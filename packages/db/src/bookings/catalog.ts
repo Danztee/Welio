@@ -45,6 +45,7 @@ export const quoteFor = (s: Service, w: Workspace) =>
     zone: w.timeZone,
     bookingLocation: w.bookingLocation,
     serviceArea: w.serviceArea,
+    businessAddress: w.businessAddress,
   });
 
 export async function lockedWorkspace(tx: Tx, scope: Scope) {
@@ -98,6 +99,7 @@ export async function catalogIn(
     contactEmail: w.contactEmail,
     phone: w.phone,
     serviceArea: w.serviceArea,
+    businessAddress: w.businessAddress,
     bookingLocation: w.bookingLocation,
     timeZone: w.timeZone,
     currency: w.currency,

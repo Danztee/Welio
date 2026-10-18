@@ -18,6 +18,7 @@ import {
 } from "@welio/domain/bookings/contract";
 import { BookingError } from "@welio/domain/bookings/errors";
 import { AppointmentStatus } from "@welio/domain/bookings/enums";
+import { BookingLocation } from "@welio/domain/workspaces/enums";
 import {
   availabilityIn,
   fingerprint,
@@ -140,19 +141,35 @@ export async function createBooking(
 
   return db.transaction(async (tx) => {
     const w = await lockedWorkspace(tx, scope);
+    const serviceLocation =
+      w.bookingLocation === BookingLocation.Both
+        ? v.serviceLocation
+        : w.bookingLocation;
+    if (!serviceLocation)
+      throw new BookingError("Choose where the appointment will take place.");
+
+    if (
+      w.bookingLocation !== BookingLocation.Both &&
+      v.serviceLocation &&
+      v.serviceLocation !== w.bookingLocation
+    )
+      throw new BookingError(
+        "Appointment location must match this business’s booking settings.",
+      );
+
     const address =
-      w.bookingLocation === "business_address"
-        ? w.serviceArea?.trim()
+      serviceLocation === BookingLocation.BusinessAddress
+        ? w.businessAddress?.trim()
         : v.address;
     if (!address)
       throw new BookingError(
-        w.bookingLocation === "business_address"
+        serviceLocation === BookingLocation.BusinessAddress
           ? "Add your business address in Settings before accepting bookings."
           : "Enter the service address.",
       );
 
     const requestFingerprint = fingerprint({
-      v: { ...v, address },
+      v: { ...v, serviceLocation, address },
       actor: scope.userId ?? "public",
     });
     const [old] = await tx

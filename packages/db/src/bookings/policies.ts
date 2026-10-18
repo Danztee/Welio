@@ -34,7 +34,11 @@ export async function publishBooking(
   await db.transaction(async (tx) => {
     const w = await lockedWorkspace(tx, { userId, workspaceId });
     if (published) {
-      if (!w.contactEmail || !w.serviceArea?.trim())
+      const locationConfigured =
+        w.bookingLocation === "customer_address"
+          ? w.serviceArea?.trim()
+          : w.businessAddress?.trim();
+      if (!w.contactEmail || !locationConfigured)
         throw new BookingError(
           "Add a contact email and service area or business address in Settings before publishing.",
         );

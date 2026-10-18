@@ -1,5 +1,12 @@
 import { z } from "zod";
-import type { BookingLocation } from "../workspaces/enums";
+import { BookingLocation } from "../workspaces/enums";
+
+export const serviceLocationInput = z.enum([
+  BookingLocation.CustomerAddress,
+  BookingLocation.BusinessAddress,
+]);
+
+export type ServiceLocation = z.infer<typeof serviceLocationInput>;
 
 export const dateInput = z.iso.date();
 
@@ -44,6 +51,7 @@ export const bookingInput = z.strictObject({
   staffId: z.uuid(),
   date: dateInput,
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  serviceLocation: serviceLocationInput.optional(),
   quote: z.string().regex(/^[a-f0-9]{64}$/),
   name: z.string().trim().min(2).max(100),
   email: z
@@ -91,6 +99,7 @@ export type Catalog = {
   contactEmail: string | null;
   phone: string;
   serviceArea: string | null;
+  businessAddress: string | null;
   bookingLocation: BookingLocation;
   timeZone: string;
   currency: string;
