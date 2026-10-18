@@ -32,6 +32,7 @@ export function StaffFormFields({
           <Input
             id="staff-name"
             name="name"
+            placeholder="e.g. Jane Doe"
             required
             readOnly={linkedAccount}
             autoComplete="name"
@@ -44,6 +45,7 @@ export function StaffFormFields({
             id="staff-email"
             name="email"
             type="email"
+            placeholder="name@example.com"
             autoComplete="email"
             required
             readOnly={linkedAccount}
@@ -61,6 +63,7 @@ export function StaffFormFields({
           <Input
             id="staff-job"
             name="jobTitle"
+            placeholder="Enter a job title"
             defaultValue={worker?.jobTitle ?? "Service specialist"}
             maxLength={100}
           />

@@ -20,11 +20,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Data = WorkspaceDashboardData;
+const timeOffDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+});
+
 function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T00:00:00Z`));
+  return timeOffDateFormatter.format(new Date(`${date}T00:00:00Z`));
 }
 
 async function save(
