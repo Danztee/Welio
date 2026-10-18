@@ -11,6 +11,10 @@ import { toast } from "sonner";
 type Session = NonNullable<
   Awaited<ReturnType<typeof authClient.listSessions>>["data"]
 >[number];
+type SessionDisplay = Session & {
+  createdAtLabel: string;
+  expiresAtLabel: string;
+};
 
 const sessionDateTime = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
@@ -25,7 +29,13 @@ async function loadSessions() {
   if (listed.error || current.error || !listed.data || !current.data?.session)
     throw Error("Could not load your sessions.");
 
-  return { sessions: listed.data, currentId: current.data.session.id };
+  const sessions = listed.data.map((session) => ({
+    ...session,
+    createdAtLabel: sessionDateTime.format(new Date(session.createdAt)),
+    expiresAtLabel: sessionDateTime.format(new Date(session.expiresAt)),
+  }));
+
+  return { sessions, currentId: current.data.session.id };
 }
 
 function deviceName(userAgent: string | null | undefined) {
@@ -55,12 +65,208 @@ function deviceName(userAgent: string | null | undefined) {
   return `${browser} on ${system}`;
 }
 
-function dateTime(value: Date | string) {
-  return sessionDateTime.format(new Date(value));
+function SessionList({
+  sessions,
+  currentId,
+  loading,
+  loadError,
+  pending,
+  onRefresh,
+  onRevoke,
+  onRevokeOthers,
+}: {
+  sessions: SessionDisplay[];
+  currentId: string;
+  loading: boolean;
+  loadError: boolean;
+  pending: string;
+  onRefresh: () => void;
+  onRevoke: (session: SessionDisplay) => void;
+  onRevokeOthers: () => void;
+}) {
+  const ordered = [...sessions].sort(
+    (a, b) =>
+      Number(b.id === currentId) - Number(a.id === currentId) ||
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return (
+    <section className="mt-8" aria-labelledby="active-sessions-heading">
+      <SessionListHeader
+        count={sessions.length}
+        otherCount={
+          sessions.filter((session) => session.id !== currentId).length
+        }
+        loading={loading}
+        loadError={loadError}
+        pending={pending}
+        onRevokeOthers={onRevokeOthers}
+      />
+      <SessionListContent
+        sessions={ordered}
+        currentId={currentId}
+        loading={loading}
+        loadError={loadError}
+        pending={pending}
+        onRefresh={onRefresh}
+        onRevoke={onRevoke}
+      />
+    </section>
+  );
+}
+
+function SessionListHeader({
+  count,
+  otherCount,
+  loading,
+  loadError,
+  pending,
+  onRevokeOthers,
+}: {
+  count: number;
+  otherCount: number;
+  loading: boolean;
+  loadError: boolean;
+  pending: string;
+  onRevokeOthers: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h3 id="active-sessions-heading" className="font-medium">
+          Active sessions
+        </h3>
+        {!loading && !loadError && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {count} active {count === 1 ? "session" : "sessions"}
+          </p>
+        )}
+      </div>
+      {!loadError && otherCount > 0 && (
+        <Button
+          variant="outline"
+          className="text-destructive hover:text-destructive"
+          onClick={onRevokeOthers}
+          disabled={Boolean(pending) || loading}
+        >
+          {pending === "others" ? "Signing out…" : "Sign out other devices"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function SessionListContent({
+  sessions,
+  currentId,
+  loading,
+  loadError,
+  pending,
+  onRefresh,
+  onRevoke,
+}: {
+  sessions: SessionDisplay[];
+  currentId: string;
+  loading: boolean;
+  loadError: boolean;
+  pending: string;
+  onRefresh: () => void;
+  onRevoke: (session: SessionDisplay) => void;
+}) {
+  if (loading) {
+    return (
+      <div className="mt-6 flex flex-col gap-4">
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading sessions…
+        </p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="mt-6 flex flex-col items-start gap-3">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Could not load your sessions. Please try again.
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" size="sm" onClick={onRefresh}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!sessions.length) {
+    return (
+      <p className="mt-6 text-sm text-muted-foreground">
+        No active sessions found.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-6 flex flex-col gap-4">
+      {sessions.map((session) => (
+        <SessionRow
+          key={session.id}
+          session={session}
+          current={session.id === currentId}
+          pending={pending}
+          onRevoke={onRevoke}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SessionRow({
+  session,
+  current,
+  pending,
+  onRevoke,
+}: {
+  session: SessionDisplay;
+  current: boolean;
+  pending: string;
+  onRevoke: (session: SessionDisplay) => void;
+}) {
+  const mobile = /iPhone|iPad|Android/i.test(session.userAgent ?? "");
+  const Icon = mobile ? SmartphoneIcon : MonitorIcon;
+
+  return (
+    <div className="flex flex-wrap items-start gap-4 border-b pb-4 last:border-b-0">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <Icon className="size-5" aria-hidden="true" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium">{deviceName(session.userAgent)}</p>
+          {current && <Badge variant="secondary">This device</Badge>}
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Signed in {session.createdAtLabel} · Expires {session.expiresAtLabel}
+        </p>
+      </div>
+      {!current && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-destructive hover:text-destructive"
+          disabled={Boolean(pending)}
+          onClick={() => onRevoke(session)}
+          aria-label={`Sign out ${deviceName(session.userAgent)} session from ${session.createdAtLabel}`}
+        >
+          {pending === session.id ? "Signing out…" : "Sign out"}
+        </Button>
+      )}
+    </div>
+  );
 }
 
 export function SessionSettings() {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<SessionDisplay[]>([]);
   const [currentId, setCurrentId] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -105,7 +311,7 @@ export function SessionSettings() {
     };
   }, []);
 
-  async function revoke(session: Session) {
+  async function revoke(session: SessionDisplay) {
     if (session.id === currentId || pending) return;
 
     setPending(session.id);
@@ -137,15 +343,6 @@ export function SessionSettings() {
     }
   }
 
-  const ordered = [...sessions].sort(
-    (a, b) =>
-      Number(b.id === currentId) - Number(a.id === currentId) ||
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-  const otherCount = sessions.filter(
-    (session) => session.id !== currentId,
-  ).length;
-
   return (
     <>
       <h2 id="settings-section-title" className="text-lg font-semibold">
@@ -154,105 +351,16 @@ export function SessionSettings() {
       <p className="mt-1 text-sm text-muted-foreground">
         See where you’re signed in and end sessions you no longer use.
       </p>
-      <section className="mt-8" aria-labelledby="active-sessions-heading">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h3 id="active-sessions-heading" className="font-medium">
-              Active sessions
-            </h3>
-            {!loading && !loadError && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                {sessions.length} active{" "}
-                {sessions.length === 1 ? "session" : "sessions"}
-              </p>
-            )}
-          </div>
-          {!loadError && otherCount > 0 && (
-            <Button
-              variant="outline"
-              className="text-destructive hover:text-destructive"
-              onClick={revokeOthers}
-              disabled={Boolean(pending) || loading}
-            >
-              {pending === "others" ? "Signing out…" : "Sign out other devices"}
-            </Button>
-          )}
-        </div>
-        <div className="mt-6 flex flex-col gap-4">
-          {loading && (
-            <p role="status" className="text-sm text-muted-foreground">
-              Loading sessions…
-            </p>
-          )}
-          {!loading && loadError && (
-            <div className="flex flex-col items-start gap-3">
-              <Alert variant="destructive">
-                <AlertDescription>
-                  Could not load your sessions. Please try again.
-                </AlertDescription>
-              </Alert>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void refresh()}
-              >
-                Try again
-              </Button>
-            </div>
-          )}
-          {!loading && !loadError && ordered.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No active sessions found.
-            </p>
-          )}
-          {!loading &&
-            !loadError &&
-            ordered.map((session) => {
-              const current = session.id === currentId;
-              const mobile = /iPhone|iPad|Android/i.test(
-                session.userAgent ?? "",
-              );
-              const Icon = mobile ? SmartphoneIcon : MonitorIcon;
-
-              return (
-                <div
-                  key={session.id}
-                  className="flex flex-wrap items-start gap-4 border-b pb-4 last:border-b-0"
-                >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">
-                        {deviceName(session.userAgent)}
-                      </p>
-                      {current && (
-                        <Badge variant="secondary">This device</Badge>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Signed in {dateTime(session.createdAt)} · Expires{" "}
-                      {dateTime(session.expiresAt)}
-                    </p>
-                  </div>
-                  {!current && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      disabled={Boolean(pending)}
-                      onClick={() => void revoke(session)}
-                      aria-label={`Sign out ${deviceName(session.userAgent)} session from ${dateTime(session.createdAt)}`}
-                    >
-                      {pending === session.id ? "Signing out…" : "Sign out"}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-        </div>
-      </section>
+      <SessionList
+        sessions={sessions}
+        currentId={currentId}
+        loading={loading}
+        loadError={loadError}
+        pending={pending}
+        onRefresh={() => void refresh()}
+        onRevoke={(session) => void revoke(session)}
+        onRevokeOthers={() => void revokeOthers()}
+      />
     </>
   );
 }
