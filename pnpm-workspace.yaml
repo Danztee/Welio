@@ -1,0 +1,6 @@
+allowBuilds:
+  esbuild: true
+  sharp: false
+  unrs-resolver: false
+overrides:
+  "@strands-agents/sdk>openai": "-"

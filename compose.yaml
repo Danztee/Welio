@@ -1,0 +1,19 @@
+services:
+  redis:
+    image: valkey/valkey:8
+    ports:
+      - "6388:6379"
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    ports:
+      - "5461:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:
