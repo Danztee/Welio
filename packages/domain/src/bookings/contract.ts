@@ -1,5 +1,8 @@
 import { z } from "zod";
+import type { BookingLocation } from "../workspaces/enums";
+
 export const dateInput = z.iso.date();
+
 export const policyInput = z.object({
   leadHours: z.coerce.number().int().min(0).max(168),
   horizonDays: z.coerce.number().int().min(1).max(365),
@@ -8,6 +11,9 @@ export const policyInput = z.object({
     .number()
     .refine((v) => [15, 30, 60].includes(v), "Choose 15, 30, or 60 minutes."),
 });
+
+export type PolicyInput = z.infer<typeof policyInput>;
+
 export const timeOffInput = z
   .object({
     staffId: z.uuid(),
@@ -19,11 +25,19 @@ export const timeOffInput = z
     (v) => v.from <= v.to,
     "End date must be on or after the start date.",
   );
+
+export type TimeOffInput = z.infer<typeof timeOffInput>;
+
 export const slotInput = z.strictObject({
   serviceId: z.uuid(),
   staffId: z.uuid().optional(),
   date: dateInput,
 });
+
+export type SlotInput = z.infer<typeof slotInput>;
+
+export const serviceAddressInput = z.string().trim().min(3).max(500);
+
 export const bookingInput = z.strictObject({
   key: z.uuid(),
   serviceId: z.uuid(),
@@ -37,9 +51,14 @@ export const bookingInput = z.strictObject({
     .max(254)
     .transform((v) => v.toLowerCase()),
   phone: z.string().trim().max(40),
-  address: z.string().trim().min(3).max(500),
+  address: serviceAddressInput.optional(),
   consent: z.literal(true),
 });
+
+export const bookingProposalInput = bookingInput.extend({
+  address: serviceAddressInput,
+});
+
 export const changeInput = z
   .object({
     key: z.uuid(),
@@ -59,8 +78,11 @@ export const changeInput = z
         message: "Choose a new date, time, and staff member.",
       });
   });
+
 export type BookingInput = z.infer<typeof bookingInput>;
+
 export type ChangeInput = z.infer<typeof changeInput>;
+
 export type Catalog = {
   id: string;
   name: string;
@@ -69,6 +91,7 @@ export type Catalog = {
   contactEmail: string | null;
   phone: string;
   serviceArea: string | null;
+  bookingLocation: BookingLocation;
   timeZone: string;
   currency: string;
   leadHours: number;
@@ -88,7 +111,9 @@ export type Catalog = {
   }[];
   staff: { id: string; name: string }[];
 };
+
 export type Slot = { time: string; staffId: string; startsAt: string };
+
 export type BookingView = {
   workspaceId: string;
   id: string;

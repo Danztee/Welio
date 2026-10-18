@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { BookingLocation } from "./enums";
+
+export { BookingLocation } from "./enums";
+
+export const bookingLocation = z.enum(BookingLocation);
+
 const name = z.string().trim().min(2).max(100);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 export const workspaceInput = z.object({
@@ -18,6 +24,7 @@ export const workspaceInput = z.object({
   contactEmail: z.email().max(254),
   phone: z.string().trim().max(40),
   serviceArea: z.string().trim().min(2).max(200),
+  bookingLocation,
   timeZone: z.enum([
     "Africa/Lagos",
     "Europe/London",
@@ -26,6 +33,7 @@ export const workspaceInput = z.object({
   ]),
   currency: z.enum(["NGN", "USD", "GBP"]),
 });
+
 export const serviceInput = z.object({
   id: z.uuid().optional(),
   name,
@@ -37,10 +45,12 @@ export const serviceInput = z.object({
   isActive: z.boolean(),
   staffIds: z.array(z.uuid()).max(100).optional(),
 });
+
 export const serviceStaffInput = z.object({
   serviceId: z.uuid(),
   staffIds: z.array(z.uuid()).max(100),
 });
+
 export const staffInput = z
   .object({
     id: z.uuid().optional(),
@@ -72,6 +82,11 @@ export const staffInput = z
           "Working hours and break times must be in order, with the break inside working hours.",
       });
   });
+
 export type WorkspaceInput = z.infer<typeof workspaceInput>;
+
 export type ServiceInput = z.infer<typeof serviceInput>;
+
 export type StaffInput = z.infer<typeof staffInput>;
+
+export type ServiceStaffInput = z.infer<typeof serviceStaffInput>;

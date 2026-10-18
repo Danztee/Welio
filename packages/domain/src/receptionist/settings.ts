@@ -20,7 +20,9 @@ export const receptionistSettingsSchema = z
     message: "Enable availability checks before allowing booking requests.",
     path: ["allowBooking"],
   });
+
 export type ReceptionistSettings = z.infer<typeof receptionistSettingsSchema>;
+
 export const defaultReceptionistSettings: ReceptionistSettings = {
   enabled: true,
   greeting: "Hello! How can I help you find a service or book an appointment?",
