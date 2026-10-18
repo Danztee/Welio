@@ -5,6 +5,9 @@ import { z } from "zod";
 import { getDatabase, incrementRateLimit } from "@welio/db";
 import { BookingError } from "@welio/domain/bookings/errors";
 import { WorkspaceError } from "@welio/domain/workspaces/errors";
+import { isAllowedAppOrigin } from "@/lib/app-origin";
+
+export { appOrigin } from "@/lib/app-origin";
 
 export class HttpError extends Error {
   constructor(
@@ -15,17 +18,6 @@ export class HttpError extends Error {
   }
 }
 
-export function appOrigin() {
-  const value =
-    process.env.BETTER_AUTH_URL ??
-    process.env.APP_URL ??
-    "http://localhost:3000";
-  if (!URL.canParse(value))
-    throw new HttpError("The application URL is not configured.", 503);
-
-  return new URL(value).origin;
-}
-
 export function requireOrigin(request: Request) {
   if (
     request.headers.get("content-type")?.split(";")[0].trim() !==
@@ -33,7 +25,8 @@ export function requireOrigin(request: Request) {
   )
     throw new HttpError("Use a JSON request.", 415);
 
-  if (request.headers.get("origin") !== appOrigin())
+  const origin = request.headers.get("origin");
+  if (!origin || !isAllowedAppOrigin(origin))
     throw new HttpError("This request origin is not allowed.", 403);
 }
 
