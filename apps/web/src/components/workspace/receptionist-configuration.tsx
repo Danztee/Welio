@@ -84,6 +84,7 @@ export function ReceptionistConfiguration({
                 </FieldLabel>
                 <Textarea
                   id="receptionist-greeting"
+                  placeholder="Welcome! How can we help you today?"
                   required
                   maxLength={240}
                   rows={2}
@@ -100,6 +101,7 @@ export function ReceptionistConfiguration({
                 </FieldLabel>
                 <Textarea
                   id="receptionist-instructions"
+                  placeholder="Describe your services, preferred tone, and useful guidance for customers."
                   maxLength={2400}
                   rows={4}
                   value={settings.instructions}
@@ -183,6 +185,7 @@ export function ReceptionistConfiguration({
                     </FieldLabel>
                     <Input
                       id={`faq-question-${index}`}
+                      placeholder="e.g. What areas do you serve?"
                       required
                       maxLength={200}
                       value={faq.question}
@@ -204,6 +207,7 @@ export function ReceptionistConfiguration({
                     </FieldLabel>
                     <Textarea
                       id={`faq-answer-${index}`}
+                      placeholder="Add a clear answer for customers."
                       required
                       rows={2}
                       maxLength={1000}

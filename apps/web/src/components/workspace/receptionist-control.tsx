@@ -21,7 +21,12 @@ import { ReceptionistConfiguration } from "./receptionist-configuration";
 import { ReceptionistPreview } from "./receptionist-preview";
 
 type Data = WorkspaceDashboardData;
-type Turn = { text: string; reply: string; proposal: Proposal | null };
+type Turn = {
+  id: string;
+  text: string;
+  reply: string;
+  proposal: Proposal | null;
+};
 const previewResultSchema = z.object({
   reply: z.string(),
   proposal: proposalSchema.nullable(),
@@ -128,7 +133,12 @@ export function ReceptionistControl({
       );
       setTurns((current) => [
         ...current,
-        { text: message, reply: result.reply, proposal: result.proposal },
+        {
+          id: crypto.randomUUID(),
+          text: message,
+          reply: result.reply,
+          proposal: result.proposal,
+        },
       ]);
       setText("");
     } catch (error) {

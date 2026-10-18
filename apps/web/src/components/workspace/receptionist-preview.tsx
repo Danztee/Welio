@@ -35,7 +35,12 @@ import { ReceptionistMessage } from "./receptionist-message";
 import { ReceptionistQuickActions } from "./receptionist-quick-actions";
 
 type Data = WorkspaceDashboardData;
-type Turn = { text: string; reply: string; proposal: Proposal | null };
+type Turn = {
+  id: string;
+  text: string;
+  reply: string;
+  proposal: Proposal | null;
+};
 type EditableSettings = Omit<ReceptionistSettings, "faqs"> & {
   faqs: (ReceptionistSettings["faqs"][number] & { id: string })[];
 };
@@ -139,10 +144,10 @@ export function ReceptionistPreview({
                     )}
                   </div>
                 </MessageScrollerItem>
-                {turns.map((turn, index) => (
+                {turns.map((turn) => (
                   <MessageScrollerItem
-                    key={index}
-                    messageId={`preview-${index}`}
+                    key={turn.id}
+                    messageId={turn.id}
                     scrollAnchor
                   >
                     <div className="flex flex-col gap-3">
