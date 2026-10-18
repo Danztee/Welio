@@ -9,5 +9,10 @@ const globalForDatabase = globalThis as typeof globalThis & {
 
 export function getDatabase() {
   globalForDatabase.welioDatabase ??= createDatabase(getDatabaseUrl());
+
   return globalForDatabase.welioDatabase.db;
 }
+
+export { checkDatabaseReadiness } from "./health";
+
+export { incrementRateLimit } from "./rate-limits";

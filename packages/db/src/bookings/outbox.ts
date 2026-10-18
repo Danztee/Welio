@@ -1,13 +1,17 @@
+import "server-only";
+
 import { and, eq, sql } from "drizzle-orm";
-import type { Database } from "@/db/connection";
-import { emailOutbox, workspaces, appointments } from "@/db/schema";
-import { reminderApplies } from "./reminders";
-import { BookingError } from "./repository";
-import { authorizeWorkspace } from "@/lib/workspaces/repository";
-import type { AuthMail } from "@/lib/auth/factory";
+import type { Database } from "../connection";
+import { emailOutbox, workspaces, appointments } from "../schema";
+import { reminderApplies } from "@welio/domain/bookings/reminder-policy";
+import { BookingError } from "@welio/domain/bookings/errors";
+import { authorizeWorkspace } from "../workspaces/repository";
+
+export type OutboundMail = { to: string; subject: string; text: string };
+
 export async function deliverQueued(
   db: Database,
-  send: (mail: AuthMail) => Promise<void>,
+  send: (mail: OutboundMail) => Promise<void>,
   workspaceId?: string,
   limit = 10,
   clock = () => new Date(),
@@ -31,6 +35,7 @@ export async function deliverQueued(
         .limit(1)
         .for("update", { of: workspaces, skipLocked: true });
       if (!candidate) return null;
+
       const [item] = await tx
         .select()
         .from(emailOutbox)
@@ -42,6 +47,7 @@ export async function deliverQueued(
         )
         .for("update", { skipLocked: true });
       if (!item) return null;
+
       if (item.kind === "reminder") {
         const [appointment] = await tx
           .select()
@@ -63,9 +69,11 @@ export async function deliverQueued(
             .update(emailOutbox)
             .set({ status: "skipped" })
             .where(eq(emailOutbox.id, item.id));
+
           return { skipped: true as const };
         }
       }
+
       await tx
         .update(emailOutbox)
         .set({
@@ -74,13 +82,16 @@ export async function deliverQueued(
           lastAttemptAt: clock(),
         })
         .where(eq(emailOutbox.id, item.id));
+
       return item;
     });
     if (!claimed) break;
+
     if ("skipped" in claimed) {
       skipped++;
       continue;
     }
+
     let accepted = false;
     try {
       await send({
@@ -92,6 +103,7 @@ export async function deliverQueued(
     } catch {
       /* Provider errors may contain private email data. */
     }
+
     await db
       .update(emailOutbox)
       .set({
@@ -102,8 +114,10 @@ export async function deliverQueued(
     if (accepted) sent++;
     else failed++;
   }
+
   return { sent, failed, skipped };
 }
+
 export async function retryEmail(
   db: Database,
   userId: string,

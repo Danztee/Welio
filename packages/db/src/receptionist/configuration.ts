@@ -1,11 +1,17 @@
-import { eq } from "drizzle-orm";
-import type { Database } from "@/db/connection";
-import { workspaces } from "@/db/schema";
-import { BookingError, getCatalog } from "@/lib/bookings/repository";
-import { authorizeWorkspace } from "@/lib/workspaces/repository";
-import { receptionistSettingsSchema } from "./settings";
+import "server-only";
 
-export type PreviewScope = { userId: string; workspaceId: string };
+import { eq } from "drizzle-orm";
+import type { Database } from "../connection";
+import { workspaces } from "../schema";
+import { getCatalog } from "../bookings/repository";
+import { authorizeWorkspace } from "../workspaces/repository";
+import { BookingError } from "@welio/domain/bookings/errors";
+import {
+  receptionistSettingsSchema,
+  type ReceptionistSettings,
+} from "@welio/domain/receptionist/settings";
+import type { PreviewScope } from "@welio/domain/receptionist/scope";
+
 export async function loadReceptionistConfiguration(
   db: Database,
   slug: string,
@@ -16,16 +22,17 @@ export async function loadReceptionistConfiguration(
     .select({ settings: workspaces.receptionistSettings })
     .from(workspaces)
     .where(eq(workspaces.id, catalog.id));
-  if (!workspace) throw new BookingError("Business not found.", 404);
+  if (!workspace) throw new BookingError("Business not found.", "not_found");
+
   return receptionistSettingsSchema.parse(workspace.settings);
 }
+
 export async function saveReceptionistConfiguration(
   db: Database,
   userId: string,
   workspaceId: string,
-  input: unknown,
+  settings: ReceptionistSettings,
 ) {
-  const settings = receptionistSettingsSchema.parse(input);
   await db.transaction(async (tx) => {
     await authorizeWorkspace(tx, userId, workspaceId, true);
     await tx

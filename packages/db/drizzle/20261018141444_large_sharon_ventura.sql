@@ -1,0 +1,2 @@
+CREATE TYPE "public"."booking_location" AS ENUM('customer_address', 'business_address');--> statement-breakpoint
+ALTER TABLE "workspaces" ADD COLUMN "booking_location" "booking_location" DEFAULT 'customer_address' NOT NULL;
