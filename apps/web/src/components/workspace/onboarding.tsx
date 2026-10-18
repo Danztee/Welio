@@ -27,6 +27,7 @@ import {
   saveBusinessAction,
 } from "@/app/dashboard/workspace-actions";
 import { SetupInput } from "./setup-input";
+import { ServiceAreasField } from "./service-areas-field";
 
 type Data = WorkspaceDashboardData;
 
@@ -130,6 +131,7 @@ export function WorkspaceOnboarding({
                 <SetupInput
                   label="Business name"
                   name="name"
+                  placeholder="Enter your business name"
                   autoComplete="organization"
                   value={businessName}
                   onChange={(event) => {
@@ -144,6 +146,7 @@ export function WorkspaceOnboarding({
                 <SetupInput
                   label="Booking page URL"
                   name="slug"
+                  placeholder="Choose a booking page URL"
                   autoComplete="off"
                   value={slug}
                   onChange={(event) => {
@@ -170,6 +173,7 @@ export function WorkspaceOnboarding({
                     label="Phone (optional)"
                     name="phone"
                     type="tel"
+                    placeholder="Enter a phone number"
                     autoComplete="tel"
                     defaultValue={workspace?.phone ?? ""}
                     maxLength={40}
@@ -195,30 +199,66 @@ export function WorkspaceOnboarding({
                     <NativeSelectOption value="business_address">
                       At our business address
                     </NativeSelectOption>
+                    <NativeSelectOption value="both">
+                      Both (customer chooses)
+                    </NativeSelectOption>
                   </NativeSelect>
                   <p className="text-sm text-muted-foreground">
-                    {bookingLocation === "business_address"
-                      ? "Customers will see this address and won’t be asked to enter theirs."
-                      : "Customers will enter the address where you’ll provide the service."}
+                    {bookingLocation === "both"
+                      ? "Customers can choose your business address or request service at their address."
+                      : bookingLocation === "business_address"
+                        ? "Customers will see this address and won’t be asked to enter theirs."
+                        : "Customers will enter the address where you’ll provide the service."}
                   </p>
                 </Field>
-                <Field>
-                  <FieldLabel htmlFor="setup-serviceArea">
-                    {bookingLocation === "business_address"
-                      ? "Business address"
-                      : "Service area"}
-                  </FieldLabel>
-                  <Textarea
-                    id="setup-serviceArea"
-                    name="serviceArea"
-                    autoComplete="street-address"
-                    defaultValue={workspace?.serviceArea ?? ""}
-                    minLength={2}
-                    maxLength={200}
-                    rows={3}
-                    required
+                {bookingLocation !== "customer_address" && (
+                  <Field>
+                    <FieldLabel htmlFor="setup-businessAddress">
+                      Business address
+                    </FieldLabel>
+                    <Textarea
+                      id="setup-businessAddress"
+                      name="businessAddress"
+                      autoComplete="street-address"
+                      defaultValue={workspace?.businessAddress ?? ""}
+                      minLength={2}
+                      maxLength={200}
+                      rows={3}
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {bookingLocation === "both"
+                        ? "Customers can book here or enter their own service address."
+                        : "Customers will book appointments at this address."}
+                    </p>
+                  </Field>
+                )}
+                {bookingLocation !== "business_address" ? (
+                  <ServiceAreasField
+                    id="setup-service-area"
+                    value={workspace?.serviceArea ?? null}
+                    label={`Areas you serve${bookingLocation === "both" ? " (optional)" : ""}`}
+                    required={bookingLocation === "customer_address"}
+                    description={
+                      bookingLocation === "both"
+                        ? "Customers enter their exact address when booking at home."
+                        : "Customers enter the exact appointment address when booking."
+                    }
                   />
-                </Field>
+                ) : (
+                  <input
+                    type="hidden"
+                    name="serviceArea"
+                    value={workspace?.serviceArea ?? ""}
+                  />
+                )}
+                {bookingLocation === "customer_address" && (
+                  <input
+                    type="hidden"
+                    name="businessAddress"
+                    value={workspace?.businessAddress ?? ""}
+                  />
+                )}
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="setup-timeZone">Time zone</FieldLabel>
