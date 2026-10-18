@@ -9,7 +9,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write . && pnpm --recursive exec eslint --fix .",
     "check": "turbo run lint check && prettier --check .",
-    "db:up": "docker compose -f compose.yaml up -d --wait db",
+    "db:up": "docker compose -f docker-compose.yaml up -d --wait db",
     "db:generate": "turbo run db:generate --filter=@welio/db",
     "db:migrate": "turbo run db:migrate --filter=@welio/db"
   },
