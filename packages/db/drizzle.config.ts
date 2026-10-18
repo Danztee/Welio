@@ -1,13 +1,17 @@
+import { resolve } from "node:path";
 import { loadEnvConfig } from "@next/env";
 
-loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
+loadEnvConfig(
+  resolve(process.cwd(), "../../apps/web"),
+  process.env.NODE_ENV !== "production",
+);
 
 import { defineConfig } from "drizzle-kit";
 
-import { getDatabaseUrl } from "./src/db/config";
+import { getDatabaseUrl } from "./src/config";
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
+  schema: "./src/schema/index.ts",
   out: "./drizzle",
   dialect: "postgresql",
   casing: "snake_case",

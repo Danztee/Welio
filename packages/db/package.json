@@ -1,0 +1,44 @@
+{
+  "name": "@welio/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./connection": "./src/connection.ts",
+    "./schema": "./src/schema.ts",
+    "./health": "./src/health.ts",
+    "./rate-limits": "./src/rate-limits.ts",
+    "./bookings": "./src/bookings/repository.ts",
+    "./bookings/outbox": "./src/bookings/outbox.ts",
+    "./bookings/reminders": "./src/bookings/reminders.ts",
+    "./workspaces": "./src/workspaces/repository.ts",
+    "./receptionist/configuration": "./src/receptionist/configuration.ts",
+    "./receptionist/proposals": "./src/receptionist/proposals.ts",
+    "./receptionist/chat-sessions": "./src/receptionist/chat-sessions.ts"
+  },
+  "dependencies": {
+    "@welio/domain": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@next/env": "16.4.2",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10.1.8",
+    "typescript": "^5",
+    "typescript-eslint": "^8.71.2"
+  }
+}
