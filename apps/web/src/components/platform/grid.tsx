@@ -34,9 +34,9 @@ export function Grid<T>({
         <Table>
           <TableHeader>
             <TableRow>
-              {columns.map((c, index) => (
+              {columns.map((c) => (
                 <TableHead
-                  key={index}
+                  key={c.label || "actions"}
                   className={
                     c.label === "Actions" || !c.label
                       ? "w-px text-right"
@@ -57,9 +57,9 @@ export function Grid<T>({
                     : JSON.stringify(row)
                 }
               >
-                {columns.map((c, index) => (
+                {columns.map((c) => (
                   <TableCell
-                    key={index}
+                    key={c.label || "actions"}
                     className={
                       c.label === "Actions" || !c.label
                         ? "w-px py-4 text-right"

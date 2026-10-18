@@ -26,6 +26,7 @@ export function SearchField({
       <InputGroupInput
         type="search"
         aria-label={label}
+        placeholder="Search…"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
