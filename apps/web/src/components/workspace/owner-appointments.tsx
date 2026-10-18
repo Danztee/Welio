@@ -53,6 +53,7 @@ import { floatingSheetClassName } from "@welio/ui/components/sheet-styles";
 import { EyeIcon, MoreHorizontalIcon } from "lucide-react";
 
 type Data = WorkspaceDashboardData;
+
 async function save(workspaceId: string, input: unknown) {
   const result = await runServerAction(() =>
     changeWorkspaceBookingAction(workspaceId, input),
@@ -65,182 +66,220 @@ async function save(workspaceId: string, input: unknown) {
 const slotSchema = z.array(
   z.object({ time: z.string(), staffId: z.uuid(), startsAt: z.string() }),
 );
-export function OwnerAppointments({
+
+function toBookingView(
+  data: Data,
+  booking: Data["bookings"][number],
+): BookingView {
+  return {
+    workspaceId: data.workspace.id,
+    id: booking.id,
+    version: booking.version,
+    status: booking.status,
+    serviceId: booking.serviceId,
+    staffId: booking.staffId,
+    serviceName: booking.serviceName,
+    staffName:
+      data.staff.find((member) => member.id === booking.staffId)?.name ??
+      "Staff",
+    startsAt: new Date(booking.startsAt).toISOString(),
+    endsAt: new Date(booking.endsAt).toISOString(),
+    timeZone: booking.timeZone,
+    priceMinor: booking.priceMinor,
+    currency: booking.currency,
+    durationMinutes: booking.durationMinutes,
+    name: booking.customerName,
+    email: booking.customerEmail,
+    phone: booking.customerPhone,
+    address: booking.serviceAddress ?? "",
+    business: data.workspace.name,
+    contactEmail: data.workspace.contactEmail,
+    businessPhone: data.workspace.phone,
+    canChange: booking.status === "confirmed",
+    cancelHours: data.workspace.cancelHours,
+    slug: data.workspace.slug,
+  };
+}
+
+async function loadAppointmentSlots(
+  workspaceId: string,
+  appointmentId: string,
+  date: string,
+) {
+  const response = await fetch(
+    `/api/workspaces/${workspaceId}/availability?${new URLSearchParams({ appointmentId, date })}`,
+    { cache: "no-store" },
+  );
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    const error = z.object({ error: z.string() }).safeParse(payload);
+    throw Error(
+      error.success ? error.data.error : "Could not load availability.",
+    );
+  }
+
+  return slotSchema.parse(payload);
+}
+
+function OwnerAppointmentTable({
+  data,
+  query,
+  status,
+  onQueryChange,
+  onStatusChange,
+  onSelect,
+}: {
+  data: Data;
+  query: string;
+  status: string;
+  onQueryChange: (value: string) => void;
+  onStatusChange: (value: string) => void;
+  onSelect: (bookingId: string) => void;
+}) {
+  return (
+    <Grid
+      toolbar={
+        <>
+          <SearchField
+            label="Search appointments"
+            value={query}
+            onChange={onQueryChange}
+          />
+          <Select
+            value={status}
+            onValueChange={(value) => onStatusChange(value || "all")}
+          >
+            <SelectTrigger aria-label="Appointment status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {["all", "confirmed", "completed", "cancelled", "no_show"].map(
+                  (value) => (
+                    <SelectItem key={value} value={value}>
+                      {value === "all"
+                        ? "All statuses"
+                        : value.replace("_", " ")}
+                    </SelectItem>
+                  ),
+                )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </>
+      }
+      empty={
+        data.bookings.length ? "No appointments found" : "No appointments yet"
+      }
+      emptyDescription={
+        data.bookings.length
+          ? "Try another search or status."
+          : "Appointments will appear here when they’re booked."
+      }
+      rows={data.bookings.filter(
+        (booking) =>
+          (status === "all" || booking.status === status) &&
+          `${booking.customerName} ${booking.customerEmail} ${booking.serviceName}`
+            .toLowerCase()
+            .includes(query.toLowerCase()),
+      )}
+      columns={[
+        {
+          label: "Customer",
+          cell: (booking) => booking.customerName || "Customer",
+        },
+        { label: "Service", cell: (booking) => booking.serviceName },
+        {
+          label: "Date & time",
+          cell: (booking) => (
+            <div>
+              {formatWhen(booking.startsAt, booking.timeZone)}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {booking.timeZone}
+              </p>
+            </div>
+          ),
+        },
+        {
+          label: "Staff",
+          cell: (booking) =>
+            data.staff.find((member) => member.id === booking.staffId)?.name ??
+            "—",
+        },
+        {
+          label: "Status",
+          cell: (booking) => (
+            <Status value={booking.status.replace("_", " ")} />
+          ),
+        },
+        {
+          label: "Price",
+          cell: (booking) => formatMoney(booking.priceMinor, booking.currency),
+        },
+        {
+          label: "Actions",
+          cell: (booking) => (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Actions for ${booking.customerName || "appointment"}`}
+                  />
+                }
+              >
+                <MoreHorizontalIcon />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => onSelect(booking.id)}>
+                    <EyeIcon />
+                    View details
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ),
+        },
+      ]}
+    />
+  );
+}
+
+function AppointmentDialogs({
   data,
   catalog,
+  creating,
+  view,
+  rescheduling,
+  command,
+  onCreatingChange,
+  onReschedulingChange,
+  onCommandChange,
+  onCloseDetails,
+  onChange,
+  onCreated,
 }: {
   data: Data;
   catalog: Catalog;
+  creating: boolean;
+  view: BookingView | undefined;
+  rescheduling: boolean;
+  command: { action: "cancel" | "completed" | "no_show"; key: string } | null;
+  onCreatingChange: (creating: boolean) => void;
+  onReschedulingChange: (rescheduling: boolean) => void;
+  onCommandChange: (
+    command: { action: "cancel" | "completed" | "no_show"; key: string } | null,
+  ) => void;
+  onCloseDetails: () => void;
+  onChange: (input: ChangeInput) => Promise<void>;
+  onCreated: () => void;
 }) {
-  const router = useRouter();
-  const [query, setQuery] = useState(""),
-    [status, setStatus] = useState("all"),
-    [selected, setSelected] = useState(""),
-    [creating, setCreating] = useState(false),
-    [rescheduling, setRescheduling] = useState(false);
-  const [command, setCommand] = useState<{
-    action: "cancel" | "completed" | "no_show";
-    key: string;
-  } | null>(null);
-  const a = data.bookings.find((a) => a.id === selected);
-  const view: BookingView | undefined = a
-    ? {
-        workspaceId: data.workspace.id,
-        id: a.id,
-        version: a.version,
-        status: a.status,
-        serviceId: a.serviceId,
-        staffId: a.staffId,
-        serviceName: a.serviceName,
-        staffName: data.staff.find((t) => t.id === a.staffId)?.name ?? "Staff",
-        startsAt: new Date(a.startsAt).toISOString(),
-        endsAt: new Date(a.endsAt).toISOString(),
-        timeZone: a.timeZone,
-        priceMinor: a.priceMinor,
-        currency: a.currency,
-        durationMinutes: a.durationMinutes,
-        name: a.customerName,
-        email: a.customerEmail,
-        phone: a.customerPhone,
-        address: a.serviceAddress ?? "",
-        business: data.workspace.name,
-        contactEmail: data.workspace.contactEmail,
-        businessPhone: data.workspace.phone,
-        canChange: a.status === "confirmed",
-        cancelHours: data.workspace.cancelHours,
-        slug: data.workspace.slug,
-      }
-    : undefined;
-
-  async function change(input: ChangeInput) {
-    if (!a) return;
-
-    await save(data.workspace.id, { id: a.id, change: input });
-    router.refresh();
-  }
-
   return (
-    <div className="flex flex-col gap-6">
-      <Heading
-        title="Appointments"
-        action={
-          <Button
-            disabled={!catalog.services.length}
-            onClick={() => setCreating(true)}
-          >
-            <CalendarPlusIcon data-icon="inline-start" />
-            New appointment
-          </Button>
-        }
-      />
-      <Grid
-        toolbar={
-          <>
-            <SearchField
-              label="Search appointments"
-              value={query}
-              onChange={setQuery}
-            />
-            <Select
-              value={status}
-              onValueChange={(value) => setStatus(value || "all")}
-            >
-              <SelectTrigger aria-label="Appointment status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {[
-                    "all",
-                    "confirmed",
-                    "completed",
-                    "cancelled",
-                    "no_show",
-                  ].map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s === "all" ? "All statuses" : s.replace("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </>
-        }
-        empty={
-          data.bookings.length ? "No appointments found" : "No appointments yet"
-        }
-        emptyDescription={
-          data.bookings.length
-            ? "Try another search or status."
-            : "Appointments will appear here when they’re booked."
-        }
-        rows={data.bookings.filter(
-          (a) =>
-            (status === "all" || a.status === status) &&
-            `${a.customerName} ${a.customerEmail} ${a.serviceName}`
-              .toLowerCase()
-              .includes(query.toLowerCase()),
-        )}
-        columns={[
-          {
-            label: "Customer",
-            cell: (a) => a.customerName || "Customer",
-          },
-          { label: "Service", cell: (a) => a.serviceName },
-          {
-            label: "Date & time",
-            cell: (a) => (
-              <div>
-                {formatWhen(a.startsAt, a.timeZone)}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {a.timeZone}
-                </p>
-              </div>
-            ),
-          },
-          {
-            label: "Staff",
-            cell: (a) =>
-              data.staff.find((t) => t.id === a.staffId)?.name ?? "—",
-          },
-          {
-            label: "Status",
-            cell: (a) => <Status value={a.status.replace("_", " ")} />,
-          },
-          {
-            label: "Price",
-            cell: (a) => formatMoney(a.priceMinor, a.currency),
-          },
-          {
-            label: "Actions",
-            cell: (a) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`Actions for ${a.customerName || "appointment"}`}
-                    />
-                  }
-                >
-                  <MoreHorizontalIcon />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => setSelected(a.id)}>
-                      <EyeIcon />
-                      View details
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
-          },
-        ]}
-      />
+    <>
       {creating && (
-        <Dialog open onOpenChange={setCreating}>
+        <Dialog open onOpenChange={onCreatingChange}>
           <DialogContent size="wide">
             <DialogHeader>
               <DialogTitle>New appointment</DialogTitle>
@@ -249,28 +288,12 @@ export function OwnerAppointments({
                 booking.
               </DialogDescription>
             </DialogHeader>
-            <RealBookingForm
-              owner
-              catalog={catalog}
-              onDone={() => {
-                setCreating(false);
-                router.refresh();
-              }}
-            />
+            <RealBookingForm owner catalog={catalog} onDone={onCreated} />
           </DialogContent>
         </Dialog>
       )}
       {view && (
-        <Sheet
-          open={Boolean(view)}
-          onOpenChange={(v) => {
-            if (!v) {
-              setSelected("");
-              setRescheduling(false);
-              setCommand(null);
-            }
-          }}
-        >
+        <Sheet open onOpenChange={(open) => !open && onCloseDetails()}>
           <SheetContent side="right" className={floatingSheetClassName}>
             <SheetHeader className="border-b px-4 py-4 pr-12">
               <SheetTitle>{view.name || "Appointment details"}</SheetTitle>
@@ -285,14 +308,14 @@ export function OwnerAppointments({
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => setRescheduling(true)}
+                      onClick={() => onReschedulingChange(true)}
                     >
                       Reschedule
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() =>
-                        setCommand({
+                        onCommandChange({
                           action: "cancel",
                           key: crypto.randomUUID(),
                         })
@@ -303,7 +326,7 @@ export function OwnerAppointments({
                     <Button
                       variant="outline"
                       onClick={() =>
-                        setCommand({
+                        onCommandChange({
                           action: "completed",
                           key: crypto.randomUUID(),
                         })
@@ -314,7 +337,7 @@ export function OwnerAppointments({
                     <Button
                       variant="outline"
                       onClick={() =>
-                        setCommand({
+                        onCommandChange({
                           action: "no_show",
                           key: crypto.randomUUID(),
                         })
@@ -332,23 +355,11 @@ export function OwnerAppointments({
       {view && rescheduling && (
         <RescheduleBooking
           view={view}
-          onClose={() => setRescheduling(false)}
-          change={change}
-          loadSlots={async (date) => {
-            const r = await fetch(
-              `/api/workspaces/${data.workspace.id}/availability?${new URLSearchParams({ appointmentId: view.id, date })}`,
-              { cache: "no-store" },
-            );
-            const payload: unknown = await r.json();
-            if (!r.ok) {
-              const e = z.object({ error: z.string() }).safeParse(payload);
-              throw Error(
-                e.success ? e.data.error : "Could not load availability.",
-              );
-            }
-
-            return slotSchema.parse(payload);
-          }}
+          onClose={() => onReschedulingChange(false)}
+          change={onChange}
+          loadSlots={(date) =>
+            loadAppointmentSlots(data.workspace.id, view.id, date)
+          }
         />
       )}
       {view && command && (
@@ -360,9 +371,9 @@ export function OwnerAppointments({
           }
           label="Confirm change"
           variant={command.action === "cancel" ? "destructive" : "default"}
-          onClose={() => setCommand(null)}
+          onClose={() => onCommandChange(null)}
           onConfirm={() =>
-            change({
+            onChange({
               key: command.key,
               version: view.version,
               action: command.action,
@@ -374,6 +385,86 @@ export function OwnerAppointments({
             : "This closes the appointment. Only use this status after the appointment starts."}
         </Confirm>
       )}
+    </>
+  );
+}
+
+export function OwnerAppointments({
+  data,
+  catalog,
+}: {
+  data: Data;
+  catalog: Catalog;
+}) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
+  const [selected, setSelected] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
+  const [command, setCommand] = useState<{
+    action: "cancel" | "completed" | "no_show";
+    key: string;
+  } | null>(null);
+  const selectedBooking = data.bookings.find(
+    (booking) => booking.id === selected,
+  );
+  const view = selectedBooking
+    ? toBookingView(data, selectedBooking)
+    : undefined;
+
+  async function change(input: ChangeInput) {
+    if (!selectedBooking) return;
+
+    await save(data.workspace.id, { id: selectedBooking.id, change: input });
+    router.refresh();
+  }
+
+  function closeDetails() {
+    setSelected("");
+    setRescheduling(false);
+    setCommand(null);
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Heading
+        title="Appointments"
+        action={
+          <Button
+            disabled={!catalog.services.length}
+            onClick={() => setCreating(true)}
+          >
+            <CalendarPlusIcon data-icon="inline-start" />
+            New appointment
+          </Button>
+        }
+      />
+      <OwnerAppointmentTable
+        data={data}
+        query={query}
+        status={status}
+        onQueryChange={setQuery}
+        onStatusChange={setStatus}
+        onSelect={setSelected}
+      />
+      <AppointmentDialogs
+        data={data}
+        catalog={catalog}
+        creating={creating}
+        view={view}
+        rescheduling={rescheduling}
+        command={command}
+        onCreatingChange={setCreating}
+        onReschedulingChange={setRescheduling}
+        onCommandChange={setCommand}
+        onCloseDetails={closeDetails}
+        onChange={change}
+        onCreated={() => {
+          setCreating(false);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
