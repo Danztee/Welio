@@ -35,8 +35,8 @@ export function DashboardShell({
         className="h-svh overflow-hidden"
         style={
           {
-            "--sidebar-width": "15rem",
-            "--sidebar-width-icon": "4.5rem",
+            "--sidebar-width": "14rem",
+            "--sidebar-width-icon": "3.5rem",
           } as CSSProperties
         }
       >

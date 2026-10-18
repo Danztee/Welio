@@ -219,7 +219,7 @@ export function BusinessOverview({
           <CardHeader
             className={`${dashboardPanelHeaderClassName} flex flex-wrap items-center justify-between gap-3 border-b`}
           >
-            <CardTitle>Your receptionist</CardTitle>
+            <CardTitle>Your AI receptionist</CardTitle>
             <SparklesIcon className="size-4 text-primary" />
           </CardHeader>
           <CardContent className="flex flex-1 flex-col justify-center gap-6 p-6">
@@ -231,8 +231,8 @@ export function BusinessOverview({
                 What would you like to get done today?
               </h2>
               <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-                Help customers find a service, check availability, and book an
-                appointment.
+                Answer customer questions, check availability, and help them
+                book an appointment.
               </p>
             </div>
             <div className="flex flex-col gap-3">
@@ -241,7 +241,7 @@ export function BusinessOverview({
                 nativeButton={false}
                 render={<Link href={receptionistHref} />}
               >
-                Open receptionist
+                Open AI receptionist
                 <ArrowRightIcon data-icon="inline-end" />
               </Button>
               <p className="text-xs leading-5 text-muted-foreground">
