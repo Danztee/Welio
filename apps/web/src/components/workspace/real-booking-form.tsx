@@ -14,8 +14,12 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { formatWhen } from "./booking-format";
 import { RealBookingAvailability } from "./real-booking-availability";
-import { RealBookingDetailsForm } from "./real-booking-details-form";
+import {
+  RealBookingDetailsForm,
+  type BookingCustomerDetails,
+} from "./real-booking-details-form";
 import { RealBookingReview } from "./real-booking-review";
+import { BookingLocation } from "@welio/domain/workspaces/enums";
 
 const slotsSchema = z.array(
   z.object({ time: z.string(), staffId: z.uuid(), startsAt: z.iso.datetime() }),
@@ -73,11 +77,15 @@ export function RealBookingForm({
   const [loaded, setLoaded] = useState(false),
     [busy, setBusy] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
-  const [details, setDetails] = useState({
+  const [details, setDetails] = useState<BookingCustomerDetails>({
     name: "",
     email: "",
     phone: "",
     address: "",
+    serviceLocation:
+      catalog.bookingLocation === BookingLocation.Both
+        ? ""
+        : catalog.bookingLocation,
   });
   const [receipt, setReceipt] = useState("");
   const requestRef = useRef<{ signature: string; key: string } | null>(null);
@@ -147,19 +155,27 @@ export function RealBookingForm({
       email: text(f, "email"),
       phone: text(f, "phone"),
       address: text(f, "address"),
+      serviceLocation:
+        catalog.bookingLocation === BookingLocation.Both
+          ? (text(
+              f,
+              "serviceLocation",
+            ) as BookingCustomerDetails["serviceLocation"])
+          : catalog.bookingLocation,
     });
     setStep(3);
   }
 
   async function confirm() {
-    if (!service || !choice || busy) return;
+    if (!service || !choice || busy || !details.serviceLocation) return;
 
     setBusy(true);
     const input = {
       name: details.name,
       email: details.email,
       phone: details.phone,
-      ...(catalog.bookingLocation === "customer_address"
+      serviceLocation: details.serviceLocation,
+      ...(details.serviceLocation === BookingLocation.CustomerAddress
         ? { address: details.address }
         : {}),
       serviceId: service.id,
@@ -271,6 +287,7 @@ export function RealBookingForm({
       {step === 2 && (
         <RealBookingDetailsForm
           serviceArea={catalog.serviceArea}
+          businessAddress={catalog.businessAddress}
           bookingLocation={catalog.bookingLocation}
           details={details}
           onBack={() => setStep(1)}

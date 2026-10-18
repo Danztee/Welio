@@ -2,6 +2,7 @@ import { Panel } from "@/components/platform/shared";
 import { Button } from "@welio/ui/components/button";
 import { DialogFooter } from "@welio/ui/components/dialog";
 import type { Catalog, Slot } from "@welio/domain/bookings/contract";
+import { BookingLocation } from "@welio/domain/workspaces/enums";
 import { formatMoney, formatWhen } from "./booking-format";
 import type { BookingCustomerDetails } from "./real-booking-details-form";
 
@@ -54,8 +55,8 @@ export function RealBookingReview({
           </dd>
           <dt>Appointment location</dt>
           <dd className="break-words">
-            {catalog.bookingLocation === "business_address"
-              ? catalog.serviceArea
+            {details.serviceLocation === BookingLocation.BusinessAddress
+              ? catalog.businessAddress
               : details.address}
           </dd>
           <dt>Price</dt>

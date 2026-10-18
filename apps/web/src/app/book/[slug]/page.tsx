@@ -7,6 +7,7 @@ import { BookingShell } from "@/components/workspace/booking-ui";
 import { PublicBooking } from "@/components/workspace/public-booking";
 import { aiConfigured } from "@/lib/receptionist/provider";
 import type { Catalog } from "@welio/domain/bookings/contract";
+import { BookingLocation } from "@welio/domain/workspaces/enums";
 import {
   Avatar,
   AvatarFallback,
@@ -33,6 +34,11 @@ export default async function Page({
   }
 
   const settings = await loadReceptionistConfiguration(getDatabase(), slug);
+  const serviceAreaSummary = catalog.serviceArea
+    ?.split(/\r?\n/)
+    .map((area) => area.trim())
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <BookingShell>
@@ -52,9 +58,11 @@ export default async function Page({
         <div>
           <h1 className="text-2xl font-medium">{catalog.name}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {catalog.bookingLocation === "business_address"
-              ? `Appointments at ${catalog.serviceArea}`
-              : `Serving ${catalog.serviceArea}`}{" "}
+            {catalog.bookingLocation === BookingLocation.Both
+              ? `Choose your address or visit ${catalog.businessAddress}${serviceAreaSummary ? ` · At-home service in ${serviceAreaSummary}` : ""}`
+              : catalog.bookingLocation === BookingLocation.BusinessAddress
+                ? `Appointments at ${catalog.businessAddress}`
+                : `Serving ${serviceAreaSummary}`}{" "}
             · Times shown in {catalog.timeZone}
           </p>
         </div>
