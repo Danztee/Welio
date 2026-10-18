@@ -22,6 +22,17 @@ import {
 } from "@welio/ui/components/field";
 import { Input } from "@welio/ui/components/input";
 import {
+  Combobox,
+  ComboboxChips,
+  ComboboxChip,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from "@welio/ui/components/combobox";
+import {
   NativeSelect,
   NativeSelectOption,
 } from "@welio/ui/components/native-select";
@@ -47,6 +58,18 @@ export function Editor({
 }) {
   const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [multiSelectValues, setMultiSelectValues] = useState<
+    Record<string, string[]>
+  >(() =>
+    Object.fromEntries(
+      fields
+        .filter((field) => field.type === "multi-select")
+        .map((field) => [
+          field.name,
+          Array.isArray(field.value) ? field.value : [],
+        ]),
+    ),
+  );
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -122,7 +145,69 @@ export function Editor({
           <div className="-m-1 min-h-0 overflow-y-auto overscroll-contain p-1">
             <FieldGroup>
               {fields.map((f) =>
-                f.type === "multi" ? (
+                f.type === "multi-select" ? (
+                  <FieldSet key={f.name}>
+                    <FieldLegend variant="label">{f.label}</FieldLegend>
+                    {f.options?.length ? (
+                      <Combobox
+                        items={f.options.map((option) => option.value)}
+                        multiple
+                        name={f.name}
+                        value={multiSelectValues[f.name] ?? []}
+                        onValueChange={(value) =>
+                          setMultiSelectValues((current) => ({
+                            ...current,
+                            [f.name]: value,
+                          }))
+                        }
+                        itemToStringLabel={(value) =>
+                          f.options?.find((option) => option.value === value)
+                            ?.label ?? value
+                        }
+                      >
+                        <ComboboxChips>
+                          <ComboboxValue>
+                            {(multiSelectValues[f.name] ?? []).map((value) => (
+                              <ComboboxChip key={value}>
+                                {f.options?.find(
+                                  (option) => option.value === value,
+                                )?.label ?? value}
+                              </ComboboxChip>
+                            ))}
+                          </ComboboxValue>
+                          <ComboboxChipsInput
+                            aria-label={f.label}
+                            aria-invalid={Boolean(fieldErrors[f.name])}
+                            placeholder="Search team members"
+                          />
+                        </ComboboxChips>
+                        <ComboboxContent>
+                          <ComboboxEmpty>
+                            No matching team members.
+                          </ComboboxEmpty>
+                          <ComboboxList>
+                            {(value: string) => (
+                              <ComboboxItem key={value} value={value}>
+                                {f.options?.find(
+                                  (option) => option.value === value,
+                                )?.label ?? value}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {f.emptyMessage ?? "No options available."}
+                      </p>
+                    )}
+                    {fieldErrors[f.name] && (
+                      <FieldError id={`edit-${f.name}-error`}>
+                        {fieldErrors[f.name]}
+                      </FieldError>
+                    )}
+                  </FieldSet>
+                ) : f.type === "multi" ? (
                   <FieldSet key={f.name}>
                     <FieldLegend variant="label">{f.label}</FieldLegend>
                     {f.description && (
@@ -205,6 +290,7 @@ export function Editor({
                         }
                         defaultValue={String(f.value ?? "")}
                         required={f.required}
+                        placeholder={f.placeholder}
                         maxLength={f.maxLength ?? 2000}
                       />
                     ) : (
@@ -219,6 +305,7 @@ export function Editor({
                         }
                         type={f.type ?? "text"}
                         autoComplete={f.autoComplete}
+                        placeholder={f.placeholder}
                         defaultValue={String(f.value ?? "")}
                         required={f.required}
                         min={f.min}

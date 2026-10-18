@@ -4,6 +4,7 @@ export type EditorField = {
   autoComplete?: string;
   description?: string;
   emptyMessage?: string;
+  placeholder?: string;
   type?:
     | "text"
     | "email"
@@ -12,7 +13,8 @@ export type EditorField = {
     | "time"
     | "textarea"
     | "select"
-    | "multi";
+    | "multi"
+    | "multi-select";
   value?: string | number | string[];
   options?: { value: string; label: string }[];
   required?: boolean;

@@ -25,9 +25,8 @@ export function getEditorFields({
 }): EditorField[] {
   const assignmentField: EditorField = {
     name: "staff",
-    label: "Team members",
-    type: "multi",
-    description: "Choose who can take appointments for this service.",
+    label: "Available team members",
+    type: "multi-select",
     emptyMessage:
       "Add an active team member in Team before assigning this service.",
     value:
@@ -47,6 +46,7 @@ export function getEditorFields({
           {
             name: "name",
             label: "Service name",
+            placeholder: "Enter a service name",
             required: true,
             value: service?.name,
           },
@@ -54,6 +54,7 @@ export function getEditorFields({
             name: "description",
             label: "Description",
             type: "textarea",
+            placeholder: "Describe what the service includes.",
             value: service?.description ?? "",
           },
           {
@@ -99,13 +100,13 @@ export function getEditorFields({
             value: String(service?.isActive ?? true),
             options: boolOptions,
           },
-          ...(!recordId ? [assignmentField] : []),
         ]
       : editor === "staff"
         ? [
             {
               name: "name",
               label: "Full name",
+              placeholder: "e.g. Jane Doe",
               autoComplete: "name",
               required: true,
               value: worker?.name,
@@ -114,6 +115,7 @@ export function getEditorFields({
               name: "email",
               label: "Email",
               type: "email",
+              placeholder: "name@example.com",
               autoComplete: "email",
               required: true,
               value: worker?.email,
@@ -179,6 +181,7 @@ export function getEditorFields({
                 name: "email",
                 label: "Team member email",
                 type: "email",
+                placeholder: "name@example.com",
                 autoComplete: "email",
                 required: true,
               },
@@ -187,6 +190,7 @@ export function getEditorFields({
               {
                 name: "firstName",
                 label: "First name",
+                placeholder: "Jane",
                 autoComplete: "given-name",
                 value: user.firstName ?? "",
                 required: true,
@@ -194,6 +198,7 @@ export function getEditorFields({
               {
                 name: "lastName",
                 label: "Last name",
+                placeholder: "Doe",
                 autoComplete: "family-name",
                 value: user.lastName ?? "",
                 required: true,
