@@ -1,8 +1,8 @@
 # Welio implementation roadmap
 
-**Your AI Front Desk, Always On.**
+**Manage bookings and customers, with an AI receptionist to help.**
 
-Created: October 17, 2026. Status: Phase 1 scaffold and local database foundation implemented; deployment and environment work remain.
+Created: October 17, 2026. Status as of October 18, 2026: the multi-tenant dashboard, public booking, customer management, receptionist chat, and external MCP server are implemented in the repository. Live Bedrock inference has been verified by the owner. Deployment, external MCP client verification, the Alexa+ demo, and submission evidence remain incomplete. The automated test suite and smoke scripts were removed by an explicit project decision; current checks are lint, typecheck, formatting, and production build.
 
 ## 1. Product and finish line
 
@@ -113,10 +113,11 @@ Check off an item only when it works and its completion evidence is available. F
 - [x] Build responsive sign-in and sign-up screens with accessible validation and password controls. The screens now use real email/password authentication.
 - [x] Implement sign-up, sign-in, sign-out, verification, and account recovery with Better Auth, PostgreSQL, and ZeptoMail delivery (live credentials pending).
 - [x] Create a workspace for a new owner and associate membership with that workspace transactionally.
-- [ ] Add server-side authorization to every private query and mutation, including MCP entry points. Implemented for account/workspace setup and membership operations; Implemented for booking/customer management too; MCP entry points remain pending.
+- [x] Implement server-side authorization for account/workspace operations, booking/customer management, and the external MCP entry point. The MCP route requires a server-side Bearer secret and scopes tools to the business slug in the route.
+- [ ] Verify authorization across every entry point with negative cross-workspace checks; the automated test suite was removed, so this still needs a documented manual release check.
 - [x] Define owner/staff permissions: owners manage setup and invitations, staff can view their workspace, services, and team. Acceptance, revocation, and membership checks are implemented.
-- [ ] Add safe session handling and rate limits for authentication and public endpoints. Implemented database-backed sessions, auth/public-booking rate limits, origin checks, and bounded requests. Future public AI endpoints still need controls.
-- [x] Test current workspace queries, mutations, and URLs against guessed identifiers and another owner; staff cannot perform owner mutations. Future tools require their own negative tests.
+- [x] Add safe session handling and rate limits for authentication and public endpoints. Implemented database-backed sessions, auth/public-booking/MCP rate limits, origin checks, bounded requests, and expiring public-chat capabilities.
+- [x] Verify current workspace queries, mutations, and URLs against guessed identifiers and another owner; staff cannot perform owner mutations. The external MCP endpoint has separate slug scoping, but still needs a recorded cross-workspace manual check.
 
 **Done when:** Two owners can use independent workspaces and verified attempts to cross workspace boundaries fail.
 
@@ -173,20 +174,21 @@ Check off an item only when it works and its completion evidence is available. F
 - [x] Add saved receptionist greeting, instructions, FAQs, customer chat status, and enforced availability/booking permissions.
 - [x] Add an owner-only preview without booking/email execution, readiness checks, and booking-page publishing/link controls.
 
-- [ ] Verify the chosen Bedrock model supports the required tool flow through Strands; configure AWS credentials, timeouts, and usage limits.
-- [ ] Implement server-side MCP authentication and distinct public-customer and owner tool permissions.
+- [x] Confirm live Bedrock inference with the configured model and AWS credentials. The current configuration uses Claude Sonnet 4.6 through the EU inference profile in `eu-north-1`.
+- [ ] Verify the chosen Bedrock model's tool flow through Strands and check deployed timeouts and usage limits.
+- [x] Implement server-side MCP authentication and distinct public-customer and owner tool permissions. The public Strands gateway uses a scoped, expiring chat capability; the external endpoint uses a server-only Bearer secret. Neither exposes owner tools.
 - [ ] Require a valid appointment-scoped management token or equivalent verified ownership before public chat reads, reschedules, or cancels an existing appointment. A name, email address, or booking ID alone does not prove ownership; keep management tokens outside model prompts and logs.
-- [ ] Start with read tools: `list_services`, `get_business_hours`, `check_availability`, and owner-only `find_customer` and `get_appointments`.
-- [ ] Add mutation tools: `create_appointment`, `reschedule_appointment`, and `cancel_appointment`, reusing the tested application services.
+- [x] Implement customer-safe MCP tools: `list_services`, `check_availability`, and `prepare_booking`. `confirm_booking` is available only on the external endpoint when the environment opt-in and workspace booking permission are both enabled.
+- [ ] Add owner-only tools and in-chat rescheduling/cancellation. They are not registered today.
 - [ ] Define validated tool input/output schemas and stable error codes. Return alternatives for unavailable slots.
-- [ ] Require clarification for ambiguous customer identity, service, price, or relative dates before mutation.
-- [ ] Present a specific action summary for approval. Bind approval to the authenticated actor, workspace, exact arguments, expiry, and one-time execution; revalidate availability at execution.
+- [x] Require clarification for ambiguous service, price, or relative dates before preparing a booking.
+- [x] Present a specific booking summary for customer approval. Web chat uses a review card; external proposals bind the exact arguments, workspace, quote, expiry, token, and idempotency key, then revalidate availability during confirmation.
 - [ ] Treat messages and retrieved business content as untrusted input. Enforce authorization, amounts, and tool scope in application code.
 - [ ] Record tool attempts, approvals, execution results, latency, and cost without retaining unnecessary personal data.
 - [ ] Add readable failure handling for model outages, invalid arguments, expired approvals, and tool timeouts. Never claim success without a committed backend result.
-- [ ] Test realistic conversations, duplicate calls, prompt injection, public attempts to access owner tools or someone else's appointment, and booking conflicts between preview and approval.
+- [ ] Verify realistic conversations, duplicate calls, prompt injection, tenant isolation, and booking conflicts. Automated tests were deliberately removed and no external MCP smoke-test script is present; perform and record these checks manually before release.
 
-**Done when:** An owner can ask to book a customer, approve the concrete action, and see the actual persisted appointment and authorized email status. Public chat can answer catalog questions and book without exposing private data.
+**Done when:** An external MCP client has completed a full booking through the deployed endpoint after explicit customer approval and email consent; the appointment and email event are visible in Welio; and the chosen Alexa+ submission path is verified against the official rules. The code currently contains the MCP server, but this end-to-end evidence is still missing.
 
 ### Phase 8 — Complete the hackathon release
 
@@ -307,12 +309,12 @@ At the start of each phase, turn its checklist into implementation tasks with de
 
 **Database foundation evidence (October 17, 2026):** PostgreSQL 18 runs in Docker Compose; the initial eight-table migration and synthetic seed have been applied repeatedly. Integration checks cover tenant foreign keys, seed repeatability, snapshots, prices/durations, idempotency keys, transaction rollback, and local-target guards. The development application reports database readiness separately from liveness. Deployment and production secret management remain pending.
 
-**UI milestone:** The browser-only end-to-end demo is implemented. Its route inventory, flows, demo boundaries, and checks are recorded in [docs/UI-CHECKLIST.md](./docs/UI-CHECKLIST.md). This completes the prototype interface milestone; the production/backend checkboxes above remain independent.
+**UI milestone:** The signed-in application uses real workspace records for accounts, bookings, customers, receptionist, reminders, and settings. The retired browser-only demo is not part of the current product. See [docs/ACCOUNTS.md](./docs/ACCOUNTS.md), [docs/BOOKINGS.md](./docs/BOOKINGS.md), and [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for current behavior.
 
 **Booking milestone:** Real policy/time-off setup, availability, public/owner bookings, private customer changes, customer lists, and transactional mail events are implemented and verified; see `docs/BOOKINGS.md`.
 
-**Receptionist milestone:** Strands Agent with Bedrock Converse, scoped MCP catalog/availability/proposal tools, persisted chat sessions, expiring explicit approvals, idempotent booking execution, public chat UI, usage limits, and owner configuration/preview controls are implemented; see `docs/RECEPTIONIST.md`. Live Bedrock inference and conversation quality remain unverified until AWS credentials and model access are configured. Phase 7 also retains owner tools, private management tools, and broader observability work; it is not complete.
+**Receptionist milestone:** Strands Agent with Bedrock Converse, scoped MCP catalog/availability/proposal tools, persisted chat sessions, expiring explicit approvals, idempotent booking execution, public chat UI, usage limits, and owner configuration/preview controls are implemented; see `docs/RECEPTIONIST.md`. The owner has tested live Bedrock inference successfully. Conversation quality and the full Strands tool flow still need release verification. Phase 7 also retains owner tools, private management tools, and broader observability work; it is not complete.
 
-**Builder direction:** Strands SDK supplies the runtime agent loop with Bedrock as the model provider. The official rules explicitly list Strands SDK for the AWS Builder mini challenge. Kiro Crew remains an additional development-tool path, with actual contribution evidence pending. Alexa+ remains the intended primary track through the MCP/simulation path; a working demo and submission evidence are still required. The owner has Bedrock access; the earlier GLM 4.7 error was a daily token throttle. Live inference and a model with usable quota for the Alexa simulation remain to be verified.
+**Builder direction:** Strands SDK supplies the runtime agent loop with Bedrock as the model provider. The owner has confirmed production Bedrock access and tested live inference with Claude Sonnet 4.6 using `eu-north-1`. The external Streamable HTTP MCP server and durable booking-confirmation tool are implemented, but a remote MCP client has not yet been verified against a deployed endpoint. There is no Alexa+ connection or completed Alexa+ simulation in the repository. Kiro Crew participation evidence is still pending.
 
-**Next action:** Configure the ZeptoMail token for `noreply@hollen.app` and run a controlled live inbox check. All automated test files and their package/CI commands were removed at the user’s request. Continue verification with code checks, builds, and manual walkthroughs. Record actual Kiro Crew contributions once user setup is complete. Configure deployed email/expired-chat cleanup jobs. Complete remaining Phase 0 access and Alexa+ track checks before claiming hackathon readiness. Technical choices and the Supabase design reference are recorded in `docs/DECISIONS.md`.
+**Next action:** Run a real external MCP client against a deployed endpoint with a dedicated demo business, then complete one customer-approved booking and verify the appointment and queued email in the dashboard. After that, verify the Alexa+ track rules and access, decide whether a clearly labeled simulation qualifies, and capture the permitted demo evidence. Separately verify live ZeptoMail delivery and configure deployed email and expired-chat cleanup jobs. No automated test suite is maintained; use the repository checks and record the manual release walkthrough. Technical choices and prior dated decisions are recorded in `docs/DECISIONS.md`.

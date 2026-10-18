@@ -59,7 +59,7 @@ EMAIL_FROM=Welio <noreply@hollen.app>
 ZEPTOMAIL_SEND_MAIL_TOKEN=your-private-send-mail-token
 ```
 
-The endpoint is fixed in `src/lib/email/zeptomail.ts`. There is no local SMTP
+The endpoint is fixed in `apps/web/src/lib/email/zeptomail.ts`. There is no local SMTP
 service, transport selector, or endpoint environment setting. Missing credentials
 leave durable booking emails queued until the provider is configured. Existing
 sign-in and sessions remain usable; verification/recovery still require a

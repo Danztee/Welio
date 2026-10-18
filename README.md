@@ -1,8 +1,8 @@
 # Welio
 
-**Your AI Front Desk, Always On.**
+**Manage bookings and customers, with an AI receptionist to help.**
 
-An AI receptionist and business management application for small service businesses. The application scaffold and PostgreSQL/Drizzle database foundation are implemented. Real email/password accounts, verified sessions, workspace isolation, invitations, and saved business/services/staff setup are implemented in the signed-in application. Real public booking, availability, customer management, and transactional booking email are implemented. The Strands/Bedrock customer chat and Receptionist configuration/preview controls are implemented; live Bedrock access remains to be verified. Payment processing remains planned. See [ROADMAP.md](./ROADMAP.md) for the delivery sequence.
+Welio helps service businesses keep appointments, schedules, services, and customer details organized. Its AI receptionist answers customer questions and helps them book. The app includes verified accounts, workspace isolation, public booking, customer management, and transactional booking email. The Strands and Amazon Bedrock receptionist is implemented, and the owner has tested live Bedrock inference successfully. Payment processing remains planned. See [ROADMAP.md](./ROADMAP.md) for delivery status.
 
 ## Run locally
 
@@ -11,39 +11,39 @@ Requirements: a running Docker engine with Docker Compose, Node.js 24, and pnpm 
 ```sh
 nvm use
 pnpm install --frozen-lockfile
-cp -n .env.example .env.local
+cp -n apps/web/.env.example apps/web/.env.local
 pnpm db:up
 pnpm db:migrate
-# Set BETTER_AUTH_SECRET in .env.local to a unique random value (32+ characters).
+# Set BETTER_AUTH_SECRET in apps/web/.env.local to a unique random value (32+ characters).
 # Use 127.0.0.1 consistently with the configured BETTER_AUTH_URL.
 pnpm dev
 ```
 
-Open [127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up). All email uses ZeptoMail with the verified sender `noreply@hollen.app`. Set `ZEPTOMAIL_SEND_MAIL_TOKEN` privately in `.env.local` before testing verification or recovery; there is no local email service. See [docs/ACCOUNTS.md](./docs/ACCOUNTS.md) for complete setup and ZeptoMail configuration. The local database uses development-only credentials from `.env.example`; no hosted service account is required. Keep Docker Desktop or OrbStack running. `db:up` waits for PostgreSQL health; `docker compose stop db` stops it without deleting data.
+Open [127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up). All email uses ZeptoMail with the verified sender `noreply@hollen.app`. Set `ZEPTOMAIL_SEND_MAIL_TOKEN` privately in `apps/web/.env.local` before testing verification or recovery; there is no local email service. See [docs/ACCOUNTS.md](./docs/ACCOUNTS.md) for complete setup and ZeptoMail configuration. The local database uses development-only credentials from `apps/web/.env.example`; no hosted service account is required. Keep Docker Desktop or OrbStack running. `db:up` waits for PostgreSQL health; `docker compose stop db` stops it without deleting data.
 
 ## AI receptionist
 
 Owners configure greetings, instructions, FAQs, and allowed actions in **Receptionist**. **Test & publish** previews saved settings against real availability without creating appointments or emails, shows setup readiness, and provides publishing and booking-link controls.
 
-The public booking page includes customer chat backed by Strands SDK and Amazon Bedrock and scoped
-MCP tools. Explicit review and confirmation create an appointment using the
-existing booking operations. The runtime Strands integration is documented for the AWS Builder mini challenge; Kiro Crew development evidence remains pending. Configure an AWS region, model and credentials before enabling live chat; see
-[docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for credentials and model setup,
-usage limits, retention, and verification. Live model access still needs verification.
+The public booking page includes customer chat backed by the Strands SDK and Amazon Bedrock, with scoped Model Context Protocol (MCP) tools. Live Bedrock inference has been tested successfully. Customers review and confirm each proposed appointment before the existing booking operations create it. See [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for server configuration, usage limits, data retention, and remaining release checks.
 
-Appointment reminders are available in **Settings** and are off by default. See [docs/REMINDERS.md](./docs/REMINDERS.md) for consent, scheduling, delivery, and tests.
+The optional external MCP endpoint uses Streamable HTTP and exposes tenant-scoped receptionist tools to trusted MCP clients. It is a foundation for the Alexa+ track; it does not itself connect Welio to Alexa+. Real booking completion is an explicit server-side opt-in and requires customer approval and email consent. The external-client flow has not yet been verified end to end. See [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for setup, usage limits, and data retention.
+
+Appointment reminders are available in **Settings** and are off by default. See [docs/REMINDERS.md](./docs/REMINDERS.md) for consent, scheduling, and delivery setup.
 
 ## Code style
 
 Prettier owns formatting, including Tailwind class ordering in JSX and `cn`,
 `clsx`, and `cva` calls. It reads the Tailwind v4 theme from
-`src/app/globals.css`. ESLint checks Next.js, React, and TypeScript rules;
-formatting rules that conflict with Prettier are disabled. Lint warnings fail
-the check so they cannot quietly accumulate.
+`apps/web/src/app/globals.css`. ESLint checks Next.js, React, and TypeScript rules;
+formatting rules that conflict with Prettier are disabled. Shared ESLint spacing
+rules add blank lines between imports, declarations, control-flow blocks, and
+returns. Lint warnings fail the check so they cannot quietly accumulate.
 
 Install the recommended workspace extensions in VS Code for formatting and
 ESLint fixes on save. Other editors can use `.editorconfig` and the same
-Prettier configuration. Run `pnpm format` to format files, then `pnpm check` before pushing. CI already runs `pnpm check` on pushes
+Prettier configuration. Run `pnpm format` to format files and apply spacing
+rules, then `pnpm check` before pushing. CI already runs `pnpm check` on pushes
 and pull requests. Generated build files, the lockfile, and Drizzle metadata
 are excluded from formatting.
 
@@ -64,32 +64,51 @@ are excluded from formatting.
 ## Structure
 
 ```text
-src/
-  app/                 App Router pages, layouts, global styles, and HTTP routes
-    api/health/        Application liveness endpoint
-    api/ready/         Database/schema readiness endpoint
-  components/ui/       Generated shadcn/ui source components
-  db/                  Schema, connection factory, server-only access, seed fixtures
-  lib/                 Shared utilities and validated server environment
-drizzle/               Reviewed SQL migrations and schema snapshots
-compose.yaml           Persistent local PostgreSQL 18 instance
+apps/web/
+  src/
+    app/               App Router pages, layouts, global styles, and HTTP routes
+      api/health/      Application liveness endpoint
+      api/ready/       Database/schema readiness endpoint
+    components/        Auth, dashboard, platform, and product UI
+    features/          Server queries and explicit feature view models
+    lib/               Next.js auth, email, AI, HTTP, and server integrations
+packages/ui/
+  src/components/      Shared shadcn/ui source components
+  src/hooks/           Shared UI hooks
+  src/lib/utils.ts     Shared class-name helper
+packages/domain/
+  src/bookings/        Booking contracts, enums, time helpers, and pure rules
+  src/workspaces/      Workspace contracts, enums, and domain errors
+  src/receptionist/    Receptionist contracts, settings, and proposal rules
+packages/db/
+  drizzle/             Reviewed SQL migrations and schema snapshots
+  src/schema/          Drizzle schema, grouped by database responsibility
+  src/connection.ts    PostgreSQL connection factory and Database type
+  src/bookings/        Booking, policy, reminder, and email-outbox queries
+  src/workspaces/      Workspace, team, invitation, and access queries
+  src/receptionist/    Chat-session, proposal, and settings persistence
+  drizzle.config.ts    Drizzle Kit configuration and database tasks
+docker-compose.yaml    Persistent local PostgreSQL 17 and Valkey 8 services
+turbo.json             Workspace task graph
 docs/DECISIONS.md      Stack choices and open decisions
 ROADMAP.md             Phases, acceptance checks, and release scope
 .github/workflows/     CI checks and production build
 ```
 
-Use `@/` imports for source files. Keep credentials and server integrations on the server; `src/lib/env.ts` is guarded by `server-only`. Application database code must import `getDatabase` from `@/db`, which is also guarded by `server-only`. The connection factory is shared only with trusted CLI scripts.
+Use `@/` imports for app source, `@welio/ui/...` for shared components, `@welio/domain/...` for framework-independent contracts and rules, and `@welio/db/...` for database access. Keep credentials and server integrations on the server; `apps/web/src/lib/env.ts`, the database accessor, and database repositories are guarded by `server-only`. App server code gets a connection through `getDatabase` from `@welio/db`.
+
+Put input contracts and pure policy in `packages/domain`; put SQL, schema constraints, and atomic persistence operations in `packages/db`. Keep Next.js routes, server actions, provider calls, transport mapping, and feature composition in `apps/web`. `apps/web/src/features/workspaces` owns the dashboard query boundary and its explicit UI view types. Keep shadcn/ui primitives in `packages/ui`; compose them into product flows in the web app.
 
 ## Configuration
 
-`APP_URL` is the absolute HTTP(S) application origin, used for metadata. It defaults to `http://localhost:3000` for development. Set it to the actual application origin when deploying and rebuild. Invalid values fail with field names, without printing configuration values.
+`APP_URL` is the absolute HTTP(S) application origin, used for metadata. It defaults to `http://127.0.0.1:3000` for development, matching `BETTER_AUTH_URL`; use that exact host when opening the local app because public write endpoints validate the request origin. Set both values to the actual application origin when deploying and rebuild. Invalid values fail with field names, without printing configuration values.
 
-Commit `.env.example` with placeholders; keep `.env.local` and real credentials out of Git. The local database is bound only to `127.0.0.1:5433`; it does not reuse any PostgreSQL instance on port 5432. Hosted PostgreSQL needs its own credentials and verified TLS configuration from the provider; certificate verification is not disabled by the client. All email uses ZeptoMail’s Send Mail API. Only the Send Mail token and verified sender are configured server-side; the HTTPS endpoint is fixed in application code. The AI receptionist uses an AWS region, Bedrock model and server-side AWS credentials. PostgreSQL is the only local container service.
+Commit `apps/web/.env.example` with placeholders; keep `apps/web/.env.local` and real credentials out of Git. The local Compose database is bound to `127.0.0.1:5461`; it uses the development-only credentials shown in the example and does not reuse a PostgreSQL instance on port 5432. Hosted PostgreSQL needs its own credentials and verified TLS configuration from the provider; certificate verification is not disabled by the client. All email uses ZeptoMail’s Send Mail API. Only the Send Mail token and verified sender are configured server-side; the HTTPS endpoint is fixed in application code. The AI receptionist uses an AWS region, Bedrock model and server-side AWS credentials. Valkey is included in local Compose but is not currently used by application code.
 
 The application uses a light amber shadcn theme with white panels and a pale gray sidebar and locally bundled Inter, Source Serif 4, and JetBrains Mono fonts, so builds do not fetch fonts from Google. UI primitives use the official shadcn Base UI Nova preset and Lucide icons. To add a component, use the official registry explicitly:
 
 ```sh
-pnpm dlx shadcn@latest add @shadcn/input
+pnpm --dir apps/web dlx shadcn@latest add @shadcn/input
 ```
 
 ## Verify and build
@@ -101,7 +120,7 @@ pnpm start
 curl -i http://localhost:3000/api/health
 ```
 
-`DATABASE_URL` is required only when accessing the database. Database configuration loads `.env.local`/`.env` using Next.js environment precedence; existing process variables take priority. The database connection is lazy, so `pnpm build` and liveness work without PostgreSQL. Invalid database URLs fail without printing their values.
+`DATABASE_URL` is required only when accessing the database. Database configuration loads `apps/web/.env.local`/`apps/web/.env` using Next.js environment precedence; existing process variables take priority. The database connection is lazy, so `pnpm build` and liveness work without PostgreSQL. Invalid database URLs fail without printing their values. The local Compose file maps PostgreSQL to `127.0.0.1:5461` with the development-only `user/password` credentials used by `.env.example`; Valkey is included in Compose but the application does not currently use it.
 
 The health endpoint returns `status: "ok"`, `service: "welio"`, and a generated request ID also available in `X-Request-Id`. It is not cached and reports process liveness only; `/api/ready` separately verifies the database and core migrated tables. It returns 200 with `status: "ready"` when usable, or 503 with `status: "not_ready"` when unconfigured, unreachable, or unmigrated. Both endpoints send `Cache-Control: no-store` and a generated `X-Request-Id`; raw database errors are not returned.
 
@@ -109,18 +128,14 @@ GitHub Actions runs a frozen-lockfile install, code checks, and a production bui
 
 ## Database workflow
 
-Change `src/db/schema.ts`, run `pnpm db:generate`, review the generated SQL in `drizzle/`, then run `pnpm db:migrate`. Commit schema, SQL, snapshots, and the lockfile together. Do not use schema push or automatically run migrations during web requests/builds. Reapplying migrations is a no-op when no changes are pending.
-
-Automated test files and test tooling were removed at the user’s request. Verification uses code checks, production builds, and manual application walkthroughs.
+Change the relevant module under `packages/db/src/schema/`, run `pnpm db:generate`, review the generated SQL in `packages/db/drizzle/`, then run `pnpm db:migrate`. Turbo routes both tasks to `@welio/db`; its Drizzle config loads the schema barrel and local environment values from `apps/web/.env.local` or `apps/web/.env`. Commit schema, SQL, snapshots, and the lockfile together. Do not use schema push or automatically run migrations during web requests/builds. Reapplying migrations is a no-op when no changes are pending.
 
 Workspace foreign keys and server-side membership checks protect real business data. Real availability and booking operations now enforce working hours, time off, policies, idempotency, and database-level overlap exclusion. See [docs/BOOKINGS.md](./docs/BOOKINGS.md) for setup, public/customer routes, the email outbox, and verification.
 
 ## Application UI
 
-The signed-in application lives at `/dashboard`, with dedicated routes for appointments, customers, receptionist, notifications, services, team, members, and settings. New accounts create their workspace through `/onboarding`. Workspaces show their own PostgreSQL records and start empty.
+The signed-in application lives at `/dashboard`; new accounts create a workspace through `/onboarding`. Each workspace starts with its own PostgreSQL records.
 
-The retired browser-only demo and its fictional invoice/checkout flows have been removed. Payment processing and reports remain future work. The UI uses a light theme, yellow primary actions, outlined secondary actions, and shared dialog, menu, tab, and table components.
+Payment processing and reports remain future work. See [docs/UI-COMPONENTS.md](./docs/UI-COMPONENTS.md) for shared component guidance.
 
-## Next work
-
-Configure live ZeptoMail delivery and deployed email/expired-chat cleanup jobs. Verify reminders in a controlled inbox. Strands/Bedrock/MCP customer booking is implemented but live model access still needs verification; record actual Kiro Crew contributions after setup. Owner AI tools, Alexa+ connectivity, payment processing, and deployment verification remain subsequent work. Record decisions in [docs/DECISIONS.md](./docs/DECISIONS.md).
+See [ROADMAP.md](./ROADMAP.md) for remaining release work and [docs/DECISIONS.md](./docs/DECISIONS.md) for dated technical decisions.

@@ -1,5 +1,12 @@
 # Welio technical decisions
 
+## October 18, 2026 — Keep the verification workflow test-free
+
+At the owner's request, remove the MCP integration suite, endpoint smoke script,
+test-only database dependencies, package commands, Turbo environment wiring, and
+their setup instructions. The maintained verification workflow is lint, type
+checking, formatting, and production builds; no automated test suite is kept.
+
 ## October 17, 2026 — Application scaffold
 
 The project uses Next.js App Router, React, TypeScript in strict mode, and Tailwind CSS v4. Application code lives under `src/`, with `@/*` mapped to that directory. These implement the owner's request for Next.js, Tailwind, and shadcn/ui.
@@ -22,11 +29,11 @@ Database, authentication, hosting, email, payment providers, and AWS account/reg
 
 The owner approved PostgreSQL with Drizzle ORM. Local development uses PostgreSQL 18 in Docker Compose, published only on loopback port 5433 with a persistent named volume. Drizzle uses the `pg` connection pool with bounded connection and query timeouts. A separate local `welio_test` database runs integration checks.
 
-Versioned migrations in `drizzle/` are the schema history. Use `db:generate`, inspect the SQL, then `db:migrate`; do not use `drizzle-kit push` for this project. Initial entities are internal users, workspaces, memberships, services, staff, staff-service eligibility, customers, and appointments.
+Versioned migrations in `packages/db/drizzle/` are the schema history. Use `db:generate`, inspect the SQL, then `db:migrate`; do not use `drizzle-kit push` for this project. Initial entities are internal users, workspaces, memberships, services, staff, staff-service eligibility, customers, and appointments.
 
 Composite foreign keys prevent records from different workspaces being linked, including appointment customers, staff eligibility, and optional staff account membership. These are integrity controls, not read authorization: login, authenticated workspace scoping, and authorization remain Phase 2 work. No business-data API is exposed yet. Authentication-provider tables will be added when that provider is selected.
 
-Amounts use integer minor units (₦15,000 = 1,500,000 kobo). Appointments snapshot service name, duration, buffers, price, currency, and service address. UTC instants use PostgreSQL `timestamptz`; the business retains its IANA time zone. `updated_at` defaults on insert and is maintained by Drizzle updates; raw SQL writers must update it explicitly.
+Amounts use integer minor units (₦15,000 = 1,500,000 kobo). Appointments snapshot service name, duration, buffers, price, currency, and service address. UTC instants use PostgreSQL `timestamptz`; the business retains its IANA time zone. Timestamp columns are defined only where an auth contract or application workflow needs them; generic creation and update columns are not added to every table.
 
 The initial schema checks valid time ordering, matching duration, nonnegative prices/buffers, and unique non-null workspace idempotency keys. Full availability rules, status transitions, request idempotency semantics, and concurrent overlap protection remain Phase 4 work; storing appointments does not mean the booking engine is ready.
 
@@ -64,7 +71,7 @@ Replaced the dashboard's top-left product logo and separate workspace card with 
 
 This supersedes the earlier isolated dashboard/auth previews and refresh-reset behavior. The owner requested all end-to-end dummy UI before backend connection. The prototype now uses a versioned, schema-validated browser store shared across account, onboarding, workspace operations, public booking, self-service, receptionist approvals, invoices/checkout, notifications, reports, and settings. New workspaces start empty; the initial cleaning workspace supplies fixtures. Changes persist across navigation, refresh, and same-origin tabs. The account menu resets the complete demo.
 
-Demo session, recovery, verification, invitation, provider connection, payment, and notification states are explicit simulations. No passwords are persisted and no external providers are called. Authenticated server authorization, secure public access links, real AI, concurrent scheduling integrity, email, payment webhooks, and deployment remain backend work. The supplied amber theme and the existing Supabase-inspired layout remain in place. The detailed screen inventory and verification record are in `docs/UI-CHECKLIST.md`.
+Demo session, recovery, verification, invitation, provider connection, payment, and notification states are explicit simulations. No passwords are persisted and no external providers are called. Authenticated server authorization, secure public access links, real AI, concurrent scheduling integrity, email, payment webhooks, and deployment remain backend work. The supplied amber theme and the existing Supabase-inspired layout remain in place.
 
 ## October 17, 2026 — Real accounts and workspace foundation
 
@@ -80,7 +87,7 @@ The owner selected ZeptoMail instead of Amazon SES. Replaced the SES adapter and
 
 ## October 17, 2026 — Transactional bookings and private customer management
 
-Implemented the booking workflow authorized by the owner. PostgreSQL is the source of truth for scheduling policies, full-day time off, availability, bookings, customer records, and mail events. Temporal handles business wall-clock conversion and rejects ambiguous/nonexistent times. Workspace row locks coordinate booking and configuration mutations; a custom PostgreSQL trigger derives occupied intervals, and a partial GiST exclusion constraint (`btree_gist`) prevents staff overlaps including raw SQL writes. Active service eligibility can change without breaking historical foreign keys.
+Implemented the booking workflow authorized by the owner. PostgreSQL is the source of truth for scheduling policies, full-day time off, availability, bookings, customer records, and mail events. Temporal handles business wall-clock conversion and rejects ambiguous/nonexistent times. Workspace row locks coordinate application booking and configuration mutations; availability derives occupied intervals from appointment start/end times and saved buffers. Current migrations do not add a trigger or exclusion constraint for direct SQL writes, so appointment writes go through the booking repository. Active service eligibility can change without breaking historical foreign keys.
 
 Public catalog/availability responses are sanitized. Booking creation uses a quote fingerprint and idempotency key; changes use a replay ledger and optimistic versions. Customer management capabilities are random, hashed on appointments, carried in email link fragments, and checked with expiry; booking IDs alone grant no read access. Owners explicitly publish the booking page and can override customer cancellation notice. Current notice policies apply to existing customer changes, while price/duration/buffers/currency/zone remain appointment snapshots.
 
@@ -128,6 +135,20 @@ Strands receptionist now uses Bedrock Converse, with an explicitly configured
 region and tool-capable model or inference profile. AWS credentials are resolved
 server-side via the SDK chain or a Bedrock API key. The existing MCP scope, call
 budget, limits and explicit booking confirmation remain in place. The example
-configuration uses the US Nova Lite inference profile; actual account access,
-quota, tool calls and conversation quality must be verified with live credentials.
+initially used the US Nova Lite inference profile; the current configuration has
+since been updated to Claude Sonnet 4.6 in `eu-north-1` (see
+`apps/web/.env.example` and `docs/RECEPTIONIST.md`). The owner has tested live
+Bedrock inference successfully. Strands tool calls and conversation quality
+still need release verification.
 Alexa+ connectivity and hosting remain separate work.
+
+## October 18, 2026 — pnpm and Turborepo workspace
+
+Moved the existing Next.js application to `apps/web` and the shadcn Base UI
+components, shared `cn` helper, and mobile hook to `packages/ui`. The web app
+imports UI through the `@welio/ui` workspace package. Tailwind's app stylesheet
+scans the package source so utility classes in shared components are included.
+Root scripts run app tasks through Turborepo. Drizzle migrations live with the
+`@welio/db` package in `packages/db/drizzle/`; Docker Compose remains at the
+repository root. App environment files live in `apps/web/` so Next.js and the
+Drizzle configuration use the same settings.

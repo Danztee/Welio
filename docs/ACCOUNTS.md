@@ -4,15 +4,15 @@
 
 ## Local setup
 
-1. Copy `.env.example` to `.env.local` if it does not exist. Preserve existing configuration.
-2. Set `BETTER_AUTH_SECRET` to a unique random value of at least 32 characters. Generate one with `openssl rand -base64 48`; keep it in `.env.local`, never in source control. This workspace already has a generated local secret.
+1. Copy `apps/web/.env.example` to `apps/web/.env.local` if it does not exist. Preserve existing configuration.
+2. Set `BETTER_AUTH_SECRET` to a unique random value of at least 32 characters. Generate one with `openssl rand -base64 48`; keep it in `apps/web/.env.local`, never in source control.
 3. Set `BETTER_AUTH_URL=http://127.0.0.1:3000`. Use this exact origin in your browser; `localhost` has different cookies/origin. `APP_URL` is the metadata origin and should match your deployment.
 4. Run `pnpm install --frozen-lockfile`, `pnpm db:up`, `pnpm db:migrate`, and configure the ZeptoMail Send Mail token.
-5. Run `pnpm dev --hostname 127.0.0.1` and open [Create account](http://127.0.0.1:3000/sign-up).
+5. Run `pnpm --filter @welio/web dev -- --hostname 127.0.0.1` and open [Create account](http://127.0.0.1:3000/sign-up).
 6. Open the verification email in your real inbox and follow its link. ZeptoMail is the only email provider; the verified sender is `noreply@hollen.app`.
 7. Create a workspace with business details. In the dashboard, add a team member, working hours, a service, and its staff assignment. Refresh or sign out and back in to confirm persistence.
 
-Only PostgreSQL runs locally in Docker. Accounts use proper credential hashing and real token/session logic; email goes through ZeptoMail. Test fixtures do not create credentials or grant real accounts access to fixture workspaces.
+Only PostgreSQL runs locally in Docker. Accounts use Better Auth with database-backed sessions; email goes through ZeptoMail.
 
 ## Implemented
 
@@ -29,27 +29,23 @@ Only PostgreSQL runs locally in Docker. Accounts use proper credential hashing a
 
 ## ZeptoMail deployment
 
-Set `EMAIL_FROM=Welio <noreply@hollen.app>` and `ZEPTOMAIL_SEND_MAIL_TOKEN` to your agent’s Send Mail token. The API endpoint is fixed in `src/lib/email/zeptomail.ts`; there is no transport or API URL environment variable. Do not use an OAuth access token or expose the Send Mail token through `NEXT_PUBLIC_` variables.
+Set `EMAIL_FROM=Welio <noreply@hollen.app>` and `ZEPTOMAIL_SEND_MAIL_TOKEN` to your agent’s Send Mail token. The API endpoint is fixed in `apps/web/src/lib/email/zeptomail.ts`; there is no transport or API URL environment variable. Do not use an OAuth access token or expose the Send Mail token through `NEXT_PUBLIC_` variables.
 
 Set `BETTER_AUTH_URL` and `APP_URL` to your public HTTPS origin, configure a production PostgreSQL URL and unique `BETTER_AUTH_SECRET`, and apply the committed migrations. Add the required sending-domain DNS records and complete sender verification in ZeptoMail. Account verification, password reset, and staff invitations all use this shared adapter. The adapter sends plain text, disables click/open tracking, rejects redirects, uses a 10-second timeout, and never includes provider response bodies, email content, or credentials in errors. It does not automatically retry uncertain sends, which could duplicate email.
 
-The sender is configured as `noreply@hollen.app`; a live Send Mail token is still required before verification, reset, invitations, or booking emails can be delivered. Add it privately to `.env.local` and restart the app. Provider configuration is validated when sending, so existing sessions and sign-in remain usable while email is unavailable. Builds do not require email secrets. No live delivery is claimed until an actual controlled inbox test passes.
-
-AWS SES has been removed from the active email implementation and dependencies. AWS/Bedrock remains part of the AI receptionist plan; this provider choice changes transactional email only.
+The sender is configured as `noreply@hollen.app`; a live Send Mail token is still required before verification, reset, invitations, or booking emails can be delivered. Add it privately to `apps/web/.env.local` and restart the app. Provider configuration is validated when sending, so existing sessions and sign-in remain usable while email is unavailable. Builds do not require email secrets. No live delivery is claimed until an actual controlled inbox test passes.
 
 Behind a trusted edge proxy, set `AUTH_TRUSTED_IP_HEADER` to the client-IP header that the proxy overwrites, and ensure the application origin cannot bypass that proxy. Do not trust a header that clients can supply. Without it, authentication safely falls back to a shared per-endpoint bucket; this is appropriate locally but must be configured for multi-user deployment. The app does not trust forwarded hosts to build auth URLs. Incoming development logs suppress auth/reset/verification/invitation URLs to avoid token logging; apply equivalent query redaction in hosting/proxy logs.
 
 Authentication mail uses Next.js `after()` so the request does not wait for provider delivery and does not reveal email existence through provider latency. Delivery failure emits only the `auth_email_delivery_failed` event, with no recipient/token. Users can resend links after delivery is restored. Invitation sending is awaited, and a delivery failure revokes that invitation. Provider retries, bounce tracking, and an email outbox are future operational work.
 
-## Verification
+## Release checks
 
-- `pnpm check` and `pnpm build` validate lint, types, formatting, and the production build.
+Run `pnpm check` and `pnpm build`. Before deployment, manually verify signup, email verification, recovery, workspace creation, member isolation, role restrictions, invitations, and persistence using controlled accounts and inboxes.
 
-Browser automation was disabled in Work settings during this implementation. The connected account/booking screens were not visually/interaction-tested in a browser during these passes; previous prototype screenshots are not evidence for the new connected flows. A manual account/onboarding walkthrough is still appropriate before deployment.
+## Related workflows
 
-## Connected bookings and next integration
-
-Scheduling policies, time off, public booking, customers, appointment management, and transactional email outbox are now implemented. See [BOOKINGS.md](./BOOKINGS.md). `/book` and `/booking` use real PostgreSQL records and private customer management links. Reminders are implemented separately in [REMINDERS.md](./REMINDERS.md). Real invoices/payments, live AI provider access, provider delivery webhooks, an external queue scheduler, and production hosting remain pending.
+Public booking and customer management are covered in [BOOKINGS.md](./BOOKINGS.md). Appointment reminders are covered in [REMINDERS.md](./REMINDERS.md). The receptionist uses Amazon Bedrock; the owner has tested live inference. Payments, delivery webhooks, deployed scheduling, and production hosting remain future work.
 
 References: [Better Auth email/password](https://better-auth.com/docs/authentication/email-password), [Next.js integration](https://better-auth.com/docs/integrations/next), [Drizzle adapter](https://better-auth.com/docs/adapters/drizzle), [ZeptoMail sending API](https://www.zoho.com/zeptomail/help/api/email-sending.html), [official ZeptoMail examples](https://github.com/zoho/zoho-cpaas-node).
 

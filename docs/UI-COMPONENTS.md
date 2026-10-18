@@ -1,4 +1,4 @@
-# UI component audit
+# Shared UI components
 
 Welio uses the existing shadcn Base UI / Nova components and shared light amber
 theme. Product screens compose these components rather than styling native
@@ -18,19 +18,14 @@ controls independently.
 | Customer and owner preview conversations                           | MessageScroller, Message, Bubble                                                              |
 | Loading and delivery-status disclosure                             | Spinner, Collapsible                                                                          |
 
-The audit replaced raw action buttons, labels and fieldsets, custom panel
-wrappers, initials badges, the SVG activity chart, the manual responsive sidebar,
-and the preview's manually scrolled message list. NativeSelect is itself an
-installed shadcn component; date/time inputs use the shared Input component.
-
 The brand SVG, page layout, booking steps, business content and application logic
 remain product code. These are not substitute implementations of shared controls.
 
-Use components from `src/components/ui` for new controls. Theme changes belong
-in `src/app/globals.css`. Preserve form names, values, validation and explicit
-booking consent when changing UI. Do not replace installed components with global
-native-element styling. Shared wrappers such as Grid, Panel and Notice should
-continue composing shadcn primitives.
-
-Verification: lint, TypeScript, formatting and production build. Interactive
-visual checks remain pending while local browser use is disabled in Work settings.
+Use components from `packages/ui/src/components` for new shared controls and
+import them from `@welio/ui/components/...`. The shadcn CLI configuration lives
+in `apps/web/components.json` and `packages/ui/components.json`; keep their style
+and icon settings aligned. Theme changes belong in `apps/web/src/app/globals.css`.
+Preserve form names, values, validation and explicit booking consent when changing
+UI. Do not replace installed components with global native-element styling.
+Shared wrappers such as Grid, Panel and Notice should continue composing shadcn
+primitives.
