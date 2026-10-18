@@ -3,6 +3,7 @@ import {
   bookingInput,
   bookingProposalInput,
   serviceAddressInput,
+  serviceLocationInput,
   slotInput,
 } from "../bookings/contract";
 import { BookingLocation } from "../workspaces/enums";
@@ -12,14 +13,26 @@ const proposalBaseInput = bookingInput.omit({
   quote: true,
   consent: true,
   address: true,
+  serviceLocation: true,
 });
 
 export function proposalInputForLocation(location: BookingLocation) {
   return proposalBaseInput.extend({
+    ...(location === BookingLocation.Both
+      ? {
+          serviceLocation: serviceLocationInput.describe(
+            "Choose customer_address or business_address for this appointment.",
+          ),
+        }
+      : {}),
     address:
       location === BookingLocation.CustomerAddress
         ? serviceAddressInput
-        : serviceAddressInput.optional(),
+        : serviceAddressInput
+            .optional()
+            .describe(
+              "Required when serviceLocation is customer_address; omit for business_address.",
+            ),
   });
 }
 
