@@ -150,6 +150,7 @@ export function WorkspaceSettingsPanel({
                     <Input
                       id="settings-first-name"
                       name="firstName"
+                      placeholder="Jane"
                       defaultValue={user.firstName ?? ""}
                       autoComplete="given-name"
                       required
@@ -162,6 +163,7 @@ export function WorkspaceSettingsPanel({
                     <Input
                       id="settings-last-name"
                       name="lastName"
+                      placeholder="Doe"
                       defaultValue={user.lastName ?? ""}
                       autoComplete="family-name"
                       required

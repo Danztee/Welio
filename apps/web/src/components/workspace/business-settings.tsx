@@ -16,11 +16,274 @@ import {
 import { Textarea } from "@welio/ui/components/textarea";
 import { workspaceInput } from "@welio/domain/workspaces/contract";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
+import { ServiceAreasField } from "./service-areas-field";
 import { ImagePlusIcon, Trash2Icon } from "lucide-react";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { toast } from "sonner";
 
 type Workspace = WorkspaceDashboardData["workspace"];
+
+function BusinessLogoField({
+  logo,
+  saving,
+  preparing,
+  inputRef,
+  onChoose,
+  onRemove,
+}: {
+  logo: string | null;
+  saving: boolean;
+  preparing: boolean;
+  inputRef: RefObject<HTMLInputElement | null>;
+  onChoose: (file?: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <Field>
+      <FieldLabel htmlFor="settings-business-logo">Business logo</FieldLabel>
+      <div className="flex flex-wrap items-center gap-3">
+        {logo && (
+          <Avatar className="size-10 shrink-0 rounded-lg border after:rounded-lg">
+            <AvatarImage
+              src={logo}
+              alt="Business logo preview"
+              className="rounded-lg object-contain"
+            />
+            <AvatarFallback className="rounded-lg">Logo</AvatarFallback>
+          </Avatar>
+        )}
+        <Input
+          ref={inputRef}
+          id="settings-business-logo"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          disabled={saving || preparing}
+          className="sr-only"
+          onChange={(event) => onChoose(event.target.files?.[0])}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={saving || preparing}
+          onClick={() => inputRef.current?.click()}
+        >
+          <ImagePlusIcon data-icon="inline-start" />
+          {preparing ? "Preparing…" : logo ? "Change logo" : "Add logo"}
+        </Button>
+        {logo && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            disabled={saving || preparing}
+            onClick={onRemove}
+          >
+            <Trash2Icon data-icon="inline-start" />
+            Remove
+          </Button>
+        )}
+        <p className="text-xs text-muted-foreground">
+          PNG, JPG, or WebP. Up to 8 MB.
+        </p>
+      </div>
+    </Field>
+  );
+}
+
+function BusinessIdentityFields({ workspace }: { workspace: Workspace }) {
+  return (
+    <>
+      <Field>
+        <FieldLabel htmlFor="settings-business-name">Business name</FieldLabel>
+        <Input
+          id="settings-business-name"
+          name="name"
+          placeholder="Enter your business name"
+          autoComplete="organization"
+          defaultValue={workspace.name}
+          required
+          maxLength={100}
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="settings-business-slug">
+          Booking page URL
+        </FieldLabel>
+        <Input
+          id="settings-business-slug"
+          name="slug"
+          placeholder="Choose a booking page URL"
+          autoComplete="off"
+          defaultValue={workspace.slug}
+          required
+          minLength={3}
+          maxLength={80}
+          pattern="[a-z0-9]+(-[a-z0-9]+)*"
+        />
+      </Field>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field>
+          <FieldLabel htmlFor="settings-business-email">
+            Business email
+          </FieldLabel>
+          <Input
+            id="settings-business-email"
+            name="contactEmail"
+            type="email"
+            placeholder="hello@example.com"
+            autoComplete="email"
+            defaultValue={workspace.contactEmail ?? ""}
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="settings-business-phone">Phone</FieldLabel>
+          <Input
+            id="settings-business-phone"
+            name="phone"
+            type="tel"
+            placeholder="Enter a phone number"
+            autoComplete="tel"
+            defaultValue={workspace.phone}
+            maxLength={40}
+          />
+        </Field>
+      </div>
+    </>
+  );
+}
+
+function BusinessLocationFields({
+  workspace,
+  bookingLocation,
+  onBookingLocationChange,
+}: {
+  workspace: Workspace;
+  bookingLocation: Workspace["bookingLocation"];
+  onBookingLocationChange: (value: Workspace["bookingLocation"]) => void;
+}) {
+  return (
+    <>
+      <Field>
+        <FieldLabel htmlFor="settings-booking-location">
+          Where do appointments take place?
+        </FieldLabel>
+        <NativeSelect
+          id="settings-booking-location"
+          name="bookingLocation"
+          value={bookingLocation}
+          onChange={(event) =>
+            onBookingLocationChange(
+              event.target.value as Workspace["bookingLocation"],
+            )
+          }
+          className="w-full"
+        >
+          <NativeSelectOption value="customer_address">
+            At the customer’s address
+          </NativeSelectOption>
+          <NativeSelectOption value="business_address">
+            At our business address
+          </NativeSelectOption>
+          <NativeSelectOption value="both">
+            Both (customer chooses)
+          </NativeSelectOption>
+        </NativeSelect>
+        <p className="text-sm text-muted-foreground">
+          {bookingLocation === "both"
+            ? "Customers can choose your business address or request service at their address."
+            : bookingLocation === "business_address"
+              ? "Customers will see this address and won’t be asked to enter theirs."
+              : "Customers will enter the address where you’ll provide the service."}
+        </p>
+      </Field>
+      {bookingLocation !== "customer_address" && (
+        <Field>
+          <FieldLabel htmlFor="settings-business-address">
+            Business address
+          </FieldLabel>
+          <Textarea
+            id="settings-business-address"
+            name="businessAddress"
+            autoComplete="street-address"
+            defaultValue={workspace.businessAddress ?? ""}
+            required
+            minLength={2}
+            maxLength={200}
+            rows={3}
+          />
+          <p className="text-sm text-muted-foreground">
+            {bookingLocation === "both"
+              ? "Customers can book here or enter their own service address."
+              : "Customers will book appointments at this address."}
+          </p>
+        </Field>
+      )}
+      {bookingLocation !== "business_address" ? (
+        <ServiceAreasField
+          id="settings-service-area"
+          value={workspace.serviceArea}
+          label={`Areas you serve${bookingLocation === "both" ? " (optional)" : ""}`}
+          required={bookingLocation === "customer_address"}
+          description={
+            bookingLocation === "both"
+              ? "Customers enter their exact address when booking at home."
+              : "Customers enter the exact appointment address when booking."
+          }
+        />
+      ) : (
+        <input
+          type="hidden"
+          name="serviceArea"
+          value={workspace.serviceArea ?? ""}
+        />
+      )}
+      {bookingLocation === "customer_address" && (
+        <input
+          type="hidden"
+          name="businessAddress"
+          value={workspace.businessAddress ?? ""}
+        />
+      )}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field>
+          <FieldLabel htmlFor="settings-business-zone">Time zone</FieldLabel>
+          <NativeSelect
+            id="settings-business-zone"
+            name="timeZone"
+            defaultValue={workspace.timeZone}
+            className="w-full"
+          >
+            {["Africa/Lagos", "Europe/London", "America/New_York", "UTC"].map(
+              (zone) => (
+                <NativeSelectOption key={zone} value={zone}>
+                  {zone}
+                </NativeSelectOption>
+              ),
+            )}
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="settings-business-currency">Currency</FieldLabel>
+          <NativeSelect
+            id="settings-business-currency"
+            name="currency"
+            defaultValue={workspace.currency}
+            className="w-full"
+          >
+            {["NGN", "USD", "GBP"].map((currency) => (
+              <NativeSelectOption key={currency} value={currency}>
+                {currency}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+      </div>
+    </>
+  );
+}
 
 export function BusinessSettings({
   workspace,
@@ -30,9 +293,10 @@ export function BusinessSettings({
   onSave: (input: unknown) => Promise<void>;
 }) {
   const [saving, setSaving] = useState(false);
-  const [bookingLocation, setBookingLocation] = useState(
-    workspace.bookingLocation,
-  );
+  const [bookingLocationOverride, setBookingLocationOverride] = useState<
+    Workspace["bookingLocation"] | null
+  >(null);
+  const bookingLocation = bookingLocationOverride ?? workspace.bookingLocation;
   const [logo, setLogo] = useState<string | null>(workspace.logo);
   const [preparingLogo, setPreparingLogo] = useState(false);
   const logoInput = useRef<HTMLInputElement>(null);
@@ -109,6 +373,7 @@ export function BusinessSettings({
       contactEmail: text(form, "contactEmail"),
       phone: text(form, "phone"),
       serviceArea: text(form, "serviceArea"),
+      businessAddress: text(form, "businessAddress"),
       bookingLocation: text(form, "bookingLocation"),
       timeZone: text(form, "timeZone"),
       currency: text(form, "currency"),
@@ -146,202 +411,20 @@ export function BusinessSettings({
       </p>
       <form onSubmit={submit} className="mt-8 max-w-2xl">
         <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="settings-business-logo">
-              Business logo
-            </FieldLabel>
-            <div className="flex flex-wrap items-center gap-3">
-              {logo && (
-                <Avatar className="size-10 shrink-0 rounded-lg border after:rounded-lg">
-                  <AvatarImage
-                    src={logo}
-                    alt="Business logo preview"
-                    className="rounded-lg object-contain"
-                  />
-                  <AvatarFallback className="rounded-lg">Logo</AvatarFallback>
-                </Avatar>
-              )}
-              <Input
-                ref={logoInput}
-                id="settings-business-logo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                disabled={saving || preparingLogo}
-                className="sr-only"
-                onChange={(event) => void chooseLogo(event.target.files?.[0])}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={saving || preparingLogo}
-                onClick={() => logoInput.current?.click()}
-              >
-                <ImagePlusIcon data-icon="inline-start" />
-                {preparingLogo
-                  ? "Preparing…"
-                  : logo
-                    ? "Change logo"
-                    : "Add logo"}
-              </Button>
-              {logo && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  disabled={saving || preparingLogo}
-                  onClick={() => {
-                    setLogo(null);
-                  }}
-                >
-                  <Trash2Icon data-icon="inline-start" />
-                  Remove
-                </Button>
-              )}
-              <p className="text-xs text-muted-foreground">
-                PNG, JPG, or WebP. Up to 8 MB.
-              </p>
-            </div>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="settings-business-name">
-              Business name
-            </FieldLabel>
-            <Input
-              id="settings-business-name"
-              name="name"
-              autoComplete="organization"
-              defaultValue={workspace.name}
-              required
-              maxLength={100}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="settings-business-slug">
-              Booking page URL
-            </FieldLabel>
-            <Input
-              id="settings-business-slug"
-              name="slug"
-              autoComplete="off"
-              defaultValue={workspace.slug}
-              required
-              minLength={3}
-              maxLength={80}
-              pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            />
-          </Field>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="settings-business-email">
-                Business email
-              </FieldLabel>
-              <Input
-                id="settings-business-email"
-                name="contactEmail"
-                type="email"
-                autoComplete="email"
-                defaultValue={workspace.contactEmail ?? ""}
-                required
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="settings-business-phone">Phone</FieldLabel>
-              <Input
-                id="settings-business-phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                defaultValue={workspace.phone}
-                maxLength={40}
-              />
-            </Field>
-          </div>
-          <Field>
-            <FieldLabel htmlFor="settings-booking-location">
-              Where do appointments take place?
-            </FieldLabel>
-            <NativeSelect
-              id="settings-booking-location"
-              name="bookingLocation"
-              value={bookingLocation}
-              onChange={(event) =>
-                setBookingLocation(event.target.value as typeof bookingLocation)
-              }
-              className="w-full"
-            >
-              <NativeSelectOption value="customer_address">
-                At the customer’s address
-              </NativeSelectOption>
-              <NativeSelectOption value="business_address">
-                At our business address
-              </NativeSelectOption>
-            </NativeSelect>
-            <p className="text-sm text-muted-foreground">
-              {bookingLocation === "business_address"
-                ? "Customers will see this address and won’t be asked to enter theirs."
-                : "Customers will enter the address where you’ll provide the service."}
-            </p>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="settings-business-area">
-              {bookingLocation === "business_address"
-                ? "Business address"
-                : "Service area"}
-            </FieldLabel>
-            <Textarea
-              id="settings-business-area"
-              name="serviceArea"
-              autoComplete="street-address"
-              defaultValue={workspace.serviceArea ?? ""}
-              required
-              minLength={2}
-              maxLength={200}
-              rows={3}
-            />
-          </Field>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="settings-business-zone">
-                Time zone
-              </FieldLabel>
-              <NativeSelect
-                id="settings-business-zone"
-                name="timeZone"
-                defaultValue={workspace.timeZone}
-                className="w-full"
-              >
-                {[
-                  "Africa/Lagos",
-                  "Europe/London",
-                  "America/New_York",
-                  "UTC",
-                ].map((zone) => (
-                  <NativeSelectOption key={zone} value={zone}>
-                    {zone}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="settings-business-currency">
-                Currency
-              </FieldLabel>
-              <NativeSelect
-                id="settings-business-currency"
-                name="currency"
-                defaultValue={workspace.currency}
-                className="w-full"
-              >
-                {["NGN", "USD", "GBP"].map((currency) => (
-                  <NativeSelectOption key={currency} value={currency}>
-                    {currency}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </Field>
-          </div>
+          <BusinessLogoField
+            logo={logo}
+            saving={saving}
+            preparing={preparingLogo}
+            inputRef={logoInput}
+            onChoose={(file) => void chooseLogo(file)}
+            onRemove={() => setLogo(null)}
+          />
+          <BusinessIdentityFields workspace={workspace} />
+          <BusinessLocationFields
+            workspace={workspace}
+            bookingLocation={bookingLocation}
+            onBookingLocationChange={setBookingLocationOverride}
+          />
           <Button type="submit" disabled={saving} className="self-start">
             {saving ? "Saving…" : "Save changes"}
           </Button>
