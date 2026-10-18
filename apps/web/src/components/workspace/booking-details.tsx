@@ -4,6 +4,7 @@ import { Card, CardContent } from "@welio/ui/components/card";
 import { Separator } from "@welio/ui/components/separator";
 import type { BookingView } from "@welio/domain/bookings/contract";
 import { formatMoney } from "./booking-format";
+import { useMemo } from "react";
 import {
   CalendarDaysIcon,
   Clock3Icon,
@@ -36,18 +37,24 @@ function Detail({
 }
 
 export function BookingDetails({ view }: { view: BookingView }) {
-  const date = new Intl.DateTimeFormat("en-GB", {
-    timeZone: view.timeZone,
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(view.startsAt));
-  const time = new Intl.DateTimeFormat("en-GB", {
-    timeZone: view.timeZone,
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(view.startsAt));
+  const { date, time } = useMemo(() => {
+    const startsAt = new Date(view.startsAt);
+
+    return {
+      date: new Intl.DateTimeFormat("en-GB", {
+        timeZone: view.timeZone,
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(startsAt),
+      time: new Intl.DateTimeFormat("en-GB", {
+        timeZone: view.timeZone,
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(startsAt),
+    };
+  }, [view.startsAt, view.timeZone]);
 
   return (
     <Card className="gap-0 border-border py-0">
