@@ -53,7 +53,7 @@ export default function OpenGraphImage() {
           letterSpacing: -2,
         }}
       >
-        Your business, in good hands.
+        Manage bookings and customers.
       </div>
       <div
         style={{
@@ -63,7 +63,7 @@ export default function OpenGraphImage() {
           fontSize: 28,
         }}
       >
-        Appointments, customers, and your AI receptionist in one place.
+        An AI receptionist answers questions and helps customers book.
       </div>
     </div>,
     size,

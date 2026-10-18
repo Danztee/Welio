@@ -8,11 +8,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.APP_URL),
   applicationName: "Welio",
   title: {
-    default: "Welio | Business dashboard",
+    default: "Welio | Bookings and customers",
     template: "%s | Welio",
   },
   description:
-    "Manage appointments, customers, services, and your AI receptionist in one place with Welio.",
+    "Manage bookings, customer details, and service schedules. Welio's AI receptionist answers questions and helps customers book.",
   robots: {
     index: false,
     follow: false,
@@ -21,15 +21,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Welio",
-    title: "Welio | Business dashboard",
+    title: "Welio | Bookings and customers",
     description:
-      "Manage appointments, customers, services, and your AI receptionist in one place.",
+      "Manage bookings, customer details, and service schedules. Welio's AI receptionist answers questions and helps customers book.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Welio | Business dashboard",
+    title: "Welio | Bookings and customers",
     description:
-      "Manage appointments, customers, services, and your AI receptionist in one place.",
+      "Manage bookings, customer details, and service schedules. Welio's AI receptionist answers questions and helps customers book.",
   },
 };
 
