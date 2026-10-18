@@ -18,12 +18,13 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex w-full max-w-lg flex-col gap-6">
           <h2 className="text-[2rem] leading-[1.3] font-normal tracking-tight">
-            Your AI Front Desk,
+            Manage bookings
             <br />
-            Always On.
+            and customers.
           </h2>
           <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-            Appointments and customer conversations, in one place.
+            Keep schedules and customer details organized. The AI receptionist
+            answers questions and helps customers book.
           </p>
         </div>
       </aside>

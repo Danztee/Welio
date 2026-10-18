@@ -21,6 +21,7 @@ export function NameFields({
           <Input
             id={field}
             name={field}
+            placeholder={field === "firstName" ? "Jane" : "Doe"}
             autoComplete={field === "firstName" ? "given-name" : "family-name"}
             required
             maxLength={50}

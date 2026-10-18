@@ -14,6 +14,7 @@ export function AccountFields({ mode, email }: { mode: Mode; email: string }) {
           id="account-email"
           name="email"
           type="email"
+          placeholder="name@example.com"
           autoCapitalize="none"
           spellCheck={false}
           className="h-9"
@@ -32,6 +33,7 @@ export function AccountFields({ mode, email }: { mode: Mode; email: string }) {
         <PasswordInput
           id="new-password"
           name="password"
+          placeholder="Enter a new password"
           autoComplete="new-password"
           minLength={8}
           maxLength={128}
@@ -43,6 +45,7 @@ export function AccountFields({ mode, email }: { mode: Mode; email: string }) {
         <PasswordInput
           id="confirm-password"
           name="confirm"
+          placeholder="Re-enter your new password"
           autoComplete="new-password"
           minLength={8}
           maxLength={128}

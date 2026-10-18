@@ -31,6 +31,7 @@ export function AuthFields({
           id="email"
           name="email"
           type="email"
+          placeholder="name@example.com"
           autoComplete="email"
           autoCapitalize="none"
           spellCheck={false}
@@ -60,6 +61,7 @@ export function AuthFields({
         <PasswordInput
           id="password"
           name="password"
+          placeholder="Enter your password"
           autoComplete={isSignUp ? "new-password" : "current-password"}
           required
           aria-invalid={Boolean(errors.password)}
@@ -86,6 +88,7 @@ export function AuthFields({
           <PasswordInput
             id="confirmPassword"
             name="confirmPassword"
+            placeholder="Re-enter your password"
             autoComplete="new-password"
             required
             maxLength={128}
