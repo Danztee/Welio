@@ -1,1 +1,0 @@
-ALTER TABLE "chat_sessions" ADD COLUMN "active_turn" jsonb;

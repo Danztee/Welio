@@ -1,0 +1,2 @@
+ALTER TABLE "workspaces" DROP CONSTRAINT "workspaces_booking_location_valid";--> statement-breakpoint
+ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_booking_location_valid" CHECK ("workspaces"."booking_location" in ('customer_address','business_address','both'));
