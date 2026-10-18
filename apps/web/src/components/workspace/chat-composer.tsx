@@ -52,6 +52,7 @@ export function ChatComposer({
           <InputGroupTextarea
             id={id}
             name="message"
+            placeholder="Ask about services or availability…"
             rows={1}
             maxLength={1600}
             value={text}
