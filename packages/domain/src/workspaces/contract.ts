@@ -7,32 +7,55 @@ export const bookingLocation = z.enum(BookingLocation);
 
 const name = z.string().trim().min(2).max(100);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
-export const workspaceInput = z.object({
-  name,
-  logo: z
-    .string()
-    .max(620_000)
-    .regex(/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/)
-    .nullable()
-    .default(null),
-  slug: z
-    .string()
-    .trim()
-    .min(3)
-    .max(80)
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
-  contactEmail: z.email().max(254),
-  phone: z.string().trim().max(40),
-  serviceArea: z.string().trim().min(2).max(200),
-  bookingLocation,
-  timeZone: z.enum([
-    "Africa/Lagos",
-    "Europe/London",
-    "America/New_York",
-    "UTC",
-  ]),
-  currency: z.enum(["NGN", "USD", "GBP"]),
-});
+export const workspaceInput = z
+  .object({
+    name,
+    logo: z
+      .string()
+      .max(620_000)
+      .regex(/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/)
+      .nullable()
+      .default(null),
+    slug: z
+      .string()
+      .trim()
+      .min(3)
+      .max(80)
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+    contactEmail: z.email().max(254),
+    phone: z.string().trim().max(40),
+    serviceArea: z.string().trim().max(200).default(""),
+    businessAddress: z.string().trim().max(200).default(""),
+    bookingLocation,
+    timeZone: z.enum([
+      "Africa/Lagos",
+      "Europe/London",
+      "America/New_York",
+      "UTC",
+    ]),
+    currency: z.enum(["NGN", "USD", "GBP"]),
+  })
+  .superRefine((workspace, context) => {
+    if (
+      workspace.bookingLocation === BookingLocation.CustomerAddress &&
+      workspace.serviceArea.length < 2
+    )
+      context.addIssue({
+        code: "custom",
+        path: ["serviceArea"],
+        message: "Add the neighborhoods or cities where you provide services.",
+      });
+
+    if (
+      workspace.bookingLocation !== BookingLocation.CustomerAddress &&
+      workspace.businessAddress.length < 2
+    )
+      context.addIssue({
+        code: "custom",
+        path: ["businessAddress"],
+        message: "Add the address where customers can visit your business.",
+      });
+  });
 
 export const serviceInput = z.object({
   id: z.uuid().optional(),

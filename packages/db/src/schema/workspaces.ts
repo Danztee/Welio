@@ -33,6 +33,7 @@ export const workspaces = pgTable(
     currency: varchar("currency", { length: 3 }).default("NGN").notNull(),
     contactEmail: text("contact_email"),
     serviceArea: text("service_area"),
+    businessAddress: text("business_address"),
     bookingLocation: text("booking_location")
       .$type<BookingLocation>()
       .default(BookingLocation.CustomerAddress)
@@ -58,7 +59,7 @@ export const workspaces = pgTable(
     check("workspaces_currency_format", sql`${t.currency} ~ '^[A-Z]{3}$'`),
     check(
       "workspaces_booking_location_valid",
-      sql`${t.bookingLocation} in ('customer_address','business_address')`,
+      sql`${t.bookingLocation} in ('customer_address','business_address','both')`,
     ),
     check(
       "workspaces_booking_policy",

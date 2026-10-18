@@ -26,6 +26,7 @@ export type WorkspaceDashboardData = {
     currency: string;
     contactEmail: string | null;
     serviceArea: string | null;
+    businessAddress: string | null;
     bookingLocation: BookingLocation;
     isPublished: boolean;
     phone: string;
