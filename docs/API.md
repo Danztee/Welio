@@ -78,12 +78,42 @@ credential to exercise the customer-approved booking flow.
 
 ## Tests
 
-Unit tests run with `go test ./...`. PostgreSQL integration tests run only when `WELIO_TEST_DATABASE_URL` points to a local disposable database whose name ends in `_test`:
+Run `make test` for the Go suite with race detection and an automatically
+provisioned disposable PostgreSQL container. Run `make check` for fast unit,
+formatting, contract, type, and lint checks without database integration tests.
+`make verify` combines the complete database, browser, build, and image checks.
 
-```sh
-WELIO_TEST_DATABASE_URL='postgres://user:password@127.0.0.1:5432/welio_api_test?sslmode=disable' go test ./...
-go vet ./...
-go build ./...
-```
+For direct Go commands, integration tests run only when
+`WELIO_TEST_DATABASE_URL` points to a local disposable database whose name ends
+in `_test`. Integration tests apply both Go and River migrations under a
+PostgreSQL advisory lock. Never point this variable at application data.
 
-Integration tests apply both Go and River migrations under a PostgreSQL advisory lock. Never point `WELIO_TEST_DATABASE_URL` at production or a database containing application data.
+## Session renewal and shared limits
+
+Keep the refresh cookie restricted to `/v1/auth`. When server-rendered account
+checks find an expired access cookie, the web app redirects to `/session/renew`.
+That browser page calls the Go API directly, so the browser can send its scoped
+refresh cookie and apply the API's replacement cookies. It then returns to an
+allowlisted local destination. Web Locks serialize renewal across tabs, with a
+shared in-tab promise and bounded `refresh_race` recovery as fallbacks. API
+outages offer retry instead of treating the session as revoked.
+
+Runtime rate limits use the `rate_limits` PostgreSQL table. Counters are atomic
+across API replicas and survive restarts; storage failures fail closed. Keys
+are hashed, and a River maintenance job removes expired quota/auth state in
+bounded batches. The AI daily budget remains in its existing atomic database
+counter. Apply migrations before starting new API/worker binaries.
+
+## Container and browser checks
+
+`make image-test` builds the nonroot Go image, creates an isolated PostgreSQL container, applies migrations, checks API/worker readiness and role isolation, then removes its test containers and network.
+Run the same image as `welio serve --role api` or `welio serve --role worker`,
+using separate process environments. Run `welio migrate` as a release step
+before either role. TLS, public URLs, trusted origins, and a shared parent
+cookie domain still need deployment-specific configuration.
+
+Run `make test-e2e` for browser regressions. The launcher provisions a temporary
+PostgreSQL container and installs the Playwright Chromium browser if needed.
+The harness seeds test records and starts its own Go API on 8181 and Next.js on
+3101; it does not reuse running application servers. CI uses its own isolated
+PostgreSQL service.

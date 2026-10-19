@@ -1,5 +1,12 @@
 # Welio architecture review — 19 October 2026
 
+## Remediation status
+
+The fixes from this review are implemented in the working tree. See
+[the implementation and verification record](./ARCHITECTURE-FIXES-2026-10-19.md)
+for the completed changes, regression checks, and migration requirement. The
+findings below describe the original reviewed state.
+
 ## Verdict and scope
 
 The Go API plus Next.js frontend is a sensible modular monolith for this product. The implementation has useful correctness protections, but the current migration is not ready for an unqualified production sign-off. Session handling, dashboard data access, and the authorization test contract need attention first.

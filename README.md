@@ -41,51 +41,29 @@ migrations to that database.
 Requirements: Docker Compose, Node.js 24, pnpm 11.9.0, Go 1.26, and AWS Bedrock
 access for live receptionist responses.
 
-1. Install the standalone web app dependencies and create one private env file
-   for each process:
+```sh
+make setup
+make dev
+```
 
-   ```sh
-   cd web
-   pnpm install
-   cd ..
-   cp .env.api.example .env.api
-   cp .env.worker.example .env.worker
-   cp .env.web.example .env.web
-   ```
+`make setup` checks local prerequisites, installs dependencies, creates missing
+private env files, and generates a local auth secret. Existing env files are
+preserved. `make dev` starts PostgreSQL, waits for readiness, applies migrations,
+and launches the API, worker, and Next.js as separate processes in one terminal.
+Go changes rebuild and restart the Go processes; Next.js provides its own hot
+reload. After adding SQL migrations, run `make migrate` or restart `make dev`. Ctrl+C stops the launcher and its child processes. PostgreSQL retains its
+volume; use `make dev-db-down` to stop it.
 
-2. Set a unique `AUTH_SECRET` of at least 32 bytes in `.env.api`. For Bedrock,
-   use the AWS SDK credential chain or put `AWS_BEARER_TOKEN_BEDROCK` in
-   `.env.api`. Set `ZEPTOMAIL_SEND_MAIL_TOKEN` and `EMAIL_FROM` in
-   `.env.worker` only when enabling email. Keep credentials out of `.env.web`;
-   use an IAM role when hosted.
+Open [http://127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up).
+Run `make doctor` to diagnose prerequisites, env configuration, and local ports.
+The individual `make api`, `make worker`, `make web`, and `make migrate` targets
+remain available.
 
-3. Start the local PostgreSQL dependency and apply migrations:
-
-   ```sh
-   make dev-db
-   make migrate
-   ```
-
-4. Start the Go API in a terminal:
-
-   ```sh
-   make api
-   ```
-
-   Run `make worker` in another terminal to deliver email and process scheduled
-   jobs. The API and worker load separate env files.
-
-5. Start the web app in another terminal:
-
-   ```sh
-   make web
-   ```
-
-   Open [http://127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up). The web
-   target reads only `.env.web`; API and worker credentials stay out of the
-   Next.js process. Stop each foreground process with Ctrl+C; run
-   `make dev-db-down` to stop PostgreSQL while keeping its volume. See [the API
-   guide](./docs/API.md) for service-specific configuration and database tests.
+Set Bedrock credentials in `.env.api` for live receptionist responses, using the
+AWS SDK credential chain or `AWS_BEARER_TOKEN_BEDROCK`. Set
+`ZEPTOMAIL_SEND_MAIL_TOKEN` and `EMAIL_FROM` in `.env.worker` to enable email.
+Keep credentials out of `.env.web`; the launcher gives Next.js only its web
+configuration. See [the API guide](./docs/API.md) for service configuration.
 
 ## AI receptionist and MCP
 
@@ -108,20 +86,20 @@ to configure and run an external Streamable HTTP MCP client.
 ## Verification
 
 ```sh
-make check
-make build
+make check      # fast checks without starting Docker
+make test       # Go race tests with an automatic disposable PostgreSQL database
+make test-e2e   # browser tests with an automatic disposable PostgreSQL database
+make verify     # full checks, builds, browser regressions, and container smoke test
 ```
 
-`make check` validates migration filename pairs, Go formatting, Go tests and vet,
-then runs the web type check and lint. `make build` builds the Go executable and
-the Next.js production app. GitHub Actions runs the same checks and provides an
-isolated PostgreSQL service for the database integration tests.
+The test launcher owns its temporary database container and removes it when the
+command exits. It does not read the application database URL. Integration tests
+apply application and River migrations automatically. `make check` runs Go unit
+tests without database integration tests; use `make verify` for full validation.
 
-PostgreSQL integration tests are skipped unless
-`WELIO_TEST_DATABASE_URL` points to a local disposable database whose name ends
-in `_test`. Do not point tests at production or a database containing useful
-data. An external MCP client requires a reachable HTTPS endpoint and its
-server-side OAuth or bearer configuration.
+`make build` builds Go and Next.js production outputs. `make image-test` checks
+the API and worker image in an isolated container network. GitHub Actions also
+runs database, browser, contract, formatting, lint, and build checks.
 
 ## Repository layout
 
@@ -139,3 +117,12 @@ docker-compose.dev.yml  Local PostgreSQL development dependency
 Go commands run from the repository root; frontend commands run from `web/`.
 See the focused guides for [accounts](./docs/ACCOUNTS.md),
 [bookings](./docs/BOOKINGS.md), and [reminders](./docs/REMINDERS.md).
+
+## Code conventions
+
+Run `make fmt` to format handwritten Go and frontend/configuration files, and
+`make format-check` to check their formatting. Both tools are pinned; CI runs
+the same checks. API artifacts remain owned by `make contracts`.
+
+See [the architecture guide](./docs/ARCHITECTURE.md) for module boundaries,
+workspace data flow, and the patterns adapted from the local OpenDesk reference.

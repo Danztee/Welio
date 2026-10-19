@@ -88,10 +88,9 @@ Set `API_SERVER_URL` to the public Go API origin and use that origin in the MCP
 client URL and `MCP_OAUTH_RESOURCE_URL`. The default allowed host comes from
 `API_SERVER_URL`; override `MCP_ALLOWED_HOSTS` when a reverse proxy or tunnel
 uses a different public hostname. The API publishes its route-derived OpenAPI 3.1 schema at
-`/v1/openapi.json`; TypeScript types can be generated with
-`npx openapi-typescript https://api.example.com/v1/openapi.json -o openapi.d.ts`.
-OpenDesk uses this same route-generated OpenAPI document and documents
-`openapi-typescript` for optional TypeScript type generation.
+`/v1/openapi.json`. Welio generates its TypeScript models and HTTP SDK with
+Hey API from this schema; run `make contracts` after changing route definitions.
+See [the contract guide](../contracts/README.md) for generation and freshness checks.
 
 Set `MCP_BOOKING_CONFIRMATION_ENABLED=true` to expose the complete tool set.
 Authentication can use a business-specific bearer secret in
