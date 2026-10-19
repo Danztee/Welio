@@ -82,6 +82,8 @@ API's public MCP URL, such as
 `https://api.example.com/api/mcp/your-business`. The endpoint must use HTTPS
 outside local development. Follow [the receptionist and MCP guide](./docs/RECEPTIONIST.md)
 to configure and run an external Streamable HTTP MCP client.
+For the Alexa+ hackathon rehearsal and video outline, see
+[the hackathon demo guide](./docs/HACKATHON-DEMO.md).
 
 ## Verification
 

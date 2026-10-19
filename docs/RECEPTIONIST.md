@@ -105,6 +105,11 @@ does not yet implement Alexa+'s user-level authorization-code/PKCE account
 linking or a verified native Alexa+ connection. Do not describe the current
 integration as a native Alexa+ booking connection.
 
+This limitation does not block the Amazon Developer Hackathon's Alexa+ track:
+its rules accept a self-hosted MCP server using Streamable HTTP. See the
+[hackathon demo guide](./HACKATHON-DEMO.md) for the local rehearsal and video
+flow.
+
 ## Data limits and retention
 
 Chat content, customer details in pending proposals, and MCP proposals are
