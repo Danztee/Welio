@@ -73,9 +73,8 @@ test("customer lists expose pagination and overview totals include all records",
   await page.goto("/dashboard");
   await expect(page.getByText("1005", { exact: true })).toBeVisible();
   await page.goto("/dashboard/customers");
-  await expect(
-    page.getByText("1005 matching customers", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("searchbox")).toHaveCount(1);
+  await expect(page.getByText("1005 records", { exact: true })).toBeVisible();
   const first = await page.locator("tbody tr").first().textContent();
   await page.getByRole("link", { name: "Next page", exact: true }).click();
   await expect(page).toHaveURL(/cursor=/);
@@ -83,10 +82,7 @@ test("customer lists expose pagination and overview totals include all records",
   await page
     .getByLabel("Search all customers", { exact: true })
     .fill("Customer 1005");
-  await page.getByRole("button", { name: "Apply filters" }).click();
-  await expect(
-    page.getByText("1 matching customers", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("1 record", { exact: true })).toBeVisible();
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.locator("tbody")).toContainText("Customer 1005");
 });
@@ -126,4 +122,122 @@ test("UI sign-in and service creation persist through the generated SDK", async 
   const persisted = page.getByRole("row").filter({ hasText: serviceName });
   await expect(persisted).toHaveCount(1);
   await expect(persisted).toContainText("90 min");
+});
+
+test("table search and filters apply without buttons and share count footers", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/services");
+  const initialCount = await page.locator("tbody tr").count();
+  const search = page.getByRole("searchbox");
+  await expect(search).toHaveCount(1);
+  await search.fill("a-service-that-does-not-exist");
+  await expect(page.getByText("0 records", { exact: true })).toBeVisible();
+  await search.fill("");
+  await expect(
+    page.getByText(
+      `${initialCount} ${initialCount === 1 ? "record" : "records"}`,
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.goto("/dashboard/appointments");
+  await expect(page.getByRole("button", { name: "Apply filters" })).toHaveCount(
+    0,
+  );
+  await page
+    .getByLabel("Appointment status", { exact: true })
+    .selectOption("cancelled");
+  await expect(page).toHaveURL(/status=cancelled/);
+  await page.getByLabel("From", { exact: true }).fill("2026-10-01");
+  await expect(page).toHaveURL(/from=2026-10-01/);
+  await expect(page).toHaveURL(/status=cancelled/);
+  await page.getByLabel("Appointment status", { exact: true }).selectOption("");
+  await expect(page).not.toHaveURL(/status=/);
+  await expect(page.getByText("0 records", { exact: true })).toBeVisible();
+});
+
+test("team picker dropdown stays aligned with the complete multi-select", async ({
+  page,
+  context,
+}) => {
+  const workspaces = await context.request.get(`${api}/v1/workspaces`);
+  const [{ workspace }] = await workspaces.json();
+  const headers = {
+    Origin: "http://127.0.0.1:3101",
+    "X-Welio-Workspace": workspace.id,
+  };
+  const staff = await context.request.post(`${api}/v1/catalog/staff`, {
+    headers,
+    data: {
+      name: "Picker Test Member",
+      email: "picker@example.test",
+      job_title: "Cleaner",
+      is_active: true,
+      schedule: {
+        start: "09:00",
+        end: "17:00",
+        days: [1, 2, 3, 4, 5],
+        break_start: "12:00",
+        break_end: "13:00",
+      },
+    },
+  });
+  expect(staff.ok()).toBeTruthy();
+  const service = await context.request.post(`${api}/v1/catalog/services`, {
+    headers,
+    data: {
+      name: "Picker Alignment Service",
+      description: "Test service",
+      duration_minutes: 60,
+      price: 1000,
+      buffer_before_minutes: 0,
+      buffer_after_minutes: 0,
+      is_active: true,
+      staff_ids: [(await staff.json()).id],
+    },
+  });
+  expect(service.ok()).toBeTruthy();
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/dashboard/services");
+    const row = page
+      .getByRole("row")
+      .filter({ hasText: "Picker Alignment Service" });
+    await row.getByRole("button").click();
+    await page.getByRole("menuitem", { name: "Assign team members" }).click();
+    const picker = page.getByRole("combobox", {
+      name: "Available team members",
+    });
+    await picker.click();
+    await expect(
+      page.getByRole("option", { name: "Picker Test Member" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("option", { name: "Browser Owner" }),
+    ).toBeVisible();
+    await expect
+      .poll(async () => {
+        const anchor = await page
+          .locator('[data-slot="combobox-chips"]')
+          .boundingBox();
+        const popup = await page
+          .locator('[data-slot="combobox-content"]')
+          .boundingBox();
+        return Boolean(
+          anchor &&
+            popup &&
+            Math.abs(anchor.x - popup.x) < 2 &&
+            Math.abs(anchor.width - popup.width) < 2,
+        );
+      })
+      .toBeTruthy();
+    await page.getByRole("option", { name: "Browser Owner" }).click();
+    await picker.click();
+    await expect(page.getByRole("option")).toHaveCount(0);
+    await expect(
+      page.getByText("All team members selected.", { exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  }
 });
