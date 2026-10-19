@@ -28,7 +28,8 @@ import { Separator } from "@/components/ui/separator";
 import { floatingSheetClassName } from "@/components/ui/sheet-styles";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { EyeIcon, MoreHorizontalIcon } from "lucide-react";
-import { useState } from "react";
+import { customerAppointments } from "@/app/dashboard/read-actions";
+import { useEffect, useState } from "react";
 import { formatWhen, formatMoney } from "./booking-format";
 
 type Data = WorkspaceDashboardData;
@@ -37,18 +38,67 @@ export function RealCustomers({ data }: { data: Data }) {
   const [selected, setSelected] = useState("");
   const [query, setQuery] = useState("");
   const customer = data.customers.find((c) => c.id === selected);
-  const appointments = customer
-    ? data.bookings.filter(
-        (appointment) => appointment.customerId === customer.id,
-      )
-    : [];
+  const [history, setHistory] = useState<{
+    id: string;
+    items: Data["bookings"];
+    nextCursor: string;
+  } | null>(null);
+  const [historyError, setHistoryError] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const appointments = history?.id === selected ? history.items : [];
+  useEffect(() => {
+    if (!selected) return;
+    let active = true;
+    customerAppointments(data.workspace.id, selected)
+      .then((page) => {
+        if (active) {
+          setHistory({
+            id: selected,
+            items: page.items,
+            nextCursor: page.nextCursor,
+          });
+          setHistoryError(false);
+        }
+      })
+      .catch(() => {
+        if (active) setHistoryError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selected, data.workspace.id]);
+  async function loadMoreHistory() {
+    if (!history || loadingHistory) return;
+    setLoadingHistory(true);
+    try {
+      const page = await customerAppointments(
+        data.workspace.id,
+        selected,
+        history.nextCursor,
+      );
+      setHistory((current) =>
+        current?.id === selected
+          ? {
+              id: selected,
+              items: [...current.items, ...page.items],
+              nextCursor: page.nextCursor,
+            }
+          : current,
+      );
+      setHistoryError(false);
+    } catch {
+      setHistoryError(true);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }
 
   return (
     <>
       <Grid
         toolbar={
           <SearchField
-            label="Search customers"
+            label="Filter this page"
             value={query}
             onChange={setQuery}
           />
@@ -75,10 +125,7 @@ export function RealCustomers({ data }: { data: Data }) {
           { label: "Phone", cell: (c) => c.phone ?? "—" },
           {
             label: "Appointments",
-            cell: (c) =>
-              data.bookings.filter(
-                (appointment) => appointment.customerId === c.id,
-              ).length,
+            cell: (c) => c.appointmentCount,
           },
           {
             label: "Actions",
@@ -129,15 +176,20 @@ export function RealCustomers({ data }: { data: Data }) {
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-sm font-medium">Appointments</h3>
                   <Badge variant="outline" tone="neutral">
-                    {appointments.length}
+                    {customer.appointmentCount}
                   </Badge>
                 </div>
-                {appointments.length ? (
+                {historyError ? (
+                  <p role="alert">
+                    Could not load appointment history. Close and reopen details
+                    to try again.
+                  </p>
+                ) : history?.id !== selected ? (
+                  <p role="status">Loading appointments…</p>
+                ) : appointments.length ? (
                   <div className="flex flex-col gap-3">
                     {appointments.map((appointment) => {
-                      const staffName = data.staff.find(
-                        (member) => member.id === appointment.staffId,
-                      )?.name;
+                      const staffName = appointment.staffName;
 
                       return (
                         <Card key={appointment.id} className="gap-0 py-0">
@@ -204,6 +256,15 @@ export function RealCustomers({ data }: { data: Data }) {
                     title="No appointments yet"
                     description="This customer hasn’t booked an appointment yet."
                   />
+                )}
+                {history?.id === selected && history.nextCursor && (
+                  <Button
+                    variant="outline"
+                    disabled={loadingHistory}
+                    onClick={() => void loadMoreHistory()}
+                  >
+                    Load more appointments
+                  </Button>
                 )}
               </section>
             </div>

@@ -1,155 +1,118 @@
 import "server-only";
+import type { WorkspacesListResponse } from "@/lib/backend/generated/types.gen";
 
+import { cache } from "react";
 import type { Catalog } from "@/lib/domain/bookings/contract";
-import {
-  defaultReceptionistSettings,
-  type ReceptionistSettings,
-} from "@/lib/domain/receptionist/settings";
-import type { MembershipRole } from "@/lib/domain/workspaces/enums";
-import { backendRequest, BackendError } from "@/lib/backend/server-api";
+import { backendClient, BackendError } from "@/lib/backend/server-api";
+import { fromAPIContract } from "@/lib/api-contract";
+import { workspacesList } from "@/lib/backend/generated/sdk.gen";
+import type { CamelFields } from "@/lib/backend/contract";
+import type { DashboardSection } from "@/lib/dashboard-routes";
 import type { WorkspaceDashboardData, WorkspaceMembership } from "./types";
+import {
+  workspaceAPI,
+  type WorkspaceAPI,
+  type DashboardListOptions,
+} from "./api";
+import {
+  dashboardModel,
+  membershipRoleSchema,
+  bookingLocationSchema,
+  type DashboardResources,
+} from "./models";
 
-type ApiWorkspace = Omit<
-  WorkspaceDashboardData["workspace"],
-  "receptionistSettings"
->;
-type ApiAppointment = Omit<
-  WorkspaceDashboardData["bookings"][number],
-  "startsAt" | "endsAt" | "createdAt" | "idempotencyKey"
-> & {
-  startsAt: string;
-  endsAt: string;
-  createdAt: string;
-};
-type ApiCustomer = Omit<
-  WorkspaceDashboardData["customers"][number],
-  "createdAt"
-> & { createdAt: string };
-type ApiNotification = Omit<
-  WorkspaceDashboardData["notifications"][number],
-  "createdAt"
-> & { createdAt: string };
-type ApiTeamAccess = {
-  members: WorkspaceDashboardData["members"];
-  invitations: Array<
-    Omit<
-      WorkspaceDashboardData["invitations"][number],
-      "expiresAt" | "acceptedAt" | "revokedAt"
-    > & {
-      createdAt: string;
-      expiresAt: string;
-      acceptedAt: string | null;
-      revokedAt: string | null;
-    }
-  >;
-};
+export type { DashboardListOptions } from "./api";
 
-export function listWorkspaces(): Promise<WorkspaceMembership[]> {
-  return backendRequest("/v1/workspaces");
-}
+type WorkspaceSection = DashboardSection | "Setup";
+
+export const listWorkspaces = cache(
+  async (): Promise<WorkspaceMembership[]> => {
+    const response = await workspacesList({
+      client: await backendClient(),
+      throwOnError: true,
+    });
+    const items = fromAPIContract<CamelFields<WorkspacesListResponse>>(
+      response.data,
+    );
+    return (items ?? []).map((item) => ({
+      ...item,
+      role: membershipRoleSchema.parse(item.role),
+    }));
+  },
+);
 
 export async function getWorkspaceDashboard(
   workspaceId: string,
+  section: WorkspaceSection = "Setup",
+  options: DashboardListOptions = {},
 ): Promise<WorkspaceDashboardData> {
-  const workspaces = await listWorkspaces();
-  const membership = workspaces.find(
+  const membership = (await listWorkspaces()).find(
     (item) => item.workspace.id === workspaceId,
   );
   if (!membership)
     throw new BackendError("Workspace not found.", 404, "not_found");
 
-  const workspacePath = `/v1/workspaces/${workspaceId}`;
-  const [workspace, catalog] = await Promise.all([
-    backendRequest<ApiWorkspace>(workspacePath, { workspaceId }),
-    backendRequest<{
-      services: WorkspaceDashboardData["services"];
-      staff: WorkspaceDashboardData["staff"];
-      assignments: WorkspaceDashboardData["assignments"];
-    }>("/v1/catalog", { workspaceId }),
+  const api = workspaceAPI(workspaceId);
+  const [workspace, catalog, sectionData] = await Promise.all([
+    api.workspace(),
+    needsCatalog(section) ? api.catalog() : null,
+    membership.role === "owner" ? loadOwnerSection(api, section, options) : {},
   ]);
-
-  const ownerData =
-    membership.role === "owner"
-      ? await Promise.all([
-          backendRequest<ReceptionistSettings>(
-            `${workspacePath}/receptionist`,
-            { workspaceId },
-          ),
-          backendRequest<ApiAppointment[]>(`${workspacePath}/appointments`, {
-            workspaceId,
-          }),
-          backendRequest<ApiCustomer[]>(`${workspacePath}/customers`, {
-            workspaceId,
-          }),
-          backendRequest<WorkspaceDashboardData["timeOff"]>(
-            `${workspacePath}/time-off`,
-            { workspaceId },
-          ),
-          backendRequest<ApiNotification[]>(`${workspacePath}/notifications`, {
-            workspaceId,
-          }),
-          backendRequest<ApiTeamAccess>(`${workspacePath}/team-access`, {
-            workspaceId,
-          }),
-        ])
-      : null;
-
-  const [
-    receptionistSettings,
-    appointments,
-    customers,
-    timeOff,
-    notifications,
-    teamAccess,
-  ] = ownerData ?? [
-    defaultReceptionistSettings,
-    [],
-    [],
-    [],
-    [],
-    { members: [], invitations: [] },
-  ];
-
-  return {
-    workspace: {
-      ...workspace,
-      receptionistSettings,
-    },
-    role: membership.role as MembershipRole,
-    bookings: appointments.map((appointment) => ({
-      ...appointment,
-      startsAt: new Date(appointment.startsAt),
-      endsAt: new Date(appointment.endsAt),
-      createdAt: new Date(appointment.createdAt),
-      // Idempotency keys are internal mutation tokens, never dashboard data.
-      idempotencyKey: null,
-    })),
-    customers: customers.map((customer) => ({
-      ...customer,
-      createdAt: new Date(customer.createdAt),
-    })),
-    timeOff,
-    notifications: notifications.map((notification) => ({
-      ...notification,
-      createdAt: new Date(notification.createdAt),
-    })),
-    services: catalog.services,
-    staff: catalog.staff,
-    assignments: catalog.assignments,
-    members: teamAccess.members,
-    invitations: teamAccess.invitations.map((invitation) => ({
-      ...invitation,
-      expiresAt: new Date(invitation.expiresAt),
-      acceptedAt: invitation.acceptedAt
-        ? new Date(invitation.acceptedAt)
-        : null,
-      revokedAt: invitation.revokedAt ? new Date(invitation.revokedAt) : null,
-    })),
-  };
+  return dashboardModel(
+    { workspace, catalog, ...sectionData },
+    membership,
+    options,
+  );
 }
 
-export function getWorkspaceCatalog(workspaceId: string): Promise<Catalog> {
-  return backendRequest(`/v1/workspaces/${workspaceId}/booking-catalog`, {
-    workspaceId,
-  });
+function needsCatalog(section: WorkspaceSection): boolean {
+  return [
+    "Setup",
+    "Overview",
+    "Services",
+    "Team",
+    "Appointments",
+    "Time off",
+  ].includes(section);
+}
+
+async function loadOwnerSection(
+  api: WorkspaceAPI,
+  section: WorkspaceSection,
+  options: DashboardListOptions,
+): Promise<Omit<DashboardResources, "workspace" | "catalog">> {
+  switch (section) {
+    case "Overview":
+      return { overview: await api.overview() };
+    case "Appointments":
+      return { appointments: await api.appointments(options) };
+    case "Customers":
+      return { customers: await api.customers(options) };
+    case "Receptionist":
+      return { settings: await api.receptionist() };
+    case "Time off":
+      return { timeOff: await api.timeOff() };
+    case "Notifications":
+      return { notifications: await api.notifications() };
+    case "Members":
+    case "Team":
+      return { team: await api.teamAccess() };
+    default:
+      return {};
+  }
+}
+
+export async function getWorkspaceCatalog(
+  workspaceId: string,
+): Promise<Catalog> {
+  const catalog = await workspaceAPI(workspaceId).bookingCatalog();
+  return {
+    ...catalog,
+    bookingLocation: bookingLocationSchema.parse(catalog.bookingLocation),
+    services: (catalog.services ?? []).map((service) => ({
+      ...service,
+      staffIds: service.staffIds ?? [],
+    })),
+    staff: catalog.staff ?? [],
+  };
 }

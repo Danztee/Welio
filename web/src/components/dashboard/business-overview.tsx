@@ -17,12 +17,7 @@ import {
   Clock3Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -58,7 +53,7 @@ function offsetDate(day: string, offset: number) {
 
 export function BusinessOverview({
   appointments,
-  customerCount,
+  summary,
   today,
   currency,
   receptionistHref,
@@ -67,7 +62,9 @@ export function BusinessOverview({
   activity,
 }: {
   appointments: Appointment[];
-  customerCount: number;
+  summary: NonNullable<
+    import("@/features/workspaces/types").WorkspaceDashboardData["overview"]
+  >;
   today: string;
   currency: string;
   receptionistHref: string;
@@ -80,9 +77,7 @@ export function BusinessOverview({
     offsetDate(today, i - period + 1),
   );
   const counts = days.map(
-    (date) =>
-      appointments.filter((a) => a.date === date && a.status !== "Cancelled")
-        .length,
+    (date) => summary.daily.find((day) => day.date === date)?.count ?? 0,
   );
   const chartData = days.map((date, index) => ({
     date,
@@ -91,10 +86,8 @@ export function BusinessOverview({
   const todayBookings = appointments.filter(
     (a) => a.date === today && a.status !== "Cancelled",
   );
-  const completed = appointments.filter((a) => a.status === "Completed").length;
-  const active = appointments.filter(
-    (a) => a.status === "Confirmed" || a.status === "Pending",
-  ).length;
+  const completed = summary.completed;
+  const active = summary.confirmed;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -128,13 +121,13 @@ export function BusinessOverview({
                   Appointments today
                 </p>
                 <p className="mt-2 text-2xl font-medium tracking-tight tabular-nums sm:text-3xl">
-                  {todayBookings.length}
+                  {summary.todayCount}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Customers</p>
                 <p className="mt-2 text-2xl font-medium tracking-tight tabular-nums sm:text-3xl">
-                  {customerCount}
+                  {summary.customers}
                 </p>
               </div>
               <div className="hidden sm:block">
@@ -142,7 +135,7 @@ export function BusinessOverview({
                   Confirmed bookings
                 </p>
                 <p className="mt-2 text-2xl font-medium tracking-tight tabular-nums sm:text-3xl">
-                  {appointments.filter((a) => a.status === "Confirmed").length}
+                  {summary.confirmed}
                 </p>
               </div>
             </div>

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SheetClose } from "@/components/ui/sheet";
@@ -18,7 +14,10 @@ import {
 } from "lucide-react";
 
 export type ReceptionistChatStatus =
-  "connecting" | "online" | "unavailable" | "preview";
+  | "connecting"
+  | "online"
+  | "unavailable"
+  | "preview";
 
 const statusLabels: Record<ReceptionistChatStatus, string> = {
   connecting: "Connecting…",

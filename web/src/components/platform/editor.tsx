@@ -80,7 +80,9 @@ export function Editor({
       (
         control,
       ): control is
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
+        | HTMLInputElement
+        | HTMLSelectElement
+        | HTMLTextAreaElement =>
         (control instanceof HTMLInputElement ||
           control instanceof HTMLSelectElement ||
           control instanceof HTMLTextAreaElement) &&

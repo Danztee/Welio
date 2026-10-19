@@ -17,10 +17,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { useState } from "react";
 import { scheduleAvailabilityMessage, staffWeek } from "./staff-schedule";

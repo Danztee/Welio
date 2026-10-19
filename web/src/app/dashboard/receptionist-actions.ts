@@ -3,7 +3,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { receptionistSettingsSchema } from "@/lib/domain/receptionist/settings";
-import { backendRequest, BackendError } from "@/lib/backend/server-api";
+import { backendClient, BackendError } from "@/lib/backend/server-api";
+
+import { workspaceReceptionistSettingsUpdate } from "@/lib/backend/generated/sdk.gen";
 
 function failure(error: unknown, fallback: string) {
   if (error instanceof z.ZodError)
@@ -21,10 +23,19 @@ export async function saveReceptionistAction(
   await requireUser();
   try {
     const id = z.uuid().parse(workspaceId);
-    await backendRequest(`/v1/workspaces/${id}/receptionist`, {
-      method: "PUT",
-      workspaceId: id,
-      body: receptionistSettingsSchema.parse(input),
+    const settings = receptionistSettingsSchema.parse(input);
+    await workspaceReceptionistSettingsUpdate({
+      client: await backendClient(id),
+      throwOnError: true,
+      path: { workspaceID: id },
+      body: {
+        enabled: settings.enabled,
+        greeting: settings.greeting,
+        instructions: settings.instructions,
+        faqs: settings.faqs,
+        allow_availability: settings.allowAvailability,
+        allow_booking: settings.allowBooking,
+      },
     });
     revalidatePath("/dashboard", "layout");
 

@@ -14,7 +14,11 @@
     "lint": "eslint . --max-warnings=0",
     "typegen": "next typegen",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm typegen && pnpm typecheck"
+    "check": "pnpm typegen && pnpm typecheck",
+    "test": "node --experimental-strip-types --test tests/unit/*.test.ts",
+    "test:e2e": "playwright test",
+    "format": "prettier --write --ignore-unknown --ignore-path ../.prettierignore ..",
+    "format:check": "prettier --check --ignore-unknown --ignore-path ../.prettierignore .."
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -41,12 +45,15 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "prettier": "3.6.2",
     "shadcn": "^4.21.5",
     "tailwindcss": "^4",
     "typescript": "^5"

@@ -1,8 +1,8 @@
 import "server-only";
 
 import { headers } from "next/headers";
+import { createClient } from "./generated/client";
 import { backendOrigin } from "./origin";
-import { fromAPIContract, toAPIContract } from "@/lib/api-contract";
 
 type Problem = {
   code?: string;
@@ -22,23 +22,7 @@ export class BackendError extends Error {
   }
 }
 
-type BackendRequestOptions = {
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  body?: unknown;
-  workspaceId?: string;
-  origin?: string;
-};
-
-const allowedPath =
-  /^\/v1\/(?:[A-Za-z0-9_-]+|%[0-9A-Fa-f]{2})+(?:\/(?:[A-Za-z0-9_.~-]+|%[0-9A-Fa-f]{2})*)*(?:\?[^#]*)?$/;
-
-export async function backendRequest<T>(
-  path: string,
-  options: BackendRequestOptions = {},
-): Promise<T> {
-  if (!allowedPath.test(path) || path.includes(".."))
-    throw new Error("The backend request path is invalid.");
-
+async function backendHeaders(workspaceId?: string): Promise<Headers> {
   const requestHeaders = await headers();
   const cookies = (requestHeaders.get("cookie") ?? "")
     .split(";")
@@ -49,7 +33,6 @@ export async function backendRequest<T>(
         cookie.startsWith("welio_refresh="),
     );
   const origin =
-    options.origin ??
     requestHeaders.get("origin") ??
     process.env.APP_URL ??
     "http://localhost:3000";
@@ -59,44 +42,45 @@ export async function backendRequest<T>(
   });
   if (cookies.length) headersOut.set("Cookie", cookies.join("; "));
 
-  if (options.body !== undefined)
-    headersOut.set("Content-Type", "application/json");
-
-  if (options.workspaceId)
-    headersOut.set("X-Welio-Workspace", options.workspaceId);
+  if (workspaceId) headersOut.set("X-Welio-Workspace", workspaceId);
 
   const requestId = requestHeaders.get("x-request-id");
   if (requestId) headersOut.set("X-Request-Id", requestId);
 
-  let response: Response;
-  try {
-    response = await fetch(new URL(path, backendOrigin()), {
-      method: options.method ?? "GET",
-      headers: headersOut,
-      ...(options.body === undefined
-        ? {}
-        : { body: JSON.stringify(toAPIContract(options.body)) }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    throw new BackendError(
-      "The Welio API is unavailable. Please try again.",
-      0,
-      "api_unavailable",
-    );
-  }
+  return headersOut;
+}
 
-  if (!response.ok) {
-    const problem = (await response.json().catch(() => ({}))) as Problem;
-    throw new BackendError(
-      problem.detail ?? problem.title ?? "Could not complete this request.",
-      problem.status ?? response.status,
-      problem.code ?? "request_failed",
-    );
-  }
-
-  if (response.status === 204) return undefined as T;
-
-  return fromAPIContract<T>(await response.json());
+export async function backendClient(workspaceId?: string) {
+  return createClient({
+    baseUrl: backendOrigin().toString(),
+    headers: await backendHeaders(workspaceId),
+    cache: "no-store",
+    throwOnError: true,
+    fetch: async (request) => {
+      let response: Response;
+      try {
+        response = await fetch(request, {
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch {
+        throw new BackendError(
+          "The Welio API is unavailable. Please try again.",
+          0,
+          "api_unavailable",
+        );
+      }
+      if (!response.ok) {
+        const problem: Problem = await response
+          .clone()
+          .json()
+          .catch(() => ({}));
+        throw new BackendError(
+          problem.detail ?? problem.title ?? "Could not complete this request.",
+          problem.status ?? response.status,
+          problem.code ?? "request_failed",
+        );
+      }
+      return response;
+    },
+  });
 }

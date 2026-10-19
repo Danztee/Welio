@@ -1,4 +1,5 @@
 "use client";
+import { dashboardNotifications } from "@/app/dashboard/read-actions";
 import { AccountMenu } from "@/components/dashboard/account-menu";
 import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
 import { SearchField } from "@/components/platform/search-field";
@@ -62,6 +63,23 @@ export function WorkspaceApp({
   now: string;
   publicAppOrigin: string;
 }) {
+  const [notifications, setNotifications] = useState<
+    Data["notifications"] | null
+  >(section === "Notifications" ? (data?.notifications ?? []) : null);
+  const [notificationError, setNotificationError] = useState(false);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  async function loadNotifications() {
+    if (!data || loadingNotifications) return;
+    setLoadingNotifications(true);
+    setNotificationError(false);
+    try {
+      setNotifications(await dashboardNotifications(data.workspace.id));
+    } catch {
+      setNotificationError(true);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -162,7 +180,11 @@ export function WorkspaceApp({
   );
   const bellPanel =
     owner && data ? (
-      <Sheet>
+      <Sheet
+        onOpenChange={(open) => {
+          if (open) void loadNotifications();
+        }}
+      >
         <SheetTrigger
           render={
             <Button variant="ghost" size="icon" aria-label="Notifications" />
@@ -176,14 +198,27 @@ export function WorkspaceApp({
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="flex flex-col divide-y">
-              {data.notifications.length === 0 ? (
+              {notificationError ? (
+                <p className="px-4 py-6 text-sm">
+                  Could not load notifications.{" "}
+                  <Button
+                    variant="outline"
+                    onClick={() => void loadNotifications()}
+                  >
+                    Try again
+                  </Button>
+                </p>
+              ) : notifications === null ? (
+                <p className="px-4 py-6 text-sm" role="status">
+                  Loading notifications…
+                </p>
+              ) : notifications.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-muted-foreground">
                   No notifications yet.
                 </p>
               ) : (
-                data.notifications
+                notifications
                   .slice()
-                  .reverse()
                   .slice(0, 20)
                   .map((n) => (
                     <div key={n.id} className="flex flex-col gap-1 px-4 py-3">

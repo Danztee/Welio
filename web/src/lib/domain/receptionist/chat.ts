@@ -109,7 +109,11 @@ export const chatRequest = z.discriminatedUnion("action", [
 ]);
 
 export type ReceptionistErrorCode =
-  "conflict" | "not_found" | "rate_limited" | "unavailable" | "unprocessable";
+  | "conflict"
+  | "not_found"
+  | "rate_limited"
+  | "unavailable"
+  | "unprocessable";
 
 export class ReceptionistError extends Error {
   constructor(

@@ -14,7 +14,15 @@ export const metadata = {
 };
 
 export default async function Page({ searchParams }: PageProps<"/onboarding">) {
-  const [user, params] = await Promise.all([requireUser(), searchParams]);
+  const params = await searchParams;
+  const user = await requireUser(
+    "/onboarding" +
+      (params.new === "true"
+        ? "?new=true"
+        : typeof params.workspace === "string"
+          ? `?workspace=${encodeURIComponent(params.workspace)}`
+          : ""),
+  );
   const list = await listWorkspaces();
   const selected =
     typeof params.workspace === "string"

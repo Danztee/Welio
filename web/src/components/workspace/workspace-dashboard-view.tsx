@@ -8,6 +8,8 @@ import {
   Panel,
   type EditorField,
 } from "@/components/platform/shared";
+import { ListControls } from "./list-controls";
+import { BookingNotifications } from "./booking-notifications";
 import { BusinessOverview } from "@/components/dashboard/business-overview";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import {
@@ -16,11 +18,7 @@ import {
 } from "@/app/dashboard/workspace-actions";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { Catalog } from "@/lib/domain/bookings/contract";
 import { dashboardHref, type DashboardSection } from "@/lib/dashboard-routes";
@@ -184,6 +182,7 @@ function SetupAlert({
         {!hasActiveStaff && (
           <Button
             variant="outline"
+            nativeButton={false}
             render={<Link href={dashboardHref("Team", w?.id)} />}
           >
             <PlusIcon data-icon="inline-start" />
@@ -193,6 +192,7 @@ function SetupAlert({
         {!hasActiveService && (
           <Button
             variant="outline"
+            nativeButton={false}
             render={<Link href={dashboardHref("Services", w?.id)} />}
           >
             <PlusIcon data-icon="inline-start" />
@@ -202,6 +202,7 @@ function SetupAlert({
         {hasActiveStaff && hasActiveService && !hasAssignedActiveService && (
           <Button
             variant="outline"
+            nativeButton={false}
             render={<Link href={dashboardHref("Services", w?.id)} />}
           >
             <UsersIcon data-icon="inline-start" />
@@ -241,6 +242,7 @@ function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
     );
   }
 
+  if (!data.overview) return null;
   return (
     <BusinessOverview
       appointments={data.bookings.map((appointment) => ({
@@ -265,7 +267,7 @@ function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
                 ? "Confirmed"
                 : appointment.status,
       }))}
-      customerCount={data.customers.length}
+      summary={data.overview}
       today={formatDate(now, w.timeZone, "en-CA", {
         year: "numeric",
         month: "2-digit",
@@ -275,16 +277,13 @@ function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
       receptionistHref={dashboardHref("Receptionist", w.id)}
       appointmentsHref={dashboardHref("Appointments", w.id)}
       bookingHref={w.isPublished ? `/book/${w.slug}` : undefined}
-      activity={data.bookings
-        .slice(-4)
-        .reverse()
-        .map((appointment) => ({
-          id: appointment.id,
-          title: `${appointment.customerName} · ${appointment.serviceName}`,
-          date: formatDate(appointment.startsAt, w.timeZone, "en-GB", {
-            dateStyle: "medium",
-          }),
-        }))}
+      activity={data.overview.activity.map((item) => ({
+        id: item.id,
+        title: item.title,
+        date: formatDate(item.createdAt, w.timeZone, "en-GB", {
+          dateStyle: "medium",
+        }),
+      }))}
     />
   );
 }
@@ -390,6 +389,7 @@ function SectionNotices({ model }: { model: WorkspaceRenderModel }) {
   const { data, owner, section } = model;
   const knownSections = [
     "Overview",
+    "Notifications",
     "Setup",
     "Services",
     "Team",
@@ -447,6 +447,10 @@ function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
         hasAssignedActiveService={hasAssignedActiveService}
       />
       <DashboardOverview model={model} />
+      {model.data && <ListControls data={model.data} section={model.section} />}
+      {model.section === "Notifications" && model.owner && model.data && (
+        <BookingNotifications data={model.data} />
+      )}
       <AppointmentSection model={model} />
       <CustomerSection model={model} />
       <ReceptionistSection model={model} />

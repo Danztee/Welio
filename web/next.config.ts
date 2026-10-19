@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     incomingRequests: {
       ignore: [
         /\/api\/auth/,
+        /\/session\/renew/,
         /\/accept-invite/,
         /\/reset-password/,
         /\/verify-email/,

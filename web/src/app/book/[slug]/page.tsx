@@ -1,14 +1,15 @@
+import {
+  publicBookingCatalog,
+  publicReceptionistConfig,
+} from "@/lib/backend/generated/sdk.gen";
+import { fromAPIContract } from "@/lib/api-contract";
 import { notFound } from "next/navigation";
 import { BookingShell } from "@/components/workspace/booking-ui";
 import { PublicBooking } from "@/components/workspace/public-booking";
 import type { Catalog } from "@/lib/domain/bookings/contract";
 import { BookingLocation } from "@/lib/domain/workspaces/enums";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import { backendRequest, BackendError } from "@/lib/backend/server-api";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { backendClient, BackendError } from "@/lib/backend/server-api";
 
 export const metadata = {
   title: "Book an appointment",
@@ -23,13 +24,13 @@ export default async function Page({
   let catalog: Catalog;
   let settings: { enabled: boolean; greeting: string };
   try {
-    const encodedSlug = encodeURIComponent(slug);
-    [catalog, settings] = await Promise.all([
-      backendRequest<Catalog>(`/v1/book/${encodedSlug}`),
-      backendRequest<{ enabled: boolean; greeting: string }>(
-        `/v1/book/${encodedSlug}/receptionist`,
-      ),
+    const client = await backendClient();
+    const [catalogResponse, configResponse] = await Promise.all([
+      publicBookingCatalog({ client, throwOnError: true, path: { slug } }),
+      publicReceptionistConfig({ client, throwOnError: true, path: { slug } }),
     ]);
+    catalog = fromAPIContract<Catalog>(catalogResponse.data);
+    settings = configResponse.data;
   } catch (e) {
     if (e instanceof BackendError && e.status === 404) notFound();
 

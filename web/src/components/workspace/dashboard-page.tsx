@@ -1,11 +1,7 @@
 import { WorkspaceApp } from "@/components/workspace/workspace-app";
 import { requireUser } from "@/lib/auth/session";
 import { env } from "@/lib/env";
-import {
-  dashboardHref,
-  dashboardRoutes,
-  type DashboardSection,
-} from "@/lib/dashboard-routes";
+import { dashboardHref, type DashboardSection } from "@/lib/dashboard-routes";
 import {
   getWorkspaceCatalog,
   getWorkspaceDashboard,
@@ -17,29 +13,25 @@ import { z } from "zod";
 
 export type DashboardSearchParams = Promise<{
   workspace?: string | string[];
-  section?: string | string[];
+  tab?: string;
+  cursor?: string;
+  search?: string;
+  from?: string;
+  to?: string;
 }>;
 
-function redirectLegacySection(
-  params: Awaited<DashboardSearchParams>,
+async function loadWorkspace(
+  selected: string,
   section: DashboardSection,
+  params: Awaited<DashboardSearchParams>,
 ) {
-  if (section !== "Overview" || typeof params.section !== "string") return;
-
-  const oldSection = Object.keys(dashboardRoutes).find(
-    (name) => name.toLowerCase() === params.section?.toString().toLowerCase(),
-  );
-  const workspace =
-    typeof params.workspace === "string" ? params.workspace : undefined;
-  if (oldSection)
-    redirect(dashboardHref(oldSection as DashboardSection, workspace));
-
-  if (params.section === "Setup") redirect("/onboarding");
-}
-
-async function loadWorkspace(selected: string) {
   try {
-    return await getWorkspaceDashboard(selected);
+    return await getWorkspaceDashboard(selected, section, {
+      cursor: params.cursor,
+      search: params.search,
+      from: params.from,
+      to: params.to,
+    });
   } catch (error) {
     if (error instanceof BackendError && error.status === 404) notFound();
 
@@ -55,13 +47,21 @@ export async function DashboardPage({
   section?: DashboardSection;
 }) {
   const params = await searchParams;
+  const returnParams = new URLSearchParams();
+  for (const key of [
+    "workspace",
+    "tab",
+    "cursor",
+    "search",
+    "from",
+    "to",
+  ] as const) {
+    const value = params[key];
+    if (typeof value === "string") returnParams.set(key, value);
+  }
   const user = await requireUser(
-    dashboardHref(
-      section,
-      typeof params.workspace === "string" ? params.workspace : undefined,
-    ),
+    dashboardHref(section) + (returnParams.size ? `?${returnParams}` : ""),
   );
-  redirectLegacySection(params, section);
   const list = await listWorkspaces();
   const selected =
     typeof params.workspace === "string"
@@ -71,12 +71,14 @@ export async function DashboardPage({
 
   if (!z.uuid().safeParse(selected).success) notFound();
 
-  const data = await loadWorkspace(selected);
+  const data = await loadWorkspace(selected, section, params);
   if (data.role === "owner" && !data.workspace.onboarded)
     redirect(`/onboarding?workspace=${selected}`);
 
   const catalog =
-    data.role === "owner" ? await getWorkspaceCatalog(selected) : null;
+    data.role === "owner" && section === "Appointments"
+      ? await getWorkspaceCatalog(selected)
+      : null;
   const now = new Date().toISOString();
 
   return (

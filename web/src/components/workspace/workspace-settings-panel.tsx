@@ -25,7 +25,11 @@ import { SessionSettings } from "./session-settings";
 import { toast } from "sonner";
 
 type SettingsTab =
-  "business" | "booking-page" | "booking" | "security" | "profile";
+  | "business"
+  | "booking-page"
+  | "booking"
+  | "security"
+  | "profile";
 type UserProfile = {
   email: string;
   firstName?: string | null;

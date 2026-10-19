@@ -1,10 +1,14 @@
 import "server-only";
+import { cache } from "react";
+import { backendClient, BackendError } from "@/lib/backend/server-api";
+import { meGet } from "@/lib/backend/generated/sdk.gen";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { safeReturnPath } from "@/lib/auth-path";
+import type { APIModel } from "@/lib/backend/contract";
 import { fromAPIContract } from "@/lib/api-contract";
 
-export async function currentUser() {
+export const currentUser = cache(async function currentUser() {
   const requestHeaders = await headers();
   const cookies = requestHeaders.get("cookie") ?? "";
   const accessCookie = cookies
@@ -13,51 +17,25 @@ export async function currentUser() {
     .find((cookie) => cookie.startsWith("welio_access="));
   if (!accessCookie) return null;
 
-  const apiOrigin =
-    process.env.WELIO_API_INTERNAL_URL ?? "http://127.0.0.1:8081";
-  let response: Response;
   try {
-    response = await fetch(new URL("/v1/me", apiOrigin), {
-      headers: {
-        cookie: accessCookie,
-        ...(requestHeaders.get("x-request-id")
-          ? { "x-request-id": requestHeaders.get("x-request-id")! }
-          : {}),
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(5_000),
+    const result = await meGet({
+      client: await backendClient(),
+      throwOnError: true,
     });
-  } catch (cause) {
-    throw new Error("The Welio API is unavailable.", { cause });
+    return fromAPIContract<APIModel<"User">>(result.data);
+  } catch (error) {
+    if (error instanceof BackendError && error.status === 401) return null;
+    throw error;
   }
-
-  if (response.status === 401) return null;
-
-  if (!response.ok) {
-    throw new Error(
-      `The Welio API could not load the current account (${response.status}).`,
-    );
-  }
-
-  return fromAPIContract<{
-    id: string;
-    name: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    emailVerified: boolean;
-    image?: string | null;
-    createdAt: string;
-  }>(await response.json());
-}
+});
 
 export async function requireUser(returnTo?: string) {
   const user = await currentUser();
   if (!user)
     redirect(
       returnTo
-        ? `/sign-in?next=${encodeURIComponent(safeReturnPath(returnTo))}`
-        : "/sign-in",
+        ? `/session/renew?next=${encodeURIComponent(safeReturnPath(returnTo))}`
+        : "/session/renew",
     );
 
   if (!user.emailVerified) redirect("/verify-email");

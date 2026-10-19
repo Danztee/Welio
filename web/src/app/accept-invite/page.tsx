@@ -1,7 +1,8 @@
+import { workspaceInvitationInspect } from "@/lib/backend/generated/sdk.gen";
 import { currentUser } from "@/lib/auth/session";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { InviteContent } from "@/components/workspace/invite-content";
-import { backendRequest, BackendError } from "@/lib/backend/server-api";
+import { backendClient, BackendError } from "@/lib/backend/server-api";
 
 export const metadata = {
   title: "Join workspace",
@@ -21,12 +22,12 @@ export default async function Page({
     error = "";
   if (user?.emailVerified && token)
     try {
-      name = (
-        await backendRequest<{ workspaceName: string }>(
-          "/v1/invitations/inspect",
-          { method: "POST", body: { token } },
-        )
-      ).workspaceName;
+      const result = await workspaceInvitationInspect({
+        client: await backendClient(),
+        throwOnError: true,
+        body: { token },
+      });
+      name = result.data.workspace_name;
     } catch (e) {
       if (e instanceof BackendError) error = e.message;
       else throw e;

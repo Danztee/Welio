@@ -151,7 +151,7 @@ function OwnerAppointmentTable({
       toolbar={
         <>
           <SearchField
-            label="Search appointments"
+            label="Filter this page"
             value={query}
             onChange={onQueryChange}
           />
@@ -159,7 +159,7 @@ function OwnerAppointmentTable({
             value={status}
             onValueChange={(value) => onStatusChange(value || "all")}
           >
-            <SelectTrigger aria-label="Appointment status">
+            <SelectTrigger aria-label="Appointment status on this page">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

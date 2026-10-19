@@ -3,7 +3,12 @@ import type { EditorField } from "@/components/platform/shared";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 
 export type WorkspaceEditorKind =
-  "service" | "staff" | "invite" | "account" | "assignments" | null;
+  | "service"
+  | "staff"
+  | "invite"
+  | "account"
+  | "assignments"
+  | null;
 
 type Data = WorkspaceDashboardData;
 export function getEditorFields({

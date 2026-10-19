@@ -17,6 +17,22 @@ export type WorkspaceMembership = {
 };
 
 export type WorkspaceDashboardData = {
+  overview: {
+    today: string;
+    customers: number;
+    todayCount: number;
+    confirmed: number;
+    completed: number;
+    daily: { date: string; count: number }[];
+    activity: { id: string; title: string; createdAt: string }[];
+  } | null;
+  pagination: {
+    total: number;
+    nextCursor: string;
+    search: string;
+    from: string;
+    to: string;
+  } | null;
   workspace: {
     id: string;
     name: string;
@@ -49,6 +65,7 @@ export type WorkspaceDashboardData = {
     startsAt: Date;
     endsAt: Date;
     serviceName: string;
+    staffName: string;
     durationMinutes: number;
     bufferBeforeMinutes: number;
     bufferAfterMinutes: number;
@@ -66,6 +83,7 @@ export type WorkspaceDashboardData = {
     createdAt: Date;
   }[];
   customers: {
+    appointmentCount: number;
     id: string;
     workspaceId: string;
     name: string;

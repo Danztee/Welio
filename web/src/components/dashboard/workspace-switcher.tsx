@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CheckIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
