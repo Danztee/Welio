@@ -24,3 +24,12 @@ func TestPasswordHashRoundTripAndPolicy(t *testing.T) {
 		t.Fatal("accepted a PHC hash with unsafe parameters")
 	}
 }
+
+func TestPasswordMinimumLength(t *testing.T) {
+	if err := CheckPassword("Q7!v2@Lp"); err != nil {
+		t.Fatalf("eight-character password rejected: %v", err)
+	}
+	if err := CheckPassword("Q7!v2@L"); err != ErrPasswordTooShort {
+		t.Fatalf("seven-character password error = %v", err)
+	}
+}

@@ -22,12 +22,12 @@ const (
 	argonThreads      uint8  = 2
 	argonKeyLen       uint32 = 32
 	argonSaltLen             = 16
-	PasswordMinLength        = 12
+	PasswordMinLength        = 8
 	PasswordMaxLength        = 128
 )
 
 var (
-	ErrPasswordTooShort = errors.New("password must be at least 12 characters")
+	ErrPasswordTooShort = errors.New("password must be at least 8 characters")
 	ErrPasswordTooLong  = errors.New("password must be 128 characters or fewer")
 	ErrPasswordBreached = errors.New("choose a password that has not appeared in a known breach")
 )
