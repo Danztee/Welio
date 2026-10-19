@@ -18,8 +18,6 @@ export function SuccessState({
       "If an account exists for this email, we’ve sent a reset link. Check your inbox.",
     "reset-password":
       "Your password has been reset. Sign in with your new password.",
-    "verify-email":
-      "If this address belongs to an unverified account, a verification email has been sent.",
   };
 
   return (

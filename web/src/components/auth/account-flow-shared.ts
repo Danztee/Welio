@@ -1,6 +1,6 @@
 import { authClient } from "@/lib/auth-client";
 
-export type Mode = "forgot-password" | "reset-password" | "verify-email";
+export type Mode = "forgot-password" | "reset-password";
 
 export const copy = {
   "forgot-password": {
@@ -12,16 +12,9 @@ export const copy = {
   "reset-password": {
     title: "Choose a new password",
     description:
-      "Use at least 12 characters. Your other sessions will be signed out.",
+      "Use at least 8 characters. Your other sessions will be signed out.",
     submit: "Reset password",
     success: "Password updated.",
-  },
-  "verify-email": {
-    title: "Check your email",
-    description:
-      "Open the verification email to confirm your address, then continue to your workspace.",
-    submit: "Resend verification email",
-    success: "Verification email sent.",
   },
 } satisfies Record<
   Mode,
@@ -34,13 +27,8 @@ export async function submitRequest(mode: Mode, data: FormData, token: string) {
       email: String(data.get("email")),
     });
 
-  if (mode === "reset-password")
-    return authClient.resetPassword({
-      newPassword: String(data.get("password")),
-      token,
-    });
-
-  return authClient.sendVerificationEmail({
-    email: String(data.get("email")),
+  return authClient.resetPassword({
+    newPassword: String(data.get("password")),
+    token,
   });
 }

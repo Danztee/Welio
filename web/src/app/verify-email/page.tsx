@@ -1,9 +1,10 @@
 import { Spinner } from "@/components/ui/spinner";
 import { Suspense } from "react";
-import { AccountFlow } from "@/components/auth/account-flows";
+import { VerificationPending } from "@/components/auth/verification-pending";
 
 export const metadata = {
-  title: "Welio account",
+  title: "Verify your email",
+  referrer: "no-referrer",
   robots: { index: false, follow: false },
 };
 
@@ -17,7 +18,7 @@ export default function Page() {
         </div>
       }
     >
-      <AccountFlow mode="verify-email" />
+      <VerificationPending />
     </Suspense>
   );
 }

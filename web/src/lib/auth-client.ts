@@ -7,16 +7,16 @@ import { refreshSession } from "./auth/refresh";
 import { apiUrl } from "./api-url.ts";
 import { fromAPIContract } from "./api-contract";
 
-type AuthError = { code: string; status: number; message: string };
-type Result<T> = { data: T | null; error: AuthError | null };
-export type AuthUser = APIModel<"User">;
-export type AuthSession = APIModel<"Session">;
 type Problem = {
   code?: string;
   detail?: string;
   status?: number;
-  title?: string;
 };
+
+type AuthError = { code: string; status: number; message: string };
+type Result<T> = { data: T | null; error: AuthError | null };
+export type AuthUser = APIModel<"User">;
+export type AuthSession = APIModel<"Session">;
 
 function browserClient() {
   return createClient({
@@ -53,7 +53,7 @@ async function send<T>(
         error: {
           code: problem?.code ?? "request_failed",
           status: problem?.status ?? result.response?.status,
-          message: problem?.detail ?? problem?.title ?? "The request failed.",
+          message: problem?.detail ?? "",
         },
       };
     }
@@ -114,6 +114,8 @@ export const authClient = {
         body: { password: input.newPassword, token: input.token },
       }),
     ),
+  verifyEmail: (input: { token: string }) =>
+    send((request) => sdk.authVerifyEmail({ ...request, body: input })),
   sendVerificationEmail: (input: { email: string }) =>
     send((request) => sdk.authResendVerification({ ...request, body: input })),
   updateUser: (input: { firstName: string; lastName: string }) =>

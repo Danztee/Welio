@@ -4,12 +4,7 @@ import { headers } from "next/headers";
 import { createClient } from "./generated/client";
 import { backendOrigin } from "./origin";
 
-type Problem = {
-  code?: string;
-  detail?: string;
-  status?: number;
-  title?: string;
-};
+type Problem = { code?: string; detail?: string; status?: number };
 
 export class BackendError extends Error {
   constructor(
@@ -75,7 +70,7 @@ export async function backendClient(workspaceId?: string) {
           .json()
           .catch(() => ({}));
         throw new BackendError(
-          problem.detail ?? problem.title ?? "Could not complete this request.",
+          problem.detail ?? "",
           problem.status ?? response.status,
           problem.code ?? "request_failed",
         );

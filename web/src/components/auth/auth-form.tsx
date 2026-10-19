@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { TextLink } from "@/components/ui/text-link";
 import { signInSchema, signUpSchema } from "@/lib/auth/validation";
@@ -14,6 +14,7 @@ import { type FieldName, type Errors } from "./auth-form-types";
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [navigating, startNavigation] = useTransition();
   const isSignUp = mode === "sign-up";
   const [errors, setErrors] = useState<Errors>({});
 
@@ -59,7 +60,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     }
 
     setErrors({});
-    if (busy) return;
+    if (busy || navigating) return;
 
     setBusy(true);
     const next = safeReturnPath(
@@ -79,32 +80,27 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           });
       if (response.error) {
         if (response.error.code === "email_not_verified") {
-          router.push(
-            `/verify-email?email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(next)}`,
+          startNavigation(() =>
+            router.replace(
+              `/verify-email?email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(next)}`,
+            ),
           );
 
           return;
         }
 
-        toast.error(
-          response.error.status === 429
-            ? "Too many attempts. Please wait a minute and try again."
-            : isSignUp
-              ? "Could not create your account. Check your details or try signing in."
-              : "Could not sign in. Check your email and password.",
-        );
+        toast.error(response.error.message);
 
         return;
       }
 
-      form.reset();
-      toast.success(isSignUp ? "Account created." : "Signed in.");
-      router.push(
-        isSignUp
-          ? `/verify-email?email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(next)}`
-          : next,
+      startNavigation(() =>
+        router.replace(
+          isSignUp
+            ? `/verify-email?email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(next)}`
+            : next,
+        ),
       );
-      router.refresh();
     } catch {
       toast.error("We couldn’t reach the server. Please try again.");
     } finally {
@@ -118,8 +114,8 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-[1.75rem] font-medium tracking-tight">
+      <div className="flex flex-col gap-1.5 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">
           {isSignUp ? "Get started" : "Welcome back"}
         </h1>
         <p className="text-sm leading-6 text-muted-foreground">
@@ -133,8 +129,16 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         className="flex flex-col gap-6"
       >
         <AuthFields isSignUp={isSignUp} errors={errors} clear={clearError} />
-        <Button type="submit" className="h-10 w-full" disabled={busy}>
-          {busy ? "Please wait…" : isSignUp ? "Sign up" : "Sign in"}
+        <Button
+          type="submit"
+          className="h-10 w-full"
+          disabled={busy || navigating}
+        >
+          {busy || navigating
+            ? "Please wait…"
+            : isSignUp
+              ? "Sign up"
+              : "Sign in"}
         </Button>
       </form>
       <div className="flex flex-col gap-5">
@@ -157,9 +161,6 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           >
             {isSignUp ? "Sign in" : "Sign up"}
           </TextLink>
-        </p>
-        <p className="text-center text-xs leading-5 text-muted-foreground">
-          Your account gives you secure access to your business workspace.
         </p>
       </div>
     </div>

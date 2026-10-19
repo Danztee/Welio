@@ -78,7 +78,7 @@ export function AuthFields({
           <FieldError id="password-error">{errors.password}</FieldError>
         ) : isSignUp ? (
           <FieldDescription id="password-hint">
-            Use at least 12 characters.
+            Use at least 8 characters.
           </FieldDescription>
         ) : null}
       </Field>

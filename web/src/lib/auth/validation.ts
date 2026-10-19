@@ -26,7 +26,7 @@ export const signUpSchema = signInSchema
   .extend({
     password: z
       .string()
-      .min(12, "Use at least 12 characters.")
+      .min(8, "Use at least 8 characters.")
       .max(128, "Use 128 characters or fewer."),
     confirmPassword: z.string().min(1, "Confirm your password."),
   })

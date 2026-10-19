@@ -37,13 +37,7 @@ export function AccountFlow({ mode }: { mode: Mode }) {
     try {
       const result = await submitRequest(mode, data, token);
       if (result.error) {
-        toast.error(
-          result.error.status === 429
-            ? "Too many attempts. Please wait a minute and try again."
-            : mode === "reset-password"
-              ? "This reset link is invalid or expired. Request a new one."
-              : "Could not complete this request. Please try again.",
-        );
+        toast.error(result.error.message);
 
         return;
       }
@@ -86,20 +80,14 @@ export function AccountFlow({ mode }: { mode: Mode }) {
   return (
     <AuthShell>
       <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-[1.75rem] font-medium tracking-tight">
+        <div className="flex flex-col gap-1.5 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
             {copy[mode].title}
           </h1>
           <p className="text-sm leading-6 text-muted-foreground">
             {copy[mode].description}
           </p>
         </div>
-        {query.has("error") && mode === "verify-email" && (
-          <Notice error>
-            The verification link is invalid or expired. Request another email
-            below.
-          </Notice>
-        )}
         {content}
         <TextLink href="/sign-in" className="text-center text-sm">
           Return to sign in
