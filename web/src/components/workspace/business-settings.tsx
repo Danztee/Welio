@@ -2,7 +2,12 @@
 
 import { text } from "@/components/platform/form-utils";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -48,13 +53,13 @@ function BusinessLogoField({
             <AvatarFallback className="rounded-lg">Logo</AvatarFallback>
           </Avatar>
         )}
-        <Input
+        <input
           ref={inputRef}
           id="settings-business-logo"
           type="file"
           accept="image/png,image/jpeg,image/webp"
           disabled={saving || preparing}
-          className="sr-only"
+          hidden
           onChange={(event) => onChoose(event.target.files?.[0])}
         />
         <Button
@@ -117,7 +122,12 @@ function BusinessIdentityFields({ workspace }: { workspace: Workspace }) {
           minLength={3}
           maxLength={80}
           pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          aria-describedby="settings-business-slug-help"
         />
+        <FieldDescription id="settings-business-slug-help">
+          Use lowercase letters, numbers, and hyphens. Changing this updates
+          your public booking link.
+        </FieldDescription>
       </Field>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field>
@@ -405,7 +415,11 @@ export function BusinessSettings({
       <p className="mt-1 text-sm text-muted-foreground">
         Update the details shown on your booking page.
       </p>
-      <form onSubmit={submit} className="mt-8 max-w-2xl">
+      <form
+        onSubmit={submit}
+        aria-busy={saving || preparingLogo}
+        className="mt-6 max-w-2xl"
+      >
         <FieldGroup>
           <BusinessLogoField
             logo={logo}
@@ -421,7 +435,11 @@ export function BusinessSettings({
             bookingLocation={bookingLocation}
             onBookingLocationChange={setBookingLocationOverride}
           />
-          <Button type="submit" disabled={saving} className="self-start">
+          <Button
+            type="submit"
+            disabled={saving || preparingLogo}
+            className="self-start"
+          >
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </FieldGroup>

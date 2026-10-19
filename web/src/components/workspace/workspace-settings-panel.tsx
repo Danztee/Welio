@@ -13,6 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+  NativeSelectOptGroup,
+} from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { dashboardHref } from "@/lib/dashboard-routes";
@@ -100,7 +105,30 @@ export function WorkspaceSettingsPanel({
     <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
       <aside className="min-w-0" aria-label="Settings navigation">
         <h1 className="mb-5 text-lg font-semibold tracking-tight">Settings</h1>
-        <nav aria-label="Settings" className="flex flex-col gap-6">
+        <Field className="lg:hidden">
+          <FieldLabel htmlFor="settings-section">Settings section</FieldLabel>
+          <NativeSelect
+            id="settings-section"
+            value={tab}
+            className="w-full"
+            onChange={(event) =>
+              router.push(
+                `${dashboardHref("Settings", workspace.id)}&tab=${event.target.value}`,
+              )
+            }
+          >
+            {groups.map((group) => (
+              <NativeSelectOptGroup key={group.heading} label={group.heading}>
+                {group.items.map(({ id, label }) => (
+                  <NativeSelectOption key={id} value={id}>
+                    {label}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelectOptGroup>
+            ))}
+          </NativeSelect>
+        </Field>
+        <nav aria-label="Settings" className="hidden flex-col gap-6 lg:flex">
           {groups.map((group) => (
             <div key={group.heading} className="flex flex-col gap-2">
               <p className="px-2 text-xs font-medium text-muted-foreground">
@@ -142,7 +170,7 @@ export function WorkspaceSettingsPanel({
             </p>
             <form
               key={`${user.firstName}-${user.lastName}`}
-              className="mt-8 max-w-2xl"
+              className="mt-6 max-w-2xl"
               action={saveProfile}
             >
               <FieldGroup>
@@ -205,7 +233,7 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Set booking rules and appointment reminders.
             </p>
-            <div className="mt-8 flex flex-col gap-6">
+            <div className="mt-6 flex flex-col gap-6">
               <BookingPolicies data={data} />
             </div>
           </>
@@ -218,7 +246,7 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Publish and manage your customer booking link.
             </p>
-            <div className="mt-8 max-w-2xl">
+            <div className="mt-6 max-w-2xl">
               <PublicBookingSettings
                 data={data}
                 publicAppOrigin={publicAppOrigin}

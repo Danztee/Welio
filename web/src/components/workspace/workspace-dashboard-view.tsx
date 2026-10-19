@@ -8,7 +8,6 @@ import {
   Panel,
   type EditorField,
 } from "@/components/platform/shared";
-import { ListControls } from "./list-controls";
 import { BookingNotifications } from "./booking-notifications";
 import { BusinessOverview } from "@/components/dashboard/business-overview";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -118,8 +117,6 @@ export type WorkspaceRenderModel = {
   now: string;
   publicAppOrigin: string;
   settingsTab: "business" | "booking-page" | "booking" | "security" | "profile";
-  matches: (...values: (string | null | undefined)[]) => boolean;
-  searchToolbar: ReactNode;
   editor: EditorKind;
   setEditor: Dispatch<SetStateAction<EditorKind>>;
   recordId: string;
@@ -342,8 +339,7 @@ function TableSection({
   model: WorkspaceRenderModel;
   section: "Services" | "Team";
 }) {
-  const { data, owner, searchToolbar, matches, money, open, resendInvite } =
-    model;
+  const { data, owner, money, open, resendInvite } = model;
   if (model.section !== section || !data) return null;
 
   return (
@@ -351,8 +347,6 @@ function TableSection({
       section={section}
       data={data}
       owner={owner}
-      toolbar={searchToolbar}
-      matches={matches}
       money={money}
       onOpen={open}
       onInvite={resendInvite}
@@ -447,7 +441,6 @@ function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
         hasAssignedActiveService={hasAssignedActiveService}
       />
       <DashboardOverview model={model} />
-      {model.data && <ListControls data={model.data} section={model.section} />}
       {model.section === "Notifications" && model.owner && model.data && (
         <BookingNotifications data={model.data} />
       )}

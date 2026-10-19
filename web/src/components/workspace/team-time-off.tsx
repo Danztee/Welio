@@ -62,6 +62,14 @@ export function TeamTimeOff({ data }: { data: Data }) {
         />
         <Grid
           rows={data.timeOff}
+          searchText={(entry) =>
+            [
+              data.staff.find((member) => member.id === entry.staffId)?.name,
+              formatDate(entry.from),
+              formatDate(entry.to),
+              entry.reason,
+            ].join(" ")
+          }
           empty="No time off scheduled"
           emptyDescription={
             data.staff.length

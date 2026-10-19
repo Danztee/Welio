@@ -2,7 +2,6 @@
 import { dashboardNotifications } from "@/app/dashboard/read-actions";
 import { AccountMenu } from "@/components/dashboard/account-menu";
 import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
-import { SearchField } from "@/components/platform/search-field";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -90,22 +89,6 @@ export function WorkspaceApp({
     requestedTab === "security"
       ? requestedTab
       : "profile";
-  const [searches, setSearches] = useState<Record<string, string>>({});
-  const query = searches[section] ?? "";
-  const matches = (...values: (string | null | undefined)[]) =>
-    values.join(" ").toLowerCase().includes(query.toLowerCase());
-  const searchToolbar = (
-    <SearchField
-      label={`Search ${section.toLowerCase()}`}
-      value={query}
-      onChange={(value) =>
-        setSearches((current) => ({
-          ...current,
-          [section]: value,
-        }))
-      }
-    />
-  );
   const [editor, setEditor] = useState<EditorKind>(null);
   const [recordId, setRecordId] = useState("");
   const [revoke, setRevoke] = useState<{
@@ -250,8 +233,6 @@ export function WorkspaceApp({
     now,
     publicAppOrigin,
     settingsTab,
-    matches,
-    searchToolbar,
     editor,
     setEditor,
     recordId,

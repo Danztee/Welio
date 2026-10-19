@@ -157,7 +157,11 @@ export function WorkspaceOnboarding({
                   maxLength={80}
                   pattern="[a-z0-9]+(-[a-z0-9]+)*"
                   required
-                  description="Your public booking link updates as you type."
+                  description={
+                    slug
+                      ? `Your booking page: /book/${slug}`
+                      : "Use lowercase letters, numbers, and hyphens."
+                  }
                 />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <SetupInput
@@ -297,7 +301,11 @@ export function WorkspaceOnboarding({
               </FieldGroup>
             </CardContent>
             <CardFooter className="justify-end bg-transparent px-5 py-6 sm:px-8">
-              <Button type="submit" disabled={busy}>
+              <Button
+                type="submit"
+                disabled={busy}
+                className="w-full sm:w-auto"
+              >
                 {busy
                   ? "Saving…"
                   : workspace

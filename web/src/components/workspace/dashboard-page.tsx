@@ -16,6 +16,7 @@ export type DashboardSearchParams = Promise<{
   tab?: string;
   cursor?: string;
   search?: string;
+  status?: string;
   from?: string;
   to?: string;
 }>;
@@ -29,6 +30,10 @@ async function loadWorkspace(
     return await getWorkspaceDashboard(selected, section, {
       cursor: params.cursor,
       search: params.search,
+      status: z
+        .enum(["confirmed", "completed", "cancelled", "no_show"])
+        .optional()
+        .parse(params.status || undefined),
       from: params.from,
       to: params.to,
     });
@@ -53,6 +58,7 @@ export async function DashboardPage({
     "tab",
     "cursor",
     "search",
+    "status",
     "from",
     "to",
   ] as const) {

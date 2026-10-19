@@ -91,7 +91,7 @@ function SessionList({
   );
 
   return (
-    <section className="mt-8" aria-labelledby="active-sessions-heading">
+    <section className="mt-6" aria-labelledby="active-sessions-heading">
       <SessionListHeader
         count={sessions.length}
         otherCount={
@@ -236,7 +236,7 @@ function SessionRow({
   const Icon = mobile ? SmartphoneIcon : MonitorIcon;
 
   return (
-    <div className="flex flex-wrap items-start gap-4 border-b pb-4 last:border-b-0">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-b pb-4 last:border-b-0 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-4">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         <Icon className="size-5" aria-hidden="true" />
       </div>
@@ -253,7 +253,7 @@ function SessionRow({
         <Button
           variant="outline"
           size="sm"
-          className="text-destructive hover:text-destructive"
+          className="col-start-2 justify-self-start text-destructive hover:text-destructive sm:col-start-3 sm:row-start-1"
           disabled={Boolean(pending)}
           onClick={() => onRevoke(session)}
           aria-label={`Sign out ${deviceName(session.userAgent)} session from ${session.createdAtLabel}`}
