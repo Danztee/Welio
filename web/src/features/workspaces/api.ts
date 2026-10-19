@@ -10,6 +10,7 @@ export type DashboardListOptions = {
   search?: string;
   from?: string;
   to?: string;
+  status?: "confirmed" | "completed" | "cancelled" | "no_show";
 };
 
 export function workspaceAPI(workspaceId: string) {

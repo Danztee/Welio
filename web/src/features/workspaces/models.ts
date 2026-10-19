@@ -98,6 +98,7 @@ export function dashboardModel(
           total: page.total,
           nextCursor: page.nextCursor,
           search: options.search ?? "",
+          status: options.status ?? "",
           from: options.from ?? "",
           to: options.to ?? "",
         }

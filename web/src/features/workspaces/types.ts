@@ -30,6 +30,7 @@ export type WorkspaceDashboardData = {
     total: number;
     nextCursor: string;
     search: string;
+    status: string;
     from: string;
     to: string;
   } | null;

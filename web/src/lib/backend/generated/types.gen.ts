@@ -1611,6 +1611,7 @@ export type WorkspaceAppointmentsListData = {
         customer_id?: string;
         from?: string;
         to?: string;
+        status?: '' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
     };
     url: '/v1/workspaces/{workspaceId}/appointments';
 };

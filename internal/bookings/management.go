@@ -337,7 +337,8 @@ func (service *Service) AppointmentsPage(ctx context.Context, userID, workspaceI
 		}
 		filter := ` a.workspace_id=$1 AND ($2='' OR strpos(lower(a.customer_name || ' ' || a.customer_email || ' ' || a.service_name),lower($2))>0)
           AND ($3::uuid IS NULL OR a.customer_id=$3) AND ($4='' OR a.starts_at >= (NULLIF($4,'')::date::timestamp AT TIME ZONE a.time_zone))
-          AND ($5='' OR a.starts_at < ((NULLIF($5,'')::date + 1)::timestamp AT TIME ZONE a.time_zone))`
+          AND ($5='' OR a.starts_at < ((NULLIF($5,'')::date + 1)::timestamp AT TIME ZONE a.time_zone))
+          AND ($6='' OR a.status=$6)`
 		if options.ExcludeCancelled {
 			filter += ` AND a.status <> 'cancelled'`
 		}
@@ -345,7 +346,7 @@ func (service *Service) AppointmentsPage(ctx context.Context, userID, workspaceI
 		if options.CustomerID != uuid.Nil {
 			customerID = &options.CustomerID
 		}
-		args := []any{workspaceID, options.Search, customerID, options.From, options.To}
+		args := []any{workspaceID, options.Search, customerID, options.From, options.To, options.Status}
 		if err := tx.QueryRow(ctx, `SELECT count(*) FROM appointments a WHERE `+filter, args...).Scan(&page.Total); err != nil {
 			return err
 		}
@@ -354,7 +355,7 @@ func (service *Service) AppointmentsPage(ctx context.Context, userID, workspaceI
 			a.service_name,a.duration_minutes,a.buffer_before_minutes,a.buffer_after_minutes,a.price_minor,a.currency,a.service_address,
 			a.customer_name,a.customer_email,a.customer_phone,a.notification_consent,a.time_zone,a.source,a.version,a.idempotency_key,a.created_at,st.name
 			FROM appointments a LEFT JOIN staff st ON st.workspace_id=a.workspace_id AND st.id=a.staff_id
-			WHERE `+filter+` AND ($6::timestamptz IS NULL OR (a.starts_at,a.id)<($6,$7)) ORDER BY a.starts_at DESC,a.id DESC LIMIT $8`, args...)
+			WHERE `+filter+` AND ($7::timestamptz IS NULL OR (a.starts_at,a.id)<($7,$8)) ORDER BY a.starts_at DESC,a.id DESC LIMIT $9`, args...)
 		if err != nil {
 			return fmt.Errorf("list workspace appointments: %w", err)
 		}

@@ -1,7 +1,7 @@
 "use client";
 import { changeWorkspaceBookingAction } from "@/app/dashboard/booking-actions";
 import { Confirm, Grid, Heading, Status } from "@/components/platform/shared";
-import { SearchField } from "@/components/platform/search-field";
+import { ListControls, ListPagination } from "./list-controls";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,14 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type {
   BookingView,
   Catalog,
@@ -133,66 +125,31 @@ async function loadAppointmentSlots(
 
 function OwnerAppointmentTable({
   data,
-  query,
-  status,
-  onQueryChange,
-  onStatusChange,
   onSelect,
 }: {
   data: Data;
-  query: string;
-  status: string;
-  onQueryChange: (value: string) => void;
-  onStatusChange: (value: string) => void;
   onSelect: (bookingId: string) => void;
 }) {
   return (
     <Grid
-      toolbar={
-        <>
-          <SearchField
-            label="Filter this page"
-            value={query}
-            onChange={onQueryChange}
-          />
-          <Select
-            value={status}
-            onValueChange={(value) => onStatusChange(value || "all")}
-          >
-            <SelectTrigger aria-label="Appointment status on this page">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {["all", "confirmed", "completed", "cancelled", "no_show"].map(
-                  (value) => (
-                    <SelectItem key={value} value={value}>
-                      {value === "all"
-                        ? "All statuses"
-                        : value.replace("_", " ")}
-                    </SelectItem>
-                  ),
-                )}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </>
-      }
+      externalSearch
+      footer={<ListPagination data={data} section="Appointments" />}
+      toolbar={<ListControls data={data} section="Appointments" />}
       empty={
-        data.bookings.length ? "No appointments found" : "No appointments yet"
+        data.bookings.length ||
+        data.pagination?.search ||
+        data.pagination?.from ||
+        data.pagination?.to ||
+        data.pagination?.status
+          ? "No appointments found"
+          : "No appointments yet"
       }
       emptyDescription={
         data.bookings.length
           ? "Try another search or status."
           : "Appointments will appear here when they’re booked."
       }
-      rows={data.bookings.filter(
-        (booking) =>
-          (status === "all" || booking.status === status) &&
-          `${booking.customerName} ${booking.customerEmail} ${booking.serviceName}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      )}
+      rows={data.bookings}
       columns={[
         {
           label: "Customer",
@@ -407,8 +364,6 @@ export function OwnerAppointments({
   catalog: Catalog;
 }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
   const [selected, setSelected] = useState("");
   const [creating, setCreating] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
@@ -450,14 +405,7 @@ export function OwnerAppointments({
           </Button>
         }
       />
-      <OwnerAppointmentTable
-        data={data}
-        query={query}
-        status={status}
-        onQueryChange={setQuery}
-        onStatusChange={setStatus}
-        onSelect={setSelected}
-      />
+      <OwnerAppointmentTable data={data} onSelect={setSelected} />
       <AppointmentDialogs
         data={data}
         catalog={catalog}

@@ -17,7 +17,7 @@ func registerOwnerAppointmentReads(service *Service, api huma.API) {
 
 	huma.Register(api, huma.Operation{OperationID: "workspace-appointments-list", Method: http.MethodGet,
 		Path: "/v1/workspaces/{workspaceId}/appointments", Summary: "List workspace appointments", Tags: tags},
-		func(ctx context.Context, in *listPath) (*struct{ Body Page[Appointment] }, error) {
+		func(ctx context.Context, in *appointmentListPath) (*struct{ Body Page[Appointment] }, error) {
 			principal, err := auth.RequireVerifiedUser(ctx)
 			if err != nil {
 				return nil, httpx.Wrap(err)

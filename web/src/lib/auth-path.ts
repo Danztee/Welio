@@ -27,6 +27,7 @@ export function safeReturnPath(value: string | null) {
     "tab",
     "cursor",
     "search",
+    "status",
     "from",
     "to",
     "new",

@@ -126,6 +126,7 @@ func TestListsAndOverviewIncludeRecordsBeyondOneThousand(t *testing.T) {
 	if _, err := service.AppointmentsPage(ctx, f.userID, f.workspaceID, ListOptions{Cursor: "invalid"}); err == nil {
 		t.Fatal("accepted invalid cursor")
 	}
+	assertAppointmentStatusPagination(t, service, ctx, f)
 }
 
 func countedPageForSchema(t *testing.T, s *Service, ctx context.Context, f bookingFixture) Page[Customer] {
@@ -165,5 +166,65 @@ func assertCustomerHistoryHTTPPagination(t *testing.T, service *Service, fixture
 	second := load(first.NextCursor)
 	if len(second.Appointments) != 1 || second.Appointments[0].ID == first.Appointments[0].ID {
 		t.Fatal("customer history did not honor its cursor")
+	}
+}
+
+func assertAppointmentStatusPagination(t *testing.T, service *Service, ctx context.Context, f bookingFixture) {
+	t.Helper()
+	for _, status := range []string{"completed", "cancelled", "no_show"} {
+		_, err := service.DB.Pool.Exec(ctx, `UPDATE appointments SET status=$2 WHERE id IN (SELECT id FROM appointments WHERE workspace_id=$1 AND status='confirmed' ORDER BY starts_at ASC LIMIT 2)`, f.workspaceID, status)
+		if err != nil {
+			t.Fatal(err)
+		}
+		first, err := service.AppointmentsPage(ctx, f.userID, f.workspaceID, ListOptions{Status: status, Limit: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if first.Total != 2 || len(first.Items) != 1 || first.Items[0].Status != status || first.NextCursor == "" {
+			t.Fatalf("status %s first page: %+v", status, first)
+		}
+		second, err := service.AppointmentsPage(ctx, f.userID, f.workspaceID, ListOptions{Status: status, Limit: 1, Cursor: first.NextCursor})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if second.Total != 2 || len(second.Items) != 1 || second.Items[0].Status != status || second.Items[0].ID == first.Items[0].ID || second.NextCursor != "" {
+			t.Fatalf("status %s second page: %+v", status, second)
+		}
+	}
+	confirmed, err := service.AppointmentsPage(ctx, f.userID, f.workspaceID, ListOptions{Status: "confirmed"})
+	if err != nil || confirmed.Total != 999 {
+		t.Fatalf("confirmed total=%d err=%v", confirmed.Total, err)
+	}
+	if _, err := service.AppointmentsPage(ctx, f.userID, f.workspaceID, ListOptions{Status: "unknown"}); err == nil {
+		t.Fatal("accepted invalid appointment status")
+	}
+	router := chi.NewRouter()
+	api := humachi.New(router, huma.DefaultConfig("test", "test"))
+	RegisterOwnerAPI(service, api)
+	for _, status := range []string{"", "completed", "cancelled", "no_show", "confirmed", "unknown"} {
+		request := httptest.NewRequest(http.MethodGet, "/v1/workspaces/"+f.workspaceID.String()+"/appointments?status="+status, nil)
+		request = request.WithContext(auth.WithPrincipal(request.Context(), &auth.Principal{UserID: f.userID, EmailVerified: true}))
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, request)
+		if status == "unknown" {
+			if response.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("invalid status HTTP=%d", response.Code)
+			}
+			continue
+		}
+		if response.Code != http.StatusOK {
+			t.Fatalf("status %q HTTP=%d: %s", status, response.Code, response.Body.String())
+		}
+		var page Page[Appointment]
+		if err := json.Unmarshal(response.Body.Bytes(), &page); err != nil {
+			t.Fatal(err)
+		}
+		if status != "" {
+			for _, item := range page.Items {
+				if item.Status != status {
+					t.Fatalf("HTTP status filter %s returned %s", status, item.Status)
+				}
+			}
+		}
 	}
 }
