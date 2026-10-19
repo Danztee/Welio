@@ -20,9 +20,10 @@ func Register(d *deps.Deps, api huma.API, router chi.Router) {
 }
 
 func RegisterWorkers(d *deps.Deps, workers *river.Workers) {
+	river.AddWorker(workers, &retentionWorker{database: d.DB})
 	river.AddWorker(workers, &systemEmailWorker{sender: d.Mailer, database: d.DB})
 }
 
-func Periodic(*deps.Deps) []*river.PeriodicJob { return nil }
+func Periodic(*deps.Deps) []*river.PeriodicJob { return retentionJobs() }
 
 func Background(context.Context, *deps.Deps) {}

@@ -12,31 +12,23 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/danztee/welio/internal/db"
-	"github.com/danztee/welio/internal/jobs"
+	jobargs "github.com/danztee/welio/internal/jobs"
 	"github.com/danztee/welio/internal/mailer"
 )
 
 const (
-	EmailQueue        = jobs.QueueEmail
-	bookingEmailKind  = jobs.KindBookingEmail
 	reminderLeadTime  = 24 * time.Hour
 	reminderBatchSize = 100
 )
 
-// BookingEmailArgs remains an area-level alias while the durable River payload lives
-// in the shared jobs package, matching OpenDesk's job-argument ownership.
-type BookingEmailArgs = jobs.BookingEmailArgs
-
-type reminderSweepArgs = jobs.BookingReminderSweepArgs
-
 type bookingEmailWorker struct {
-	river.WorkerDefaults[BookingEmailArgs]
+	river.WorkerDefaults[jobargs.BookingEmailArgs]
 	service    *Service
 	serviceFor func() *Service
 	mailer     mailer.Sender
 }
 
-func (w *bookingEmailWorker) Work(ctx context.Context, job *river.Job[BookingEmailArgs]) error {
+func (w *bookingEmailWorker) Work(ctx context.Context, job *river.Job[jobargs.BookingEmailArgs]) error {
 	service := w.service
 	if w.serviceFor != nil {
 		service = w.serviceFor()
@@ -73,12 +65,12 @@ func (w *bookingEmailWorker) Work(ctx context.Context, job *river.Job[BookingEma
 }
 
 type reminderSweepWorker struct {
-	river.WorkerDefaults[reminderSweepArgs]
+	river.WorkerDefaults[jobargs.BookingReminderSweepArgs]
 	service    *Service
 	serviceFor func() *Service
 }
 
-func (w *reminderSweepWorker) Work(ctx context.Context, _ *river.Job[reminderSweepArgs]) error {
+func (w *reminderSweepWorker) Work(ctx context.Context, _ *river.Job[jobargs.BookingReminderSweepArgs]) error {
 	service := w.service
 	if w.serviceFor != nil {
 		service = w.serviceFor()
@@ -104,8 +96,8 @@ func RegisterWorkersForService(workers *river.Workers, service *Service, sender 
 func PeriodicJobs() []*river.PeriodicJob {
 	return []*river.PeriodicJob{
 		river.NewPeriodicJob(river.PeriodicInterval(time.Minute), func() (river.JobArgs, *river.InsertOpts) {
-			return reminderSweepArgs{}, &river.InsertOpts{
-				Queue:       EmailQueue,
+			return jobargs.BookingReminderSweepArgs{}, &river.InsertOpts{
+				Queue:       jobargs.QueueEmail,
 				MaxAttempts: 1,
 				UniqueOpts:  river.UniqueOpts{ByArgs: true, ByPeriod: time.Minute},
 			}
@@ -113,7 +105,7 @@ func PeriodicJobs() []*river.PeriodicJob {
 	}
 }
 
-func (service *Service) enqueueEmail(ctx context.Context, tx pgx.Tx, args BookingEmailArgs) error {
+func (service *Service) enqueueEmail(ctx context.Context, tx pgx.Tx, args jobargs.BookingEmailArgs) error {
 	if service.Jobs == nil {
 		return errors.New("booking email job client is not configured")
 	}
@@ -222,7 +214,7 @@ func (service *Service) EnqueueDueReminders(ctx context.Context) (int, error) {
 			body := fmt.Sprintf("Your upcoming appointment\n\n%s\n%s (%s)\n%s %s\nAppointment location: %s\n\nChanges and cancellations require %d hours’ notice. Use the private management link in your original confirmation email to manage this booking.\n\nContact: %s\nReference: %s",
 				appointment.ServiceName, when, w.TimeZone, w.Currency, formatMinor(int(appointment.PriceMinor)), appointment.ServiceAddress.String,
 				w.CancelHours, firstNonempty(value(w.ContactEmail), w.Phone), appointment.ID)
-			args := BookingEmailArgs{
+			args := jobargs.BookingEmailArgs{
 				EventKey:    fmt.Sprintf("%s:reminder:%d:%d", appointment.ID, appointment.Version, generation),
 				WorkspaceID: candidate.WorkspaceID, AppointmentID: appointment.ID,
 				AppointmentVersion: appointment.Version, ReminderGeneration: generation,
@@ -253,7 +245,7 @@ func reminderApplies(status string, consent bool, createdAt, startsAt time.Time,
 	return queuedVersion != version && sentVersion != version
 }
 
-func (service *Service) reminderStillEligible(ctx context.Context, args BookingEmailArgs) (bool, error) {
+func (service *Service) reminderStillEligible(ctx context.Context, args jobargs.BookingEmailArgs) (bool, error) {
 	var status string
 	var consent, enabled bool
 	var version, queuedVersion, generation int

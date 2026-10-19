@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/danztee/welio/internal/bookings"
 	"github.com/google/uuid"
+
+	"github.com/danztee/welio/internal/bookings"
 )
 
 // SharedBookingService adapts the canonical booking module to the receptionist

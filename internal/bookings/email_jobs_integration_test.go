@@ -15,6 +15,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 
 	"github.com/danztee/welio/internal/dbtest"
+	jobargs "github.com/danztee/welio/internal/jobs"
 	"github.com/danztee/welio/internal/mailer"
 )
 
@@ -145,13 +146,13 @@ func waitForEmailCount(t *testing.T, sender *recordingEmailSender, count int) []
 	return nil
 }
 
-func readBookingEmailJob(t *testing.T, ctx context.Context, pool *pgxpool.Pool, eventKey string) BookingEmailArgs {
+func readBookingEmailJob(t *testing.T, ctx context.Context, pool *pgxpool.Pool, eventKey string) jobargs.BookingEmailArgs {
 	t.Helper()
 	var raw []byte
-	if err := pool.QueryRow(ctx, `SELECT args FROM river_job WHERE kind=$1 AND args->>'event_key'=$2`, bookingEmailKind, eventKey).Scan(&raw); err != nil {
+	if err := pool.QueryRow(ctx, `SELECT args FROM river_job WHERE kind=$1 AND args->>'event_key'=$2`, jobargs.KindBookingEmail, eventKey).Scan(&raw); err != nil {
 		t.Fatalf("read River booking email job %q: %v", eventKey, err)
 	}
-	var args BookingEmailArgs
+	var args jobargs.BookingEmailArgs
 	if err := json.Unmarshal(raw, &args); err != nil {
 		t.Fatalf("decode River booking email job %q: %v", eventKey, err)
 	}

@@ -12,10 +12,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
+
 	"github.com/danztee/welio/internal/bookings"
 	"github.com/danztee/welio/internal/core/auth"
 	"github.com/danztee/welio/internal/httpx"
-	"github.com/google/uuid"
 )
 
 // RegisterOwnerAPI registers the workspace owner settings and private preview
@@ -216,7 +217,7 @@ func (service *Service) ownerBusiness(ctx context.Context, workspaceID uuid.UUID
 	if !ok {
 		return nil, Business{}, ErrUnavailable
 	}
-	business, err := repository.BusinessForWorkspace(ctx, workspaceID)
+	business, err := repository.BusinessForWorkspace(ctx, principal.UserID, workspaceID)
 	return principal, business, err
 }
 

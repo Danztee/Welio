@@ -199,15 +199,17 @@ type Appointment struct {
 }
 
 type Customer struct {
-	ID          uuid.UUID `json:"id"`
-	WorkspaceID uuid.UUID `json:"workspace_id"`
-	Name        string    `json:"name"`
-	Email       *string   `json:"email"`
-	Phone       *string   `json:"phone"`
-	CreatedAt   time.Time `json:"created_at"`
+	AppointmentCount int       `json:"appointment_count"`
+	ID               uuid.UUID `json:"id"`
+	WorkspaceID      uuid.UUID `json:"workspace_id"`
+	Name             string    `json:"name"`
+	Email            *string   `json:"email"`
+	Phone            *string   `json:"phone"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 type CustomerDetail struct {
+	NextCursor string `json:"next_cursor"`
 	Customer
 	Appointments []Appointment `json:"appointments"`
 }

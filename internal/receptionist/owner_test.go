@@ -13,10 +13,11 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
-	"github.com/danztee/welio/internal/core/auth"
-	"github.com/danztee/welio/internal/httpx"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"github.com/danztee/welio/internal/core/auth"
+	"github.com/danztee/welio/internal/httpx"
 )
 
 func TestOwnerSettingsRequireWorkspaceOwnerAndPersistSettings(t *testing.T) {

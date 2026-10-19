@@ -37,7 +37,7 @@ func (input staffInput) serviceInput() StaffInput {
 type staffOutput struct {
 	ID          uuid.UUID     `json:"id"`
 	WorkspaceID uuid.UUID     `json:"workspace_id"`
-	UserID      *uuid.UUID    `json:"user_id"`
+	UserID      *uuid.UUID    `json:"user_id" nullable:"true"`
 	Name        string        `json:"name"`
 	Email       string        `json:"email"`
 	JobTitle    string        `json:"job_title"`

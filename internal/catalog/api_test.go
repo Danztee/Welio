@@ -2,8 +2,12 @@ package catalog
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 )
 
 func TestSnapshotResponseUsesRESTScheduleNamesWithoutChangingStoredShape(t *testing.T) {
@@ -28,5 +32,20 @@ func TestSnapshotResponseUsesRESTScheduleNamesWithoutChangingStoredShape(t *test
 	}
 	if !strings.Contains(string(storedJSON), `"breakStart":"12:00"`) {
 		t.Fatalf("stored schedule representation changed: %s", storedJSON)
+	}
+}
+
+func TestRESTSnapshotJSONMatchesItsPublishedSchema(t *testing.T) {
+	snapshot := snapshotResponse(&Snapshot{Staff: []StaffMember{{ID: uuid.New(), WorkspaceID: uuid.New(), Schedule: Schedule{Start: "09:00", End: "17:00", Days: []int{1}}}}})
+	raw, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var value any
+	if err := json.Unmarshal(raw, &value); err != nil {
+		t.Fatal(err)
+	}
+	if errs := huma.NewModelValidator().Validate(reflect.TypeOf(snapshot), value); len(errs) > 0 {
+		t.Fatalf("REST JSON violates OpenAPI schema: %v", errs)
 	}
 }

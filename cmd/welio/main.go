@@ -5,8 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/signal"
 	"strings"
@@ -18,6 +21,7 @@ import (
 	"github.com/danztee/welio/internal/app"
 	"github.com/danztee/welio/internal/config"
 	"github.com/danztee/welio/internal/db"
+	"github.com/danztee/welio/internal/deps"
 )
 
 var version = "dev"
@@ -29,7 +33,7 @@ func main() {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(serveCommand(), migrateCommand(), healthcheckCommand(), &cobra.Command{
+	root.AddCommand(openAPICommand(), serveCommand(), migrateCommand(), healthcheckCommand(), &cobra.Command{
 		Use: "version", Run: func(*cobra.Command, []string) { fmt.Println(version) },
 	})
 	if err := root.Execute(); err != nil {
@@ -52,6 +56,9 @@ func serveCommand() *cobra.Command {
 				return fmt.Errorf("read role flag: %w", err)
 			}
 			if role != "" {
+				if role != "all" && role != "api" && role != "worker" {
+					return errors.New("role must be all, api, or worker")
+				}
 				cfg.Role = role
 			}
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -130,4 +137,18 @@ func healthcheckCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// openAPICommand exports the same route schema as the running API without DB access.
+func openAPICommand() *cobra.Command {
+	return &cobra.Command{Use: "openapi", Short: "Write the HTTP OpenAPI contract to stdout", RunE: func(cmd *cobra.Command, _ []string) error {
+		router := app.Router(&deps.Deps{Cfg: config.Config{PublicURL: "https://app.welio.example", APIServerURL: "https://api.welio.example"}, Log: slog.New(slog.NewTextHandler(io.Discard, nil))})
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/openapi.json", nil))
+		if response.Code != http.StatusOK {
+			return fmt.Errorf("export OpenAPI: HTTP %d", response.Code)
+		}
+		_, err := cmd.OutOrStdout().Write(response.Body.Bytes())
+		return err
+	}}
 }

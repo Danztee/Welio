@@ -251,6 +251,7 @@ type rateWindow struct {
 }
 
 type Limiter struct {
+	shared  func(string, int, time.Duration) bool
 	mu      sync.Mutex
 	entries map[string]rateWindow
 	now     func() time.Time
@@ -263,6 +264,9 @@ func NewLimiter() *Limiter {
 func (l *Limiter) Allow(key string, limit int, window time.Duration) bool {
 	if limit <= 0 || window <= 0 {
 		return false
+	}
+	if l.shared != nil {
+		return l.shared(key, limit, window)
 	}
 	now := l.now()
 	l.mu.Lock()

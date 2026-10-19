@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/danztee/welio/internal/httpx"
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
+
+	"github.com/danztee/welio/internal/httpx"
 )
 
 type memoryOAuthKeys struct {

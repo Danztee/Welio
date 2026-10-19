@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/danztee/welio/internal/httpx"
 	"github.com/google/uuid"
+
+	"github.com/danztee/welio/internal/httpx"
 )
 
 type Service struct {

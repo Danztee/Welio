@@ -24,10 +24,30 @@ type area struct {
 }
 
 var areas = []area{
-	{core.Register, core.RegisterWorkers, core.Periodic, core.Background},
-	{catalog.Register, catalog.RegisterWorkers, catalog.Periodic, catalog.Background},
-	{bookings.Register, bookings.RegisterWorkers, bookings.Periodic, bookings.Background},
-	{receptionist.Register, receptionist.RegisterWorkers, receptionist.Periodic, receptionist.Background},
+	{
+		register:        core.Register,
+		registerWorkers: core.RegisterWorkers,
+		periodic:        core.Periodic,
+		background:      core.Background,
+	},
+	{
+		register:        catalog.Register,
+		registerWorkers: catalog.RegisterWorkers,
+		periodic:        catalog.Periodic,
+		background:      catalog.Background,
+	},
+	{
+		register:        bookings.Register,
+		registerWorkers: bookings.RegisterWorkers,
+		periodic:        bookings.Periodic,
+		background:      bookings.Background,
+	},
+	{
+		register:        receptionist.Register,
+		registerWorkers: receptionist.RegisterWorkers,
+		periodic:        receptionist.Periodic,
+		background:      receptionist.Background,
+	},
 }
 
 func registerAreas(d *deps.Deps, api huma.API, router chi.Router) {

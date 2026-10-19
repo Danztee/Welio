@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/danztee/welio/internal/db"
+	jobargs "github.com/danztee/welio/internal/jobs"
 )
 
 func (service *Service) GetPolicy(ctx context.Context, userID, workspaceID uuid.UUID) (*BookingPolicy, error) {
@@ -225,7 +226,7 @@ func (service *Service) RetryNotification(ctx context.Context, userID, workspace
 		}
 		var state string
 		err := tx.QueryRow(ctx, `SELECT state::text FROM river_job
-			WHERE id=$1 AND kind=$2 AND args->>'workspace_id'=$3 FOR UPDATE`, jobID, bookingEmailKind, workspaceID.String()).Scan(&state)
+			WHERE id=$1 AND kind=$2 AND args->>'workspace_id'=$3 FOR UPDATE`, jobID, jobargs.KindBookingEmail, workspaceID.String()).Scan(&state)
 		if db.IsNotFound(err) {
 			return ErrNotFound
 		}

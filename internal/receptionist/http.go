@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/danztee/welio/internal/bookings"
-	"github.com/danztee/welio/internal/httpx"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"github.com/danztee/welio/internal/bookings"
+	"github.com/danztee/welio/internal/httpx"
 )
 
 const chatCookiePrefix = "welio-chat-"

@@ -11,8 +11,8 @@ import (
 )
 
 type authOutput struct {
-	SetCookie    []string `header:"Set-Cookie,omitempty"`
-	CacheControl string   `header:"Cache-Control,omitempty"`
+	SetCookie    []string `header:"Set-Cookie"`
+	CacheControl string   `header:"Cache-Control"`
 	Body         AuthResult
 }
 
@@ -68,11 +68,11 @@ func RegisterAPI(service *Service, api huma.API) {
 	huma.Register(api, huma.Operation{OperationID: "auth-logout", Method: http.MethodPost, Path: "/v1/auth/logout",
 		Summary: "Sign out of the current session", Tags: tags, DefaultStatus: http.StatusNoContent},
 		func(ctx context.Context, _ *struct{}) (*struct {
-			SetCookie []string `header:"Set-Cookie,omitempty"`
+			SetCookie []string `header:"Set-Cookie"`
 		}, error) {
 			cookies, err := service.Logout(ctx, FromContext(ctx), httpx.RequestMetaFrom(ctx).RefreshCookie)
 			return &struct {
-				SetCookie []string `header:"Set-Cookie,omitempty"`
+				SetCookie []string `header:"Set-Cookie"`
 			}{SetCookie: cookies}, httpx.Wrap(err)
 		})
 

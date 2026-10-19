@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/danztee/welio/internal/bookings"
 	"github.com/go-chi/chi/v5"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/danztee/welio/internal/bookings"
 )
 
 type fakeMCPTokenVerifier struct {

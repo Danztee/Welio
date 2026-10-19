@@ -18,6 +18,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 
 	"github.com/danztee/welio/internal/dbtest"
+	jobargs "github.com/danztee/welio/internal/jobs"
 )
 
 func TestPublicAndOwnerBookingFlows(t *testing.T) {
@@ -83,24 +84,24 @@ func TestPublicAndOwnerBookingFlows(t *testing.T) {
 		t.Fatalf("conflicting Create() error = %v, want ErrConflict", err)
 	}
 
-	appointments, err := service.ListAppointments(ctx, fixture.userID, fixture.workspaceID)
-	if err != nil || len(appointments) != 1 || appointments[0].ID != createdID {
+	appointments, err := service.AppointmentsPage(ctx, fixture.userID, fixture.workspaceID, ListOptions{})
+	if err != nil || len(appointments.Items) != 1 || appointments.Items[0].ID != createdID {
 		t.Fatalf("ListAppointments() = %+v, %v; want created appointment", appointments, err)
 	}
-	customers, err := service.ListCustomers(ctx, fixture.userID, fixture.workspaceID)
-	if err != nil || len(customers) != 1 || customers[0].Email == nil || *customers[0].Email != "jane@example.com" {
+	customers, err := service.CustomersPage(ctx, fixture.userID, fixture.workspaceID, ListOptions{})
+	if err != nil || len(customers.Items) != 1 || customers.Items[0].Email == nil || *customers.Items[0].Email != "jane@example.com" {
 		t.Fatalf("ListCustomers() = %+v, %v; want one customer", customers, err)
 	}
-	detail, err := service.Customer(ctx, fixture.userID, fixture.workspaceID, customers[0].ID)
+	detail, err := service.Customer(ctx, fixture.userID, fixture.workspaceID, customers.Items[0].ID, ListOptions{})
 	if err != nil || len(detail.Appointments) != 1 || detail.Appointments[0].ID != createdID {
 		t.Fatalf("Customer() = %+v, %v; want appointment history", detail, err)
 	}
 
 	var queuedArgs []byte
-	if err := database.Pool.QueryRow(ctx, `SELECT args FROM river_job WHERE kind=$1 AND args->>'event_key'=$2`, bookingEmailKind, createdID.String()+":confirmed:0").Scan(&queuedArgs); err != nil {
+	if err := database.Pool.QueryRow(ctx, `SELECT args FROM river_job WHERE kind=$1 AND args->>'event_key'=$2`, jobargs.KindBookingEmail, createdID.String()+":confirmed:0").Scan(&queuedArgs); err != nil {
 		t.Fatalf("read confirmation job: %v", err)
 	}
-	var confirmation BookingEmailArgs
+	var confirmation jobargs.BookingEmailArgs
 	if err := json.Unmarshal(queuedArgs, &confirmation); err != nil {
 		t.Fatalf("decode confirmation job: %v", err)
 	}
@@ -136,7 +137,7 @@ func TestPublicAndOwnerBookingFlows(t *testing.T) {
 		t.Fatalf("insert outsider: %v", err)
 	}
 	t.Cleanup(func() { _, _ = database.Pool.Exec(context.Background(), `DELETE FROM users WHERE id=$1`, outsiderID) })
-	if _, err := service.ListAppointments(ctx, outsiderID, fixture.workspaceID); !errorsIs(err, ErrNotFound) {
+	if _, err := service.AppointmentsPage(ctx, outsiderID, fixture.workspaceID, ListOptions{}); !errorsIs(err, ErrNotFound) {
 		t.Fatalf("cross-workspace appointment access error = %v, want ErrNotFound", err)
 	}
 	staffUserID := uuid.New()
@@ -147,7 +148,7 @@ func TestPublicAndOwnerBookingFlows(t *testing.T) {
 		t.Fatalf("insert staff membership: %v", err)
 	}
 	t.Cleanup(func() { _, _ = database.Pool.Exec(context.Background(), `DELETE FROM users WHERE id=$1`, staffUserID) })
-	if _, err := service.ListAppointments(ctx, staffUserID, fixture.workspaceID); !errors.Is(err, ErrForbidden) {
+	if _, err := service.AppointmentsPage(ctx, staffUserID, fixture.workspaceID, ListOptions{}); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("staff appointment access error = %v, want ErrForbidden", err)
 	}
 

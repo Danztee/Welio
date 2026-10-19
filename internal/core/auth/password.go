@@ -71,7 +71,7 @@ func loadBreachedPasswords() {
 	}
 }
 
-// HashPassword returns the OpenDesk-compatible PHC encoding of an Argon2id hash.
+// HashPassword returns the PHC encoding of an Argon2id password hash.
 func HashPassword(password string) (string, error) {
 	if err := CheckPassword(password); err != nil {
 		return "", err

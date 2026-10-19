@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/danztee/welio/internal/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+
+	"github.com/danztee/welio/internal/db"
 )
 
 type PostgresRepository struct {
@@ -58,7 +59,7 @@ func (repository *PostgresRepository) Business(ctx context.Context, slug string)
 	return business, nil
 }
 
-func (repository *PostgresRepository) BusinessForWorkspace(ctx context.Context, workspaceID uuid.UUID) (Business, error) {
+func (repository *PostgresRepository) BusinessForWorkspace(ctx context.Context, userID, workspaceID uuid.UUID) (Business, error) {
 	if repository == nil || repository.DB == nil {
 		return Business{}, errors.New("receptionist repository is not configured")
 	}
@@ -67,7 +68,7 @@ func (repository *PostgresRepository) BusinessForWorkspace(ctx context.Context, 
 	err := repository.DB.Pool.QueryRow(ctx, `SELECT id::text, slug, name, currency, time_zone,
 		booking_location, coalesce(business_address, ''), coalesce(contact_email, ''), phone,
 		cancel_hours, is_published, receptionist_settings
-		FROM workspaces WHERE id = $1`, workspaceID).Scan(
+		FROM workspaces WHERE id = $1 AND EXISTS (SELECT 1 FROM memberships m WHERE m.workspace_id = $1 AND m.user_id = $2 AND m.role = 'owner')`, workspaceID, userID).Scan(
 		&business.ID, &business.Slug, &business.Name, &business.Currency, &business.TimeZone,
 		&business.BookingLocation, &business.BusinessAddress, &business.ContactEmail, &business.Phone,
 		&business.CancelHours, &business.Published, &rawSettings,

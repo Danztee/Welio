@@ -10,14 +10,12 @@ import (
 	"github.com/danztee/welio/internal/jobs"
 )
 
-type retentionSweepArgs = jobs.ReceptionistRetentionSweepArgs
-
 type retentionSweepWorker struct {
-	river.WorkerDefaults[retentionSweepArgs]
+	river.WorkerDefaults[jobs.ReceptionistRetentionSweepArgs]
 	service *Service
 }
 
-func (worker *retentionSweepWorker) Work(ctx context.Context, _ *river.Job[retentionSweepArgs]) error {
+func (worker *retentionSweepWorker) Work(ctx context.Context, _ *river.Job[jobs.ReceptionistRetentionSweepArgs]) error {
 	now := worker.service.now()
 	if err := worker.service.Repository.PurgeExpiredProposals(ctx, now); err != nil {
 		return fmt.Errorf("purge expired booking proposals: %w", err)
@@ -38,8 +36,8 @@ func RegisterWorkersForService(workers *river.Workers, service *Service) {
 func PeriodicJobs() []*river.PeriodicJob {
 	return []*river.PeriodicJob{
 		river.NewPeriodicJob(river.PeriodicInterval(15*time.Minute), func() (river.JobArgs, *river.InsertOpts) {
-			opts := retentionSweepArgs{}.InsertOpts()
-			return retentionSweepArgs{}, &opts
+			opts := jobs.ReceptionistRetentionSweepArgs{}.InsertOpts()
+			return jobs.ReceptionistRetentionSweepArgs{}, &opts
 		}, &river.PeriodicJobOpts{RunOnStart: true}),
 	}
 }

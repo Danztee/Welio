@@ -12,12 +12,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+
 	"github.com/danztee/welio/internal/config"
 	"github.com/danztee/welio/internal/db"
 	"github.com/danztee/welio/internal/dbtest"
 	"github.com/danztee/welio/internal/receptionist"
-	"github.com/google/uuid"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestAppRouterMCPBooksThroughPostgresAndSharedBookingService(t *testing.T) {

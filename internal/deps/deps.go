@@ -5,12 +5,13 @@ import (
 	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	"github.com/jackc/pgx/v5"
+	"github.com/riverqueue/river"
+
 	"github.com/danztee/welio/internal/config"
 	"github.com/danztee/welio/internal/db"
 	"github.com/danztee/welio/internal/httpx"
 	"github.com/danztee/welio/internal/mailer"
-	"github.com/jackc/pgx/v5"
-	"github.com/riverqueue/river"
 )
 
 type Deps struct {

@@ -15,6 +15,7 @@ import (
 
 	"github.com/danztee/welio/internal/db"
 	"github.com/danztee/welio/internal/dbtest"
+	jobargs "github.com/danztee/welio/internal/jobs"
 )
 
 func TestBookingPoliciesPublicationAndTimeOff(t *testing.T) {
@@ -162,7 +163,7 @@ func TestRetryNotificationRequiresOwnedDiscardedBookingJob(t *testing.T) {
 	}
 	service.Jobs = jobs
 
-	args := BookingEmailArgs{EventKey: "failed-email-" + uuid.NewString(), WorkspaceID: fixture.workspaceID,
+	args := jobargs.BookingEmailArgs{EventKey: "failed-email-" + uuid.NewString(), WorkspaceID: fixture.workspaceID,
 		AppointmentID: uuid.New(), AppointmentVersion: 0, EventType: "confirmed", To: "customer@example.test",
 		Subject: "Booking confirmed", Text: "Your appointment is confirmed"}
 	var jobID int64

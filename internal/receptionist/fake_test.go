@@ -46,7 +46,7 @@ func (repository *fakeRepository) Business(_ context.Context, slug string) (Busi
 	return repository.business, nil
 }
 
-func (repository *fakeRepository) BusinessForWorkspace(_ context.Context, workspaceID uuid.UUID) (Business, error) {
+func (repository *fakeRepository) BusinessForWorkspace(_ context.Context, _ uuid.UUID, workspaceID uuid.UUID) (Business, error) {
 	if workspaceID.String() != repository.business.ID {
 		return Business{}, ErrNotFound
 	}

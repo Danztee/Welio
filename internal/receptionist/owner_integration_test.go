@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/danztee/welio/internal/core/auth"
 	"github.com/danztee/welio/internal/core/workspaces"
 	"github.com/danztee/welio/internal/dbtest"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestOwnerSettingsPersistInPostgresForTheSameWorkspace(t *testing.T) {

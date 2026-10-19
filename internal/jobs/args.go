@@ -73,3 +73,11 @@ func (ReceptionistRetentionSweepArgs) InsertOpts() river.InsertOpts {
 		UniqueOpts:  river.UniqueOpts{ByArgs: true, ByPeriod: 15 * time.Minute},
 	}
 }
+
+// CoreRetentionArgs removes expired quota and authentication records.
+type CoreRetentionArgs struct{}
+
+func (CoreRetentionArgs) Kind() string { return "core.retention" }
+func (CoreRetentionArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: QueueMaintenance, MaxAttempts: 3, UniqueOpts: river.UniqueOpts{ByArgs: true, ByPeriod: 15 * time.Minute}}
+}

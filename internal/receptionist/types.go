@@ -224,7 +224,7 @@ type Repository interface {
 // OwnerSettingsRepository loads an unlisted workspace for owner-side setup and
 // persists receptionist preferences independently of chat session state.
 type OwnerSettingsRepository interface {
-	BusinessForWorkspace(context.Context, uuid.UUID) (Business, error)
+	BusinessForWorkspace(context.Context, uuid.UUID, uuid.UUID) (Business, error)
 	SaveSettings(context.Context, uuid.UUID, uuid.UUID, Settings) error
 }
 

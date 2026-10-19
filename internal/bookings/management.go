@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/danztee/welio/internal/db"
+	jobargs "github.com/danztee/welio/internal/jobs"
 )
 
 func (service *Service) Booking(ctx context.Context, id uuid.UUID, actor Actor, workspaceID uuid.UUID) (*BookingView, error) {
@@ -316,24 +317,44 @@ func (service *Service) enqueueChangeEmail(ctx context.Context, tx pgx.Tx, w *wo
 	if token != "" && action == "reschedule" {
 		body += fmt.Sprintf("\n\nManage your booking privately:\n%s/booking/%s#%s", service.PublicURL, b.ID, token)
 	}
-	return service.enqueueEmail(ctx, tx, BookingEmailArgs{
+	return service.enqueueEmail(ctx, tx, jobargs.BookingEmailArgs{
 		EventKey: fmt.Sprintf("%s:%s:%d", b.ID, kind, version), WorkspaceID: w.ID,
 		AppointmentID: b.ID, AppointmentVersion: version, EventType: kind,
 		To: b.CustomerEmail, Subject: label + " · " + w.Name, Text: body,
 	})
 }
 
-func (service *Service) ListAppointments(ctx context.Context, userID, workspaceID uuid.UUID) ([]Appointment, error) {
+func (service *Service) AppointmentsPage(ctx context.Context, userID, workspaceID uuid.UUID, options ListOptions) (Page[Appointment], error) {
+	page := Page[Appointment]{Items: []Appointment{}}
+	limit, at, id, err := options.bounds()
+	if err != nil {
+		return page, err
+	}
 	var result []Appointment
-	err := service.DB.Tx(ctx, func(tx pgx.Tx) error {
+	err = service.DB.Tx(ctx, func(tx pgx.Tx) error {
 		if _, err := service.workspace(ctx, tx, OwnerScope(userID, workspaceID), false); err != nil {
 			return err
 		}
+		filter := ` a.workspace_id=$1 AND ($2='' OR strpos(lower(a.customer_name || ' ' || a.customer_email || ' ' || a.service_name),lower($2))>0)
+          AND ($3::uuid IS NULL OR a.customer_id=$3) AND ($4='' OR a.starts_at >= (NULLIF($4,'')::date::timestamp AT TIME ZONE a.time_zone))
+          AND ($5='' OR a.starts_at < ((NULLIF($5,'')::date + 1)::timestamp AT TIME ZONE a.time_zone))`
+		if options.ExcludeCancelled {
+			filter += ` AND a.status <> 'cancelled'`
+		}
+		var customerID *uuid.UUID
+		if options.CustomerID != uuid.Nil {
+			customerID = &options.CustomerID
+		}
+		args := []any{workspaceID, options.Search, customerID, options.From, options.To}
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM appointments a WHERE `+filter, args...).Scan(&page.Total); err != nil {
+			return err
+		}
+		args = append(args, at, id, limit+1)
 		rows, err := tx.Query(ctx, `SELECT a.id,a.workspace_id,a.customer_id,a.service_id,a.staff_id,a.status,a.starts_at,a.ends_at,
 			a.service_name,a.duration_minutes,a.buffer_before_minutes,a.buffer_after_minutes,a.price_minor,a.currency,a.service_address,
 			a.customer_name,a.customer_email,a.customer_phone,a.notification_consent,a.time_zone,a.source,a.version,a.idempotency_key,a.created_at,st.name
 			FROM appointments a LEFT JOIN staff st ON st.workspace_id=a.workspace_id AND st.id=a.staff_id
-			WHERE a.workspace_id=$1 ORDER BY a.starts_at DESC LIMIT 1000`, workspaceID)
+			WHERE `+filter+` AND ($6::timestamptz IS NULL OR (a.starts_at,a.id)<($6,$7)) ORDER BY a.starts_at DESC,a.id DESC LIMIT $8`, args...)
 		if err != nil {
 			return fmt.Errorf("list workspace appointments: %w", err)
 		}
@@ -356,23 +377,42 @@ func (service *Service) ListAppointments(ctx context.Context, userID, workspaceI
 		rows.Close()
 		return nil
 	})
-	return result, err
+	if len(result) > limit {
+		last := result[limit-1]
+		page.NextCursor = listCursor(last.StartsAt, last.ID)
+		result = result[:limit]
+	}
+	if result != nil {
+		page.Items = result
+	}
+	return page, err
 }
 
-func (service *Service) ListCustomers(ctx context.Context, userID, workspaceID uuid.UUID) ([]Customer, error) {
+func (service *Service) CustomersPage(ctx context.Context, userID, workspaceID uuid.UUID, options ListOptions) (Page[Customer], error) {
+	page := Page[Customer]{Items: []Customer{}}
+	limit, at, id, err := options.bounds()
+	if err != nil {
+		return page, err
+	}
 	var result []Customer
-	err := service.DB.Tx(ctx, func(tx pgx.Tx) error {
+	err = service.DB.Tx(ctx, func(tx pgx.Tx) error {
 		if _, err := service.workspace(ctx, tx, OwnerScope(userID, workspaceID), false); err != nil {
 			return err
 		}
-		rows, err := tx.Query(ctx, `SELECT id,workspace_id,name,email,phone,created_at FROM customers WHERE workspace_id=$1 ORDER BY created_at DESC LIMIT 1000`, workspaceID)
+		filter := `c.workspace_id=$1 AND ($2='' OR strpos(lower(c.name || ' ' || coalesce(c.email,'') || ' ' || coalesce(c.phone,'')),lower($2))>0)`
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM customers c WHERE `+filter, workspaceID, options.Search).Scan(&page.Total); err != nil {
+			return err
+		}
+		rows, err := tx.Query(ctx, `SELECT c.id,c.workspace_id,c.name,c.email,c.phone,c.created_at,
+          (SELECT count(*) FROM appointments a WHERE a.workspace_id=c.workspace_id AND a.customer_id=c.id)
+          FROM customers c WHERE `+filter+` AND ($3::timestamptz IS NULL OR (c.created_at,c.id)<($3,$4)) ORDER BY c.created_at DESC,c.id DESC LIMIT $5`, workspaceID, options.Search, at, id, limit+1)
 		if err != nil {
 			return fmt.Errorf("list workspace customers: %w", err)
 		}
 		result = make([]Customer, 0)
 		for rows.Next() {
 			var customer Customer
-			if err := rows.Scan(&customer.ID, &customer.WorkspaceID, &customer.Name, &customer.Email, &customer.Phone, &customer.CreatedAt); err != nil {
+			if err := rows.Scan(&customer.ID, &customer.WorkspaceID, &customer.Name, &customer.Email, &customer.Phone, &customer.CreatedAt, &customer.AppointmentCount); err != nil {
 				rows.Close()
 				return fmt.Errorf("scan customer: %w", err)
 			}
@@ -385,48 +425,42 @@ func (service *Service) ListCustomers(ctx context.Context, userID, workspaceID u
 		rows.Close()
 		return nil
 	})
-	return result, err
+	if len(result) > limit {
+		last := result[limit-1]
+		page.NextCursor = listCursor(last.CreatedAt, last.ID)
+		result = result[:limit]
+	}
+	if result != nil {
+		page.Items = result
+	}
+	return page, err
 }
 
-func (service *Service) Customer(ctx context.Context, userID, workspaceID, customerID uuid.UUID) (*CustomerDetail, error) {
-	var result *CustomerDetail
+func (service *Service) Customer(ctx context.Context, userID, workspaceID, customerID uuid.UUID, options ListOptions) (*CustomerDetail, error) {
+	detail := &CustomerDetail{}
 	err := service.DB.Tx(ctx, func(tx pgx.Tx) error {
 		if _, err := service.workspace(ctx, tx, OwnerScope(userID, workspaceID), false); err != nil {
 			return err
 		}
-		detail := &CustomerDetail{}
-		if err := tx.QueryRow(ctx, `SELECT id,workspace_id,name,email,phone,created_at FROM customers WHERE workspace_id=$1 AND id=$2`, workspaceID, customerID).
-			Scan(&detail.ID, &detail.WorkspaceID, &detail.Name, &detail.Email, &detail.Phone, &detail.CreatedAt); db.IsNotFound(err) {
+		err := tx.QueryRow(ctx, `SELECT id,workspace_id,name,email,phone,created_at FROM customers WHERE workspace_id=$1 AND id=$2`, workspaceID, customerID).
+			Scan(&detail.ID, &detail.WorkspaceID, &detail.Name, &detail.Email, &detail.Phone, &detail.CreatedAt)
+		if db.IsNotFound(err) {
 			return ErrNotFound
-		} else if err != nil {
-			return fmt.Errorf("load customer: %w", err)
 		}
-		rows, err := tx.Query(ctx, `SELECT a.id,a.workspace_id,a.customer_id,a.service_id,a.staff_id,a.status,a.starts_at,a.ends_at,
-			a.service_name,a.duration_minutes,a.buffer_before_minutes,a.buffer_after_minutes,a.price_minor,a.currency,a.service_address,
-			a.customer_name,a.customer_email,a.customer_phone,a.notification_consent,a.time_zone,a.source,a.version,a.idempotency_key,a.created_at,coalesce(st.name,'Team member')
-			FROM appointments a LEFT JOIN staff st ON st.workspace_id=a.workspace_id AND st.id=a.staff_id
-			WHERE a.workspace_id=$1 AND a.customer_id=$2 ORDER BY a.starts_at DESC`, workspaceID, customerID)
-		if err != nil {
-			return fmt.Errorf("list customer appointments: %w", err)
-		}
-		detail.Appointments = make([]Appointment, 0)
-		for rows.Next() {
-			var a Appointment
-			if err := rows.Scan(&a.ID, &a.WorkspaceID, &a.CustomerID, &a.ServiceID, &a.StaffID, &a.Status, &a.StartsAt, &a.EndsAt, &a.ServiceName, &a.DurationMinutes, &a.BufferBeforeMinutes, &a.BufferAfterMinutes, &a.PriceMinor, &a.Currency, &a.ServiceAddress, &a.CustomerName, &a.CustomerEmail, &a.CustomerPhone, &a.NotificationConsent, &a.TimeZone, &a.Source, &a.Version, &a.IdempotencyKey, &a.CreatedAt, &a.StaffName); err != nil {
-				rows.Close()
-				return fmt.Errorf("scan customer appointment: %w", err)
-			}
-			detail.Appointments = append(detail.Appointments, a)
-		}
-		if err := rows.Err(); err != nil {
-			rows.Close()
-			return fmt.Errorf("iterate customer appointments: %w", err)
-		}
-		rows.Close()
-		result = detail
-		return nil
+		return err
 	})
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	options.CustomerID = customerID
+	page, err := service.AppointmentsPage(ctx, userID, workspaceID, options)
+	if err != nil {
+		return nil, err
+	}
+	detail.Appointments = page.Items
+	detail.AppointmentCount = page.Total
+	detail.NextCursor = page.NextCursor
+	return detail, nil
 }
 
 func normalizeEmail(value string) string { return strings.ToLower(strings.TrimSpace(value)) }

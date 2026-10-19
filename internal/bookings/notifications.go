@@ -7,11 +7,14 @@ import (
 	"strconv"
 	"time"
 
+	jobargs "github.com/danztee/welio/internal/jobs"
+
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danztee/welio/internal/core/auth"
-	"github.com/danztee/welio/internal/httpx"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+
+	"github.com/danztee/welio/internal/core/auth"
+	"github.com/danztee/welio/internal/httpx"
 )
 
 type Notification struct {
@@ -42,7 +45,7 @@ func (service *Service) ListNotifications(ctx context.Context, userID, workspace
 			attempt, created_at
 			FROM river_job
 			WHERE kind=$1 AND args->>'workspace_id'=$2
-			ORDER BY created_at DESC, id DESC LIMIT 200`, bookingEmailKind, workspaceID.String())
+			ORDER BY created_at DESC, id DESC LIMIT 200`, jobargs.KindBookingEmail, workspaceID.String())
 		if err != nil {
 			return fmt.Errorf("list workspace booking notifications: %w", err)
 		}
