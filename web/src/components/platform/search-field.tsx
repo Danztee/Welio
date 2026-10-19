@@ -3,7 +3,6 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-  InputGroupText,
 } from "@/components/ui/input-group";
 
 export function SearchField({
@@ -16,15 +15,13 @@ export function SearchField({
   onChange: (value: string) => void;
 }) {
   return (
-    <InputGroup className="max-w-xs">
+    <InputGroup className="w-full sm:max-w-xs">
       <InputGroupAddon>
-        <InputGroupText>
-          <SearchIcon aria-hidden="true" />
-          Search
-        </InputGroupText>
+        <SearchIcon aria-hidden="true" />
       </InputGroupAddon>
       <InputGroupInput
         type="search"
+        autoComplete="off"
         aria-label={label}
         placeholder="Search…"
         value={value}

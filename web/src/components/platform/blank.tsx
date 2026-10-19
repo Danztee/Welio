@@ -18,10 +18,10 @@ export function Blank({
   action?: ReactNode;
 }) {
   return (
-    <Empty className="min-h-48">
+    <Empty className="min-h-56 py-10">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <InboxIcon />
+          <InboxIcon aria-hidden="true" />
         </EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description}</EmptyDescription>

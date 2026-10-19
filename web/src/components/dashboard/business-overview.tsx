@@ -266,6 +266,7 @@ export function BusinessOverview({
           <CardContent className="p-6">
             {todayBookings.length ? (
               <Grid
+                compact
                 rows={todayBookings.slice(0, 5)}
                 columns={[
                   {

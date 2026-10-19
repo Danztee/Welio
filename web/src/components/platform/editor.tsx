@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -151,53 +151,17 @@ export function Editor({
                   <FieldSet key={f.name}>
                     <FieldLegend variant="label">{f.label}</FieldLegend>
                     {f.options?.length ? (
-                      <Combobox
-                        items={f.options.map((option) => option.value)}
-                        multiple
-                        name={f.name}
+                      <MultiSelectField
+                        field={{ ...f, options: f.options }}
                         value={multiSelectValues[f.name] ?? []}
-                        onValueChange={(value) =>
+                        invalid={Boolean(fieldErrors[f.name])}
+                        onChange={(value) =>
                           setMultiSelectValues((current) => ({
                             ...current,
                             [f.name]: value,
                           }))
                         }
-                        itemToStringLabel={(value) =>
-                          f.options?.find((option) => option.value === value)
-                            ?.label ?? value
-                        }
-                      >
-                        <ComboboxChips>
-                          <ComboboxValue>
-                            {(multiSelectValues[f.name] ?? []).map((value) => (
-                              <ComboboxChip key={value}>
-                                {f.options?.find(
-                                  (option) => option.value === value,
-                                )?.label ?? value}
-                              </ComboboxChip>
-                            ))}
-                          </ComboboxValue>
-                          <ComboboxChipsInput
-                            aria-label={f.label}
-                            aria-invalid={Boolean(fieldErrors[f.name])}
-                            placeholder="Search team members"
-                          />
-                        </ComboboxChips>
-                        <ComboboxContent>
-                          <ComboboxEmpty>
-                            No matching team members.
-                          </ComboboxEmpty>
-                          <ComboboxList>
-                            {(value: string) => (
-                              <ComboboxItem key={value} value={value}>
-                                {f.options?.find(
-                                  (option) => option.value === value,
-                                )?.label ?? value}
-                              </ComboboxItem>
-                            )}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
+                      />
                     ) : (
                       <p className="text-sm text-muted-foreground">
                         {f.emptyMessage ?? "No options available."}
@@ -342,5 +306,74 @@ export function Editor({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MultiSelectField({
+  field,
+  value,
+  invalid,
+  onChange,
+}: {
+  field: EditorField & { options: NonNullable<EditorField["options"]> };
+  value: string[];
+  invalid: boolean;
+  onChange: (value: string[]) => void;
+}) {
+  const anchor = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  return (
+    <Combobox
+      items={field.options.map((option) => option.value)}
+      inputValue={query}
+      onInputValueChange={setQuery}
+      filteredItems={field.options
+        .filter(
+          (option) =>
+            !value.includes(option.value) &&
+            option.label
+              .toLocaleLowerCase()
+              .includes(query.toLocaleLowerCase()),
+        )
+        .map((option) => option.value)}
+      multiple
+      name={field.name}
+      value={value}
+      onValueChange={onChange}
+      itemToStringLabel={(value) =>
+        field.options?.find((option) => option.value === value)?.label ?? value
+      }
+    >
+      <ComboboxChips ref={anchor}>
+        <ComboboxValue>
+          {value.map((value) => (
+            <ComboboxChip key={value}>
+              {field.options?.find((option) => option.value === value)?.label ??
+                value}
+            </ComboboxChip>
+          ))}
+        </ComboboxValue>
+        <ComboboxChipsInput
+          aria-label={field.label}
+          aria-invalid={invalid}
+          placeholder="Search team members"
+        />
+      </ComboboxChips>
+      <ComboboxContent anchor={anchor}>
+        <ComboboxEmpty>
+          {field.options.every((option) => value.includes(option.value))
+            ? "All team members selected."
+            : "No matching team members."}
+        </ComboboxEmpty>
+        <ComboboxList>
+          {(value: string) => (
+            <ComboboxItem key={value} value={value}>
+              {field.options?.find((option) => option.value === value)?.label ??
+                value}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }
