@@ -17,7 +17,6 @@ import {
   SendIcon,
   UsersIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
 
 type Data = WorkspaceDashboardData;
 type EditorKind = "service" | "staff" | "assignments";
@@ -26,8 +25,6 @@ type Props = {
   section: "Services" | "Team";
   data: Data;
   owner: boolean;
-  toolbar: ReactNode;
-  matches: (...values: (string | null | undefined)[]) => boolean;
   money: (minorUnits: number) => string;
   onOpen: (kind: EditorKind, id?: string) => void;
   onInvite: (email: string) => Promise<void>;
@@ -37,30 +34,19 @@ export function WorkspaceTables({
   section,
   data,
   owner,
-  toolbar,
-  matches,
   money,
   onOpen,
   onInvite,
 }: Props) {
   if (section === "Services")
     return (
-      <ServiceTable
-        data={data}
-        owner={owner}
-        toolbar={toolbar}
-        matches={matches}
-        money={money}
-        onOpen={onOpen}
-      />
+      <ServiceTable data={data} owner={owner} money={money} onOpen={onOpen} />
     );
 
   return (
     <TeamTable
       data={data}
       owner={owner}
-      toolbar={toolbar}
-      matches={matches}
       money={money}
       onOpen={onOpen}
       onInvite={onInvite}
@@ -71,14 +57,11 @@ export function WorkspaceTables({
 function ServiceTable({
   data,
   owner,
-  toolbar,
-  matches,
   money,
   onOpen,
 }: Omit<Props, "section" | "onInvite">) {
   return (
     <Grid
-      toolbar={toolbar}
       empty={data.services.length ? "No services found" : "No services yet"}
       emptyDescription={
         data.services.length
@@ -87,9 +70,27 @@ function ServiceTable({
             ? "Add a service to start accepting bookings."
             : "Services will appear here once they’re added."
       }
-      rows={data.services.filter((service) =>
-        matches(service.name, service.description),
-      )}
+      rows={data.services}
+      searchText={(service) =>
+        [
+          service.name,
+          service.description,
+          `${service.durationMinutes} min`,
+          money(service.priceMinor),
+          service.isActive ? "Active" : "Inactive",
+          ...data.staff
+            .filter(
+              (member) =>
+                member.isActive &&
+                data.assignments.some(
+                  (assignment) =>
+                    assignment.serviceId === service.id &&
+                    assignment.staffId === member.id,
+                ),
+            )
+            .map((member) => member.name),
+        ].join(" ")
+      }
       columns={[
         {
           label: "Service",
@@ -175,14 +176,7 @@ function ServiceTable({
   );
 }
 
-function TeamTable({
-  data,
-  owner,
-  toolbar,
-  matches,
-  onOpen,
-  onInvite,
-}: Omit<Props, "section">) {
+function TeamTable({ data, owner, onOpen, onInvite }: Omit<Props, "section">) {
   const accessFor = (email: string) => {
     const normalizedEmail = email.toLowerCase();
     if (
@@ -208,7 +202,6 @@ function TeamTable({
 
   return (
     <Grid
-      toolbar={toolbar}
       empty={
         data.staff.length ? "No team members found" : "No team members yet"
       }
@@ -219,9 +212,17 @@ function TeamTable({
             ? "Add a team member to start accepting bookings."
             : "Team members will appear here once they’re added."
       }
-      rows={data.staff.filter((member) =>
-        matches(member.name, member.email, member.jobTitle),
-      )}
+      rows={data.staff}
+      searchText={(member) =>
+        [
+          member.name,
+          member.email,
+          member.jobTitle,
+          member.role === MembershipRole.Owner ? "Owner" : "Team member",
+          member.isActive ? "Active" : "Inactive",
+          accessFor(member.email),
+        ].join(" ")
+      }
       columns={[
         {
           label: "Team member",

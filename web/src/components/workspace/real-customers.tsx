@@ -1,6 +1,6 @@
 "use client";
 import { Blank, Grid, Status } from "@/components/platform/shared";
-import { SearchField } from "@/components/platform/search-field";
+import { ListControls, ListPagination } from "./list-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,6 @@ type Data = WorkspaceDashboardData;
 
 export function RealCustomers({ data }: { data: Data }) {
   const [selected, setSelected] = useState("");
-  const [query, setQuery] = useState("");
   const customer = data.customers.find((c) => c.id === selected);
   const [history, setHistory] = useState<{
     id: string;
@@ -96,26 +95,20 @@ export function RealCustomers({ data }: { data: Data }) {
   return (
     <>
       <Grid
-        toolbar={
-          <SearchField
-            label="Filter this page"
-            value={query}
-            onChange={setQuery}
-          />
-        }
+        externalSearch
+        footer={<ListPagination data={data} section="Customers" />}
+        toolbar={<ListControls data={data} section="Customers" />}
         empty={
-          data.customers.length ? "No customers found" : "No customers yet"
+          data.pagination?.search || data.customers.length
+            ? "No customers found"
+            : "No customers yet"
         }
         emptyDescription={
           data.customers.length
             ? "Try a different search."
             : "Customers will appear here when they book an appointment."
         }
-        rows={data.customers.filter((customer) =>
-          `${customer.name} ${customer.email ?? ""} ${customer.phone ?? ""}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-        )}
+        rows={data.customers}
         columns={[
           {
             label: "Customer",

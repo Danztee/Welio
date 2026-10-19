@@ -10,13 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { MoreHorizontalIcon, RotateCcwIcon } from "lucide-react";
@@ -41,6 +37,15 @@ export function BookingNotifications({ data }: { data: Data }) {
   return (
     <div className="flex flex-col gap-6">
       <Grid
+        searchText={(notification) =>
+          [
+            notification.subject,
+            notification.recipient,
+            notification.kind === "reminder" ? "Reminder" : "Booking update",
+            notification.status,
+            notification.attempts,
+          ].join(" ")
+        }
         empty={
           data.notifications.length
             ? "No notifications found"
@@ -52,27 +57,21 @@ export function BookingNotifications({ data }: { data: Data }) {
             : "Booking emails will appear here when they’re sent."
         }
         toolbar={
-          <Select
+          <NativeSelect
+            aria-label="Notification status"
             value={status}
-            onValueChange={(value) => setStatus(value || "all")}
+            onChange={(event) => setStatus(event.target.value)}
           >
-            <SelectTrigger aria-label="Filter by status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {["all", "queued", "sending", "sent", "failed", "skipped"].map(
-                  (value) => (
-                    <SelectItem key={value} value={value}>
-                      {value === "all"
-                        ? "All statuses"
-                        : value.charAt(0).toUpperCase() + value.slice(1)}
-                    </SelectItem>
-                  ),
-                )}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            {["all", "queued", "sending", "sent", "failed", "skipped"].map(
+              (value) => (
+                <NativeSelectOption key={value} value={value}>
+                  {value === "all"
+                    ? "All statuses"
+                    : value.charAt(0).toUpperCase() + value.slice(1)}
+                </NativeSelectOption>
+              ),
+            )}
+          </NativeSelect>
         }
         rows={data.notifications
           .filter(
