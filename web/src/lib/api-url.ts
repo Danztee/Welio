@@ -1,3 +1,5 @@
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 /** Build a browser request URL from the public Go API origin. */
 export function apiUrl(path: string): string {
   const configured = process.env.NEXT_PUBLIC_WELIO_API_URL?.trim();
@@ -20,6 +22,17 @@ export function apiUrl(path: string): string {
     origin.hash
   )
     throw new Error("NEXT_PUBLIC_WELIO_API_URL must be an HTTP(S) origin.");
+
+  // Keep local web/API requests on the same cookie site. `localhost` and
+  // `127.0.0.1` are different sites to browsers, so SameSite=Lax cookies are
+  // omitted when the page and API use different loopback names.
+  if (
+    typeof window !== "undefined" &&
+    LOOPBACK_HOSTS.has(origin.hostname) &&
+    LOOPBACK_HOSTS.has(window.location.hostname)
+  ) {
+    origin.hostname = window.location.hostname;
+  }
 
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\"))
     throw new Error(

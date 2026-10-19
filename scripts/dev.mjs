@@ -38,6 +38,15 @@ function prerequisites() {
   version("docker", ["compose", "version"]);
   version("docker", ["info"]);
 }
+function configuredPort(role, fallback) {
+  const source = readFileSync(`.env.${role}`, "utf8");
+  const configured = source.match(/^HTTP_ADDR=(.*)$/m)?.[1]?.trim();
+  const address = (configured || fallback).replace(/^(['"])(.*)\1$/, "$2");
+  const port = Number(address.slice(address.lastIndexOf(":") + 1));
+  if (!Number.isInteger(port) || port < 1 || port > 65535)
+    throw new Error(`Invalid HTTP_ADDR in .env.${role}`);
+  return port;
+}
 async function doctor() {
   prerequisites();
   for (const role of ["api", "worker", "web"]) {
@@ -50,7 +59,13 @@ async function doctor() {
     source.includes("replace-with-at-least-32-random-bytes")
   )
     throw new Error("Set a random AUTH_SECRET in .env.api");
-  for (const port of [3000, 8081, 8082, 5461]) {
+  const ports = [
+    ["web", 3000],
+    ["api", configuredPort("api", ":8081")],
+    ["worker", configuredPort("worker", "127.0.0.1:8082")],
+    ["database", 5461],
+  ];
+  for (const [service, port] of ports) {
     const active = await Promise.all(
       ["127.0.0.1", "::1"].map(
         (host) =>
@@ -67,12 +82,12 @@ async function doctor() {
       ),
     );
     if (!active.some(Boolean)) continue;
-    if (command === "dev" && port !== 5461)
+    if (command === "dev" && service !== "database")
       throw new Error(
-        `Port ${port} is already in use. Stop the existing service before make dev.`,
+        `Port ${port} for ${service} is already in use. Stop it or choose a free HTTP_ADDR in .env.${service} before make dev.`,
       );
     console.log(
-      `Port ${port} is in use; expected if the development service is running.`,
+      `Port ${port} for ${service} is in use; expected if the development service is running.`,
     );
   }
   console.log("Development prerequisites are ready.");
@@ -96,7 +111,6 @@ if (command === "setup") {
   }
   run("go", ["mod", "download"]);
   run("pnpm", ["install", "--frozen-lockfile"], { cwd: "web" });
-  run("pnpm", ["exec", "playwright", "install", "chromium"], { cwd: "web" });
   console.log("Setup complete. Run make dev.");
   process.exit(0);
 }
