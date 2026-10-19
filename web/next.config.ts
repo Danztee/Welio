@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "*.ngrok-free.app"],
@@ -33,4 +34,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function config(phase: string): NextConfig {
+  return {
+    ...nextConfig,
+    distDir:
+      process.env.WELIO_E2E === "1"
+        ? ".next-e2e"
+        : phase === PHASE_DEVELOPMENT_SERVER
+          ? ".next"
+          : ".next-build",
+  };
+}

@@ -31,6 +31,7 @@ export default defineConfig({
       timeout: 120_000,
       reuseExistingServer: false,
       env: {
+        WELIO_E2E: "1",
         APP_URL: "http://127.0.0.1:3101",
         NEXT_PUBLIC_WELIO_API_URL: "http://127.0.0.1:8181",
         WELIO_API_INTERNAL_URL: "http://127.0.0.1:8181",

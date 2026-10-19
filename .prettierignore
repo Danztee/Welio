@@ -16,3 +16,7 @@ contracts/openapi.json
 web/src/lib/backend/generated/
 **/*.md
 **/*.svg
+
+**/.next-e2e/
+
+**/.next-build/
