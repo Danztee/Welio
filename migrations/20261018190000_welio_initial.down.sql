@@ -1,0 +1,17 @@
+DROP TABLE IF EXISTS welio_oauth_signing_keys;
+DROP TABLE IF EXISTS welio_auth_tokens;
+DROP TABLE IF EXISTS welio_auth_sessions;
+DROP TABLE IF EXISTS request_counters;
+DROP TABLE IF EXISTS mcp_booking_proposals;
+DROP TABLE IF EXISTS chat_sessions;
+DROP TABLE IF EXISTS booking_operations;
+DROP TABLE IF EXISTS appointments;
+DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS staff_time_off;
+DROP TABLE IF EXISTS staff_services;
+DROP TABLE IF EXISTS staff;
+DROP TABLE IF EXISTS services;
+DROP TABLE IF EXISTS workspace_invitations;
+DROP TABLE IF EXISTS memberships;
+DROP TABLE IF EXISTS workspaces;
+DROP TABLE IF EXISTS users;
