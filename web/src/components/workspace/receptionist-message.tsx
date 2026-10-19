@@ -3,7 +3,6 @@
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
   Message,
-  MessageAvatar,
   MessageContent,
   MessageHeader,
 } from "@/components/ui/message";
@@ -109,10 +108,7 @@ export function ReceptionistMessage({
 
   return (
     <Message className="items-end">
-      <MessageAvatar className="size-7 min-w-7 rounded-full bg-primary/10 text-primary [&_svg]:size-4">
-        <SparklesIcon aria-hidden="true" />
-      </MessageAvatar>
-      <MessageContent className="max-w-[calc(100%-2.25rem)] gap-1">
+      <MessageContent className="max-w-full gap-1">
         <MessageHeader className="px-1 text-[11px]">Receptionist</MessageHeader>
         <Bubble variant="outline" className="max-w-full">
           <BubbleContent className="min-w-0 rounded-2xl rounded-bl-md px-3.5 py-2.5">
