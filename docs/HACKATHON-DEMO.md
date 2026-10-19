@@ -13,11 +13,11 @@ self-hosted MCP path for this submission.
 
 ## Rehearse the booking flow
 
-Use a dedicated demo workspace with one published service, an assigned staff
-member, working hours, and a future available slot. Keep the recorded customer
-name and email synthetic. If the local worker is running, use a mail sandbox or
-a mailbox you control because confirming a booking queues its confirmation
-email.
+Use a dedicated service-business demo workspace with one published service, an
+assigned staff member, working hours, and a future available slot. Keep the
+recorded customer name and email synthetic. If the local worker is running, use
+a mail sandbox or a mailbox you control because confirming a booking queues its
+confirmation email.
 
 1. Run `make setup` once. Start PostgreSQL with `make dev-db`, apply migrations
    with `make migrate`, and start `make api` and `make web` in separate

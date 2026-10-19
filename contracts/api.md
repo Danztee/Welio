@@ -46,8 +46,7 @@ When changing an API operation:
 3. Return `httpx.Wrap(err)` or a typed `httpx.E(...)` problem. Do not return raw
    internal errors to clients.
 4. Update the browser adapter only when the response or request shape changes.
-5. Add or update a route/contract test, then run `go test ./...`, `go vet ./...`,
-   and the web check/build before shipping.
+5. Regenerate the contract and run `make contracts-check` and `make verify` before shipping.
 
 The public receptionist stream at `/v1/workspaces/{workspaceID}/receptionist/preview`
 uses newline-delimited events for token streaming. The public chat endpoint

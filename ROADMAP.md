@@ -8,7 +8,7 @@ Created: October 17, 2026. Status as of October 18, 2026: the multi-tenant dashb
 
 Welio helps small service businesses run their front desk through a dashboard, a public booking page, and a conversational AI receptionist. Business owners configure their services, prices, staff, and working hours. Customers ask questions and book appointments. The AI performs authorized operations through the same business rules as the dashboard.
 
-The first complete customer journey is for a small cleaning business. The data model should support other appointment businesses, but specialized salon, barber, and field-service workflows are outside the first release.
+The first complete customer journey is for an appointment-based service business. Welio's core model is industry-neutral: each business configures its own services, team, schedule, and booking location. Industry-specific workflows such as routing, chair management, and equipment scheduling are outside the first release.
 
 Example owner request:
 
@@ -33,8 +33,8 @@ These are proposed defaults for implementation, not choices already approved by 
 
 - Build a responsive web application first; no native mobile application in the initial release.
 - Start with one location per workspace, one staff member per appointment, fixed-duration services, and no recurring appointments or group bookings.
-- For the cleaning demonstration, assume service at the customer's address within an owner-defined service area. Collect the address per booking; route optimization and travel-time scheduling are deferred, so owners must configure adequate buffers.
-- Start the demonstration with cleaning businesses and NGN pricing. Store a workspace currency and an IANA time zone; use `Africa/Lagos` as the demonstration default, not a global hard-coded setting.
+- Let each business choose whether appointments take place at the customer's address, the business address, or either location. Collect the address required for the selected appointment; route optimization and travel-time scheduling are deferred, so businesses must configure adequate buffers.
+- Use a representative service-business workspace for the demo. Store currency and IANA time zone per workspace; `NGN` and `Africa/Lagos` are demo defaults, not global assumptions.
 - Support owners and public customers first. Add staff accounts and permissions before broader beta access.
 - Use TypeScript, React, a server-side application/API, PostgreSQL, and a managed authentication solution. Choose exact frameworks and versions during setup after checking compatibility.
 - Use Strands SDK with Amazon Bedrock for model tool calling. Put business operations behind an authenticated MCP interface backed by application services.
@@ -114,7 +114,7 @@ Check off an item only when it works and its completion evidence is available. F
 - [x] Implement sign-up, sign-in, sign-out, verification, and account recovery with Better Auth, PostgreSQL, and ZeptoMail delivery (live credentials pending).
 - [x] Create a workspace for a new owner and associate membership with that workspace transactionally.
 - [x] Implement server-side authorization for account/workspace operations, booking/customer management, and the external MCP entry point. The MCP route requires a server-side Bearer secret and scopes tools to the business slug in the route.
-- [ ] Verify authorization across every entry point with negative cross-workspace checks; the automated test suite was removed, so this still needs a documented manual release check.
+- [ ] Verify authorization across every entry point with negative cross-workspace checks; the restored Go/PostgreSQL suite covers tenant boundaries, and the Alexa+ rehearsal should also confirm the demo business scope in a live MCP client.
 - [x] Define owner/staff permissions: owners manage setup and invitations, staff can view their workspace, services, and team. Acceptance, revocation, and membership checks are implemented.
 - [x] Add safe session handling and rate limits for authentication and public endpoints. Implemented database-backed sessions, auth/public-booking/MCP rate limits, origin checks, bounded requests, and expiring public-chat capabilities.
 - [x] Verify current workspace queries, mutations, and URLs against guessed identifiers and another owner; staff cannot perform owner mutations. The external MCP endpoint has separate slug scoping, but still needs a recorded cross-workspace manual check.
@@ -309,7 +309,7 @@ At the start of each phase, turn its checklist into implementation tasks with de
 
 **Database foundation evidence (October 17, 2026):** PostgreSQL 18 runs in Docker Compose; the initial eight-table migration and synthetic seed have been applied repeatedly. Integration checks cover tenant foreign keys, seed repeatability, snapshots, prices/durations, idempotency keys, transaction rollback, and local-target guards. The development application reports database readiness separately from liveness. Deployment and production secret management remain pending.
 
-**UI milestone:** The signed-in application uses real workspace records for accounts, bookings, customers, receptionist, reminders, and settings. The retired browser-only demo is not part of the current product. See [docs/ACCOUNTS.md](./docs/ACCOUNTS.md), [docs/BOOKINGS.md](./docs/BOOKINGS.md), and [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for current behavior.
+**UI milestone:** The signed-in application uses real workspace records for accounts, bookings, customers, receptionist, reminders, and settings. The retired browser-only demo is not part of the current product. See [docs/API.md](./docs/API.md), [docs/BOOKINGS.md](./docs/BOOKINGS.md), and [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for current behavior.
 
 **Booking milestone:** Real policy/time-off setup, availability, public/owner bookings, private customer changes, customer lists, and transactional mail events are implemented and verified; see `docs/BOOKINGS.md`.
 
@@ -317,4 +317,4 @@ At the start of each phase, turn its checklist into implementation tasks with de
 
 **Builder direction:** Strands SDK supplies the runtime agent loop with Bedrock as the model provider. The owner has confirmed production Bedrock access and tested live inference with Claude Sonnet 4.6 using `eu-north-1`. The external Streamable HTTP MCP server and durable booking-confirmation tool are implemented, but a remote MCP client has not yet been verified against a deployed endpoint. There is no Alexa+ connection or completed Alexa+ simulation in the repository. Kiro Crew participation evidence is still pending.
 
-**Next action:** Run a real external MCP client against a deployed endpoint with a dedicated demo business, then complete one customer-approved booking and verify the appointment and queued email in the dashboard. After that, verify the Alexa+ track rules and access, decide whether a clearly labeled simulation qualifies, and capture the permitted demo evidence. Separately verify live ZeptoMail delivery and configure deployed email and expired-chat cleanup jobs. No automated test suite is maintained; use the repository checks and record the manual release walkthrough. Technical choices and prior dated decisions are recorded in `docs/DECISIONS.md`.
+**Next action:** Rehearse the local Streamable HTTP MCP server with MCP Inspector and a dedicated demo business, complete one customer-approved booking, and verify that the appointment appears in the dashboard. Then record the public demo video and submit the runnable repository with reviewer access as required by the hackathon rules. A deployed endpoint is not required for this track. Separately verify live ZeptoMail delivery and configure deployed email and expired-chat cleanup jobs. The automated test suite is restored; use `make verify` before release. Technical choices and prior dated decisions are recorded in `docs/DECISIONS.md`.

@@ -88,20 +88,19 @@ For the Alexa+ hackathon rehearsal and video outline, see
 ## Verification
 
 ```sh
-make check      # fast checks without starting Docker
-make test       # Go race tests with an automatic disposable PostgreSQL database
+make check      # formatting, contracts, frontend tests, and fast Go checks
+make test       # Go tests with an automatic disposable PostgreSQL database
 make test-e2e   # browser tests with an automatic disposable PostgreSQL database
-make verify     # full checks, builds, browser regressions, and container smoke test
+make verify     # full Go, web, browser, and container verification
 ```
 
-The test launcher owns its temporary database container and removes it when the
-command exits. It does not read the application database URL. Integration tests
-apply application and River migrations automatically. `make check` runs Go unit
-tests without database integration tests; use `make verify` for full validation.
-
-`make build` builds Go and Next.js production outputs. `make image-test` checks
-the API and worker image in an isolated container network. GitHub Actions also
-runs database, browser, contract, formatting, lint, and build checks.
+`make check` runs contract and migration checks, formatting, Go vet and unit
+tests, web unit tests, TypeScript checks, and lint. `make test` provisions a
+disposable PostgreSQL database for the Go suite, and `make test-e2e` does the
+same for browser tests. `make verify` provisions one disposable database for
+the complete race-enabled Go suite, Go and Next.js production builds, browser
+tests, and the API/worker container smoke test. GitHub Actions runs the Go,
+web, browser, and image checks.
 
 ## Repository layout
 
@@ -117,8 +116,8 @@ docker-compose.dev.yml  Local PostgreSQL development dependency
 ```
 
 Go commands run from the repository root; frontend commands run from `web/`.
-See the focused guides for [accounts](./docs/ACCOUNTS.md),
-[bookings](./docs/BOOKINGS.md), and [reminders](./docs/REMINDERS.md).
+See the focused guides for [bookings](./docs/BOOKINGS.md) and
+[receptionist and MCP](./docs/RECEPTIONIST.md).
 
 ## Code conventions
 

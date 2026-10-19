@@ -8,12 +8,14 @@ authentication, versioned SQL migrations, pgx, and River. Better Auth and the
 Drizzle package were removed; their historical entries below are not current
 implementation guidance.
 
-## October 18, 2026 — Keep the verification workflow test-free
+## October 18, 2026 — Keep the verification workflow test-free (reversed)
 
-At the owner's request, remove the MCP integration suite, endpoint smoke script,
-test-only database dependencies, package commands, Turbo environment wiring, and
-their setup instructions. The maintained verification workflow is lint, type
-checking, formatting, and production builds; no automated test suite is kept.
+This temporary decision removed the MCP integration suite, endpoint smoke
+script, test-only database dependencies, package commands, and their setup
+instructions. On October 19, the owner asked to keep and restore the tests. The
+current workflow includes Go unit and PostgreSQL integration tests, web unit
+tests, Playwright browser tests, race checks, and an isolated container smoke
+test. Use `make verify` to run the complete suite with a disposable database.
 
 ## October 17, 2026 — Application scaffold
 
@@ -77,7 +79,7 @@ Replaced the dashboard's top-left product logo and separate workspace card with 
 
 ## October 17, 2026 — Complete connected UI prototype
 
-This supersedes the earlier isolated dashboard/auth previews and refresh-reset behavior. The owner requested all end-to-end dummy UI before backend connection. The prototype now uses a versioned, schema-validated browser store shared across account, onboarding, workspace operations, public booking, self-service, receptionist approvals, invoices/checkout, notifications, reports, and settings. New workspaces start empty; the initial cleaning workspace supplies fixtures. Changes persist across navigation, refresh, and same-origin tabs. The account menu resets the complete demo.
+This supersedes the earlier isolated dashboard/auth previews and refresh-reset behavior. The owner requested all end-to-end dummy UI before backend connection. The prototype now uses a versioned, schema-validated browser store shared across account, onboarding, workspace operations, public booking, self-service, receptionist approvals, invoices/checkout, notifications, reports, and settings. New workspaces start empty; the initial demo workspace uses illustrative service-business fixtures; its sample industry is not a product restriction. Changes persist across navigation, refresh, and same-origin tabs. The account menu resets the complete demo.
 
 Demo session, recovery, verification, invitation, provider connection, payment, and notification states are explicit simulations. No passwords are persisted and no external providers are called. Authenticated server authorization, secure public access links, real AI, concurrent scheduling integrity, email, payment webhooks, and deployment remain backend work. The supplied amber theme and the existing Supabase-inspired layout remain in place.
 
@@ -87,7 +89,7 @@ The owner authorized real account creation and supporting flows, with Welio cont
 
 Real data now lives behind authenticated `/dashboard` and server-side membership checks. Business profiles, services, staff schedules, eligibility, setup completion, and staff invitations persist in PostgreSQL. Owner and staff roles have server-enforced permissions. One-time invitations are random, hashed, email-bound, expire after 7 days, and are consumed under a transaction lock. Password reset revokes existing sessions. Auth secret is generated in ignored local configuration; no hardcoded production secret or credential fallback exists.
 
-Moved the complete fictional prototype to `/demo` and kept its public booking/checkout previews separate. No localStorage demo data is promoted to real records. Booking transactions, customer data APIs, Bedrock/MCP, policy/time-off persistence, payment processing, and production deployment remain subsequent phases. Current automated and HTTP verification is recorded in `docs/ACCOUNTS.md`; browser automation was disabled for this pass.
+Moved the complete fictional prototype to `/demo` and kept its public booking/checkout previews separate. No localStorage demo data is promoted to real records. Booking transactions, customer data APIs, Bedrock/MCP, policy/time-off persistence, payment processing, and production deployment remain subsequent phases. Current automated and HTTP verification is recorded in `docs/API.md`; browser automation was disabled for this pass.
 
 ## October 17, 2026 — ZeptoMail for transactional email
 
@@ -115,7 +117,7 @@ The owner explicitly removed the local email service, its container/image, SMTP 
 
 Added owner-authorized, default-off 24-hour reminders, stored booking-email consent, unique appointment/version mail events, claim-time revalidation, cancellation/reschedule suppression, safe off/on recovery for never-attempted events, explicit provider-failure retries, Notifications labels, a foreground email worker, and authenticated scheduled-job support. Old bookings without recorded consent and short-notice bookings are excluded. Already in-flight external sends cannot be recalled. Tests use captured provider requests without sending email; production scheduling and live inbox delivery are pending.
 
-The user is handling Kiro Crew installation. Actual Crew development usage and submission evidence remain pending; this pass does not claim Crew qualification. The Alexa+ primary track remains selected, while Bedrock remains optional and its account access is blocked. Reminder behavior, deployment commands, and verification are documented in `docs/REMINDERS.md`.
+The user is handling Kiro Crew installation. Actual Crew development usage and submission evidence remain pending; this pass does not claim Crew qualification. The Alexa+ primary track remains selected, while Bedrock remains optional and its account access is blocked. Reminder behavior, deployment commands, and verification are documented in `docs/BOOKINGS.md`.
 
 ## 2026-10-17 — Focused regression suite
 

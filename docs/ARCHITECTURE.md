@@ -72,9 +72,11 @@ formatter target. Generated API models, the OpenAPI snapshot, lockfiles, build
 outputs, assets, and Markdown are outside the formatter sweep. Regenerate API
 artifacts with `make contracts`, then verify them with `make contracts-check`.
 
-`make check` runs formatting, contract, migration, Go, and frontend checks. The
-browser suite exercises the real API against a disposable local test database.
-The image smoke test verifies migrations, API/worker readiness, and role isolation.
+`make check` runs formatting, contract, migration, Go vet and unit tests, web
+unit tests, TypeScript checks, and lint. `make test` and `make test-e2e` run the
+Go and browser suites with a disposable PostgreSQL database. `make verify` runs
+the complete suite, including PostgreSQL integration and race tests, production
+builds, browser tests, and an isolated API/worker container smoke test.
 
 ## Readability assessment
 
@@ -104,16 +106,16 @@ product request timeouts are unchanged.
 
 ## Development workflow
 
-The root Makefile is the public command menu. Scripts own environment loading,
-process lifecycle, prerequisite checks, and disposable database setup. `make dev`
-starts the API, worker, and web app as separate processes with prefixed output
-and shared shutdown; it keeps each role's environment separate. PostgreSQL is
-the sole Compose dependency. Production still runs migrations as an explicit
-release step before starting API and worker processes.
+The root Makefile is the public command menu. `dev.mjs` owns environment loading,
+process lifecycle, and prerequisite checks. `make dev` starts the API, worker,
+and web app as separate processes with prefixed output and shared shutdown; it
+keeps each role's environment separate. PostgreSQL is the sole Compose
+dependency. Production still runs migrations as an explicit release step before
+starting API and worker processes.
 
 `make setup` preserves existing env files. `make doctor` diagnoses local setup.
-`make check` is the fast path; `make test`, `make test-e2e`, and `make verify`
-create their own temporary database rather than depending on application data.
+`make check` runs fast checks and unit/integration tests. `make verify` runs the
+full test suite, production builds, browser tests, and image smoke test.
 
 ## Current contracts only
 
@@ -141,8 +143,7 @@ Ctrl+C removed its service processes. An existing API on port 8081 was preserved
 
 ## Script consolidation
 
-The scripts directory contains five entry points: migration validation, contract
-generation, development tooling, disposable database tests, and image smoke tests.
-`dev.mjs` owns setup, diagnostics, and service lifecycle. `test-db.mjs` owns its
-container and test process group. Separate setup, doctor, service, verification,
-and subprocess-wrapper scripts have been removed. Make remains the command menu.
+The scripts directory contains migration validation, contract generation,
+development tooling, disposable database orchestration, and image smoke tests.
+`dev.mjs` owns setup, diagnostics, and service lifecycle. Make remains the
+command menu.

@@ -21,6 +21,21 @@ The explicit `migrate` command applies the application schema and River's queue 
 After migrations finish, start `make api`, `make worker`, and `make web` in
 separate terminals.
 
+## Accounts and workspaces
+
+Registration, sign-in, verification, password recovery, session renewal, and
+session revocation are handled by the Go API. New accounts verify their email
+before signing in, then create a workspace through onboarding or accept an
+invitation. Access tokens are short-lived; opaque refresh tokens are hashed and
+rotated. Session cookies are HttpOnly and SameSite Lax, and Secure in
+production.
+
+Go derives workspace identity and roles from the authenticated principal and
+checks membership on each request. Owners manage business setup, invitations,
+catalog, and bookings; team members have limited access. The versioned SQL
+migrations create a fresh schema and do not import Better Auth accounts or the
+former Drizzle schema.
+
 Hosted deployments set environment values on each service: the web service gets
 only public web/API URLs, the API gets database, auth, Bedrock, and MCP settings,
 and the worker gets database and mail settings. At deploy time, set those values
@@ -76,17 +91,14 @@ authorization-code/PKCE account-linking flow; Alexa+ user-specific booking is
 therefore not complete. A standards-compatible MCP client can use the service
 credential to exercise the customer-approved booking flow.
 
-## Tests
+## Verification
 
-Run `make test` for the Go suite with race detection and an automatically
-provisioned disposable PostgreSQL container. Run `make check` for fast unit,
-formatting, contract, type, and lint checks without database integration tests.
-`make verify` combines the complete database, browser, build, and image checks.
-
-For direct Go commands, integration tests run only when
-`WELIO_TEST_DATABASE_URL` points to a local disposable database whose name ends
-in `_test`. Integration tests apply both Go and River migrations under a
-PostgreSQL advisory lock. Never point this variable at application data.
+Run `make check` for contract and migration checks, formatting, Go vet and unit
+tests, web unit tests, TypeScript checks, and lint. `make test` runs the Go
+suite with a disposable PostgreSQL database; `make test-e2e` does the same for
+browser tests. `make verify` provisions a disposable database and runs the
+complete race-enabled Go suite, Go and Next.js production builds, browser tests,
+and the API/worker container smoke test.
 
 ## Session renewal and shared limits
 
@@ -104,16 +116,10 @@ are hashed, and a River maintenance job removes expired quota/auth state in
 bounded batches. The AI daily budget remains in its existing atomic database
 counter. Apply migrations before starting new API/worker binaries.
 
-## Container and browser checks
+## Container image
 
-`make image-test` builds the nonroot Go image, creates an isolated PostgreSQL container, applies migrations, checks API/worker readiness and role isolation, then removes its test containers and network.
-Run the same image as `welio serve --role api` or `welio serve --role worker`,
-using separate process environments. Run `welio migrate` as a release step
-before either role. TLS, public URLs, trusted origins, and a shared parent
-cookie domain still need deployment-specific configuration.
-
-Run `make test-e2e` for browser regressions. The launcher provisions a temporary
-PostgreSQL container and installs the Playwright Chromium browser if needed.
-The harness seeds test records and starts its own Go API on 8181 and Next.js on
-3101; it does not reuse running application servers. CI uses its own isolated
-PostgreSQL service.
+`make image` builds the nonroot Go image. Run the same image as
+`welio serve --role api` or `welio serve --role worker`, using separate process
+environments. Run `welio migrate` as a release step before either role. TLS,
+public URLs, trusted origins, and a shared parent cookie domain still need
+deployment-specific configuration.

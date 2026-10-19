@@ -83,11 +83,26 @@ Configure a verified `EMAIL_FROM` and a server-only
 `ZEPTOMAIL_SEND_MAIL_TOKEN`. `sent` means ZeptoMail accepted the message; it
 does not guarantee inbox delivery. There is no Next.js email route or external
 cron endpoint. Run the Go worker role continuously so River can deliver email
-and schedule reminders. See [the API guide](./API.md) and
-[reminder behavior](./REMINDERS.md).
+and schedule reminders. See [the API guide](./API.md) for worker configuration.
+
+## Appointment reminders
+
+Reminders are off by default and owners can enable them in Settings. Customers
+must consent to booking updates and reminders. The worker queues a reminder
+about 24 hours before an eligible confirmed appointment; bookings made less
+than 24 hours before their start do not receive one. Reminder times and content
+use the business time zone and saved appointment details.
+
+Before sending, the worker checks the appointment version and status, customer
+consent, current workspace setting, and scheduled time. Rescheduling or closing
+an appointment makes a queued reminder for its earlier version ineligible.
+Provider-accepted messages cannot be recalled, and delivery remains at least
+once, so an ambiguous provider timeout can result in a duplicate.
 
 ## Verification
 
-Run `go test ./...`, `go vet ./...`, and `go build ./...` from the repository root, then
-run the web checks from `web/`. PostgreSQL integration tests need
-a local disposable database named with the `_test` suffix; see the API guide.
+Run `make verify` from the repository root. To verify the customer flow, use an
+isolated workspace with Bedrock access, then check service discovery,
+availability, proposal review, explicit confirmation, and the resulting
+appointment and email job. A successful Bedrock configuration check alone does
+not prove the whole flow or email delivery.

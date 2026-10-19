@@ -126,10 +126,8 @@ production personal data.
 
 ## Verification
 
-Run Go unit tests, vet, and build from the repository root. PostgreSQL integration tests
-run only when `WELIO_TEST_DATABASE_URL` points to a local disposable database
-whose name ends in `_test`. To verify the customer flow, use an isolated
-workspace with Bedrock access, then test service discovery, availability,
-proposal review, explicit confirmation, and the resulting appointment and
-email job. A successful Bedrock configuration check alone does not prove the
-whole flow or email delivery.
+Run `make verify` from the repository root. To verify the customer flow, use an
+isolated workspace with Bedrock access, then check service discovery,
+availability, proposal review, explicit confirmation, and the resulting
+appointment and email job. A successful Bedrock configuration check alone does
+not prove the whole flow or email delivery.
