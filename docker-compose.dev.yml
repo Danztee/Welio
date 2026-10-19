@@ -1,0 +1,20 @@
+# Local development dependency. `make dev-db` starts PostgreSQL.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    ports:
+      - "127.0.0.1:5461:5432"
+    volumes:
+      - welio-dev-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  welio-dev-pg:
