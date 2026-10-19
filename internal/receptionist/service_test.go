@@ -123,7 +123,7 @@ func TestChatBookingRequiresConsentAndPersistsReceipt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("repeat chat confirmation: %v", err)
 	}
-	if first.Receipt == "" || first.Receipt != second.Receipt || first.Pending != nil || bookingService.createCalls != 1 {
+	if first.Receipt == nil || *first.Receipt == "" || second.Receipt == nil || *first.Receipt != *second.Receipt || first.Pending != nil || bookingService.createCalls != 1 {
 		t.Fatalf("chat confirmation was not durable and idempotent: first=%#v second=%#v calls=%d", first, second, bookingService.createCalls)
 	}
 }

@@ -150,7 +150,7 @@ type ExternalProposal struct {
 type ChatState struct {
 	Turns   []ChatTurn `json:"turns"`
 	Pending *Proposal  `json:"pending"`
-	Receipt string     `json:"receipt"`
+	Receipt *string    `json:"receipt"`
 	Retry   *ChatRetry `json:"retry"`
 }
 
@@ -177,7 +177,11 @@ type ChatSession struct {
 }
 
 func (session ChatSession) State() ChatState {
-	return ChatState{Turns: session.Turns, Pending: session.Pending, Receipt: session.Receipt, Retry: session.ActiveTurn}
+	state := ChatState{Turns: session.Turns, Pending: session.Pending, Retry: session.ActiveTurn}
+	if session.Receipt != "" {
+		state.Receipt = &session.Receipt
+	}
+	return state
 }
 
 type SessionCookie struct {
