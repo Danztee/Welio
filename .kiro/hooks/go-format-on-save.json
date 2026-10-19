@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Format Go on save",
+      "trigger": "PostFileSave",
+      "description": "Runs gofmt -w on saved .go files to keep Go code formatted automatically",
+      "matcher": "\\.go$",
+      "action": {
+        "type": "command",
+        "command": "f=$(jq -r '.filePath // .path // .file // empty' 2>/dev/null || true); if [ -n \"$f\" ] && [ -f \"$f\" ]; then gofmt -w \"$f\" 2>&1 || true; fi",
+        "timeout": 10
+      }
+    }
+  ]
+}

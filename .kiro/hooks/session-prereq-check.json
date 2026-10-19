@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Check dev prerequisites on session start",
+      "trigger": "SessionStart",
+      "description": "Prints Go, Node, and pnpm versions at session start to confirm the dev toolchain is available",
+      "action": {
+        "type": "command",
+        "command": "printf 'Welio development environment:\\n  Go: %s\\n  Node: %s\\n  pnpm: %s\\n\\nRun \"make doctor\" for a full prerequisite check. Use \"make dev\" to start the API, worker, and web app.\\n' \"$(go version 2>&1 || echo 'not found')\" \"$(node --version 2>&1 || echo 'not found')\" \"$(pnpm --version 2>&1 || echo 'not found')\"",
+        "timeout": 10
+      }
+    }
+  ]
+}
