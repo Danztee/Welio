@@ -21,10 +21,6 @@ import (
 	"github.com/danztee/welio/internal/mailer"
 )
 
-type configuredMailer struct{}
-
-func (configuredMailer) Send(context.Context, mailer.Message) error { return nil }
-
 func newIntegrationService(t *testing.T) *Service {
 	t.Helper()
 	database := dbtest.OpenTestDB(t)
@@ -35,7 +31,7 @@ func newIntegrationService(t *testing.T) *Service {
 	cfg := config.Config{Env: "test", PublicURL: "http://localhost:3000", SignupEnabled: true,
 		AuthCookiePath: "/v1/auth", CookieSecure: true, AuthSecret: []byte(strings.Repeat("s", 32))}
 	return &Service{DB: database, Tokens: NewTokens(cfg.AuthSecret), Limiter: httpx.NewLimiter(), Cfg: cfg,
-		Log: slog.Default(), Mailer: configuredMailer{}, Jobs: jobs}
+		Log: slog.Default(), Jobs: jobs}
 }
 
 func TestAuthRegistrationVerificationResetAndSessions(t *testing.T) {

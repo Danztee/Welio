@@ -53,7 +53,7 @@ func (s *Service) Invite(ctx context.Context, principal *auth.Principal, workspa
 	if err := requireWorkspace(principal, workspaceID, true); err != nil {
 		return uuid.Nil, err
 	}
-	if s.Mailer == nil || s.Jobs == nil {
+	if s.Jobs == nil {
 		return uuid.Nil, httpx.E(503, "invite_delivery_unavailable", "Invitation email is not configured.")
 	}
 	appURL, err := invitationAppURL(s.AppURL)

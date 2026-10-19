@@ -24,7 +24,6 @@ import (
 	"github.com/danztee/welio/internal/db"
 	"github.com/danztee/welio/internal/httpx"
 	"github.com/danztee/welio/internal/jobs"
-	"github.com/danztee/welio/internal/mailer"
 )
 
 const (
@@ -41,7 +40,6 @@ type Service struct {
 	Limiter *httpx.Limiter
 	Cfg     config.Config
 	Log     *slog.Logger
-	Mailer  mailer.Sender
 	Jobs    *river.Client[pgx.Tx]
 }
 
@@ -492,12 +490,6 @@ func (s *Service) consumeToken(ctx context.Context, token, purpose string, actio
 }
 
 func (s *Service) enqueueTokenMail(ctx context.Context, tx pgx.Tx, emailAddress, purpose, token string) error {
-	if s.Mailer == nil {
-		if s.Log != nil {
-			s.Log.Warn("auth email was not queued because no mail provider is configured", "purpose", purpose)
-		}
-		return nil
-	}
 	path, subject, instruction := "/verify-email", "Verify your Welio email", "Confirm your email address"
 	if purpose == "reset_password" {
 		path, subject, instruction = "/reset-password", "Reset your Welio password", "Choose a new password"

@@ -17,7 +17,6 @@ import (
 	"github.com/danztee/welio/internal/core/auth"
 	"github.com/danztee/welio/internal/db"
 	"github.com/danztee/welio/internal/httpx"
-	"github.com/danztee/welio/internal/mailer"
 )
 
 const maxLogoBytes = 450 * 1024
@@ -26,7 +25,6 @@ var slugPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 type Service struct {
 	DB     *db.DB
-	Mailer mailer.Sender
 	Jobs   *river.Client[pgx.Tx]
 	AppURL string
 }

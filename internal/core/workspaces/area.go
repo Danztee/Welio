@@ -9,7 +9,7 @@ import (
 
 // For builds the workspace service from shared application dependencies.
 func For(d *deps.Deps) *Service {
-	return &Service{DB: d.DB, Mailer: d.Mailer, Jobs: d.Jobs, AppURL: d.Cfg.PublicURL}
+	return &Service{DB: d.DB, Jobs: d.Jobs, AppURL: d.Cfg.PublicURL}
 }
 
 // Register installs workspace routes.

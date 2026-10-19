@@ -18,7 +18,7 @@ func For(d *deps.Deps) *Service {
 	}
 	return &Service{
 		DB: d.DB, Tokens: NewTokens(d.Cfg.AuthSecret), Limiter: limiter,
-		Cfg: d.Cfg, Log: d.Log, Mailer: d.Mailer, Jobs: d.Jobs,
+		Cfg: d.Cfg, Log: d.Log, Jobs: d.Jobs,
 	}
 }
 

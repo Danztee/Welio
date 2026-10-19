@@ -216,9 +216,9 @@ func TestPendingInvitationReplacementRevocationAndDeliveryFailure(t *testing.T) 
 	if _, err := service.Invite(ctx, owner, workspaceID, "not an email"); errorCode(err) != "invalid_email" {
 		t.Fatalf("invalid email Invite() error = %v", err)
 	}
-	withoutMailer := &Service{DB: database, AppURL: "https://welio.example"}
-	if _, err := withoutMailer.Invite(ctx, owner, workspaceID, "no-mailer@example.test"); errorCode(err) != "invite_delivery_unavailable" {
-		t.Fatalf("Invite() without mailer error = %v", err)
+	withoutQueue := &Service{DB: database, AppURL: "https://welio.example"}
+	if _, err := withoutQueue.Invite(ctx, owner, workspaceID, "no-mailer@example.test"); errorCode(err) != "invite_delivery_unavailable" {
+		t.Fatalf("Invite() without queue error = %v", err)
 	}
 }
 
@@ -246,13 +246,13 @@ type recordingInvitationSender struct {
 	cancel   context.CancelFunc
 }
 
-func newInvitationService(t *testing.T, database *db.DB, sender mailer.Sender) *Service {
+func newInvitationService(t *testing.T, database *db.DB, _ mailer.Sender) *Service {
 	t.Helper()
 	jobs, err := river.NewClient[pgx.Tx](riverpgxv5.New(nil), &river.Config{})
 	if err != nil {
 		t.Fatalf("create River client: %v", err)
 	}
-	return &Service{DB: database, Mailer: sender, Jobs: jobs, AppURL: "https://welio.example"}
+	return &Service{DB: database, Jobs: jobs, AppURL: "https://welio.example"}
 }
 
 func latestQueuedInvitationEmail(t *testing.T, database *db.DB, to string) mailer.Message {

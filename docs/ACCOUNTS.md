@@ -72,3 +72,9 @@ are enforced by Go on every API request.
 Invoices, payments, and reports are not implemented. See
 [bookings](./BOOKINGS.md) for public customer flows and
 [reminders](./REMINDERS.md) for reminder consent and delivery behavior.
+
+API processes queue verification, password-reset, and invitation emails through
+River in the same transaction as the token. Only the worker needs `EMAIL_FROM`
+and `ZEPTOMAIL_SEND_MAIL_TOKEN`; sender credentials are not required to queue.
+The verification link opens a confirmation screen that submits the one-time
+token to the API. Pending users can resend from the inbox screen.
