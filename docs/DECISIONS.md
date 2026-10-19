@@ -1,5 +1,13 @@
 # Welio technical decisions
 
+**Historical record:** This file preserves decisions made during earlier
+project stages. Several entries describe architecture that has since been
+replaced. The current backend is the standalone Go API described in the root
+README and [`docs/API.md`](./API.md): it uses Go
+authentication, versioned SQL migrations, pgx, and River. Better Auth and the
+Drizzle package were removed; their historical entries below are not current
+implementation guidance.
+
 ## October 18, 2026 — Keep the verification workflow test-free
 
 At the owner's request, remove the MCP integration suite, endpoint smoke script,
@@ -136,13 +144,13 @@ region and tool-capable model or inference profile. AWS credentials are resolved
 server-side via the SDK chain or a Bedrock API key. The existing MCP scope, call
 budget, limits and explicit booking confirmation remain in place. The example
 initially used the US Nova Lite inference profile; the current configuration has
-since been updated to Claude Sonnet 4.6 in `eu-north-1` (see
-`apps/web/.env.example` and `docs/RECEPTIONIST.md`). The owner has tested live
+since been updated to Claude Sonnet 4.6 in `eu-north-1` (see the Go config
+defaults and `docs/RECEPTIONIST.md`). The owner has tested live
 Bedrock inference successfully. Strands tool calls and conversation quality
 still need release verification.
 Alexa+ connectivity and hosting remain separate work.
 
-## October 18, 2026 — pnpm and Turborepo workspace
+## October 18, 2026 — pnpm and Turborepo workspace (superseded)
 
 Moved the existing Next.js application to `apps/web` and the shadcn Base UI
 components, shared `cn` helper, and mobile hook to `packages/ui`. The web app
@@ -152,3 +160,14 @@ Root scripts run app tasks through Turborepo. Drizzle migrations live with the
 `@welio/db` package in `packages/db/drizzle/`; Docker Compose remains at the
 repository root. App environment files live in `apps/web/` so Next.js and the
 Drizzle configuration use the same settings.
+
+## October 19, 2026 — Root Go application and standalone web app
+
+Restructured the repository around a root Go module, following OpenDesk's
+project organization: the named CLI lives in `cmd/welio`, server packages live
+in `internal/`, SQL migrations live at the root, and API/MCP contracts live in
+`contracts/`. The Next.js app is a standalone package in `web/`, with its own
+manifest, lockfile, dependencies, and commands. Removed the Turbo workspace and
+shared `@welio/domain` and `@welio/ui` packages; their source now lives inside
+the web app because no other application consumes it. This keeps the backend
+independently buildable and deployable while preserving a single repository.

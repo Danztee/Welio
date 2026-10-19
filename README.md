@@ -1,141 +1,141 @@
 # Welio
 
-**Manage bookings and customers, with an AI receptionist to help.**
+Welio helps service businesses manage appointments, customers, staff schedules,
+and services. Its AI receptionist answers business questions and helps customers
+prepare and confirm bookings. The receptionist runs on Amazon Bedrock and exposes
+the same tenant-scoped booking operations through a Streamable HTTP MCP server.
 
-Welio helps service businesses keep appointments, schedules, services, and customer details organized. Its AI receptionist answers customer questions and helps them book. The app includes verified accounts, workspace isolation, public booking, customer management, and transactional booking email. The Strands and Amazon Bedrock receptionist is implemented, and the owner has tested live Bedrock inference successfully. Payment processing remains planned. See [ROADMAP.md](./ROADMAP.md) for delivery status.
+## Architecture
+
+The repository uses a root Go module and a standalone Next.js application in
+`web/`. The Go API owns authentication, PostgreSQL, tenant authorization,
+booking rules, MCP, Bedrock calls, transactional mail delivery, and background jobs. Browser
+requests use `NEXT_PUBLIC_WELIO_API_URL`; Next.js server components and actions
+use the private `WELIO_API_INTERNAL_URL`. The web app does not connect to
+PostgreSQL.
+
+The Go layout follows the OpenDesk area boundary: `internal/core` groups
+accounts and workspaces, `internal/jobs` owns durable River arguments and queue
+names, and `internal/mailer` owns the ZeptoMail adapter. Welio does not have
+OpenDesk's mailbox product, so it has no mailbox feature under `internal/email`.
+OpenDesk's `core/mcpserver` serves a workspace-wide helpdesk API; Welio's
+`/api/mcp/{slug}` exposes one business's receptionist tools, so that MCP server
+stays with `internal/receptionist` and uses the same booking service as chat and
+the web API.
+
+```text
+Browser ──> web/ (Next.js UI)
+Browser ──────────> Go API ──> PostgreSQL
+                          ├──> Amazon Bedrock
+                          └──> River workers ──> ZeptoMail
+MCP client ──────────────> Go API (Streamable HTTP)
+```
+
+The Go process can run as `all`, `api`, or `worker`. During development, Docker
+Compose provides PostgreSQL while the API and worker run as separate local
+processes with separate env files. `make migrate` applies SQL and River
+migrations to that database.
 
 ## Run locally
 
-Requirements: a running Docker engine with Docker Compose, Node.js 24, and pnpm 11.9.0 (see `packageManager` in `package.json`). If pnpm is unavailable, install it with `npm install --global pnpm@11.9.0`.
+Requirements: Docker Compose, Node.js 24, pnpm 11.9.0, Go 1.26, and AWS Bedrock
+access for live receptionist responses.
+
+1. Install the standalone web app dependencies and create one private env file
+   for each process:
+
+   ```sh
+   cd web
+   pnpm install
+   cd ..
+   cp .env.api.example .env.api
+   cp .env.worker.example .env.worker
+   cp .env.web.example .env.web
+   ```
+
+2. Set a unique `AUTH_SECRET` of at least 32 bytes in `.env.api`. For Bedrock,
+   use the AWS SDK credential chain or put `AWS_BEARER_TOKEN_BEDROCK` in
+   `.env.api`. Set `ZEPTOMAIL_SEND_MAIL_TOKEN` and `EMAIL_FROM` in
+   `.env.worker` only when enabling email. Keep credentials out of `.env.web`;
+   use an IAM role when hosted.
+
+3. Start the local PostgreSQL dependency and apply migrations:
+
+   ```sh
+   make dev-db
+   make migrate
+   ```
+
+4. Start the Go API in a terminal:
+
+   ```sh
+   make api
+   ```
+
+   Run `make worker` in another terminal to deliver email and process scheduled
+   jobs. The API and worker load separate env files.
+
+5. Start the web app in another terminal:
+
+   ```sh
+   make web
+   ```
+
+   Open [http://127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up). The web
+   target reads only `.env.web`; API and worker credentials stay out of the
+   Next.js process. Stop each foreground process with Ctrl+C; run
+   `make dev-db-down` to stop PostgreSQL while keeping its volume. See [the API
+   guide](./docs/API.md) for service-specific configuration and database tests.
+
+## AI receptionist and MCP
+
+The web receptionist and external MCP server use the same Go booking and
+availability services. The MCP server supports initialization and tool
+discovery, service discovery, availability checks, booking preparation, and
+booking confirmation after explicit customer approval. Proposal expiry,
+workspace scope, availability checks, and idempotency are enforced by the API.
+
+The optional external MCP OAuth integration currently supports a server-level
+`client_credentials` grant. It is a usable MCP integration point, but it does
+not implement Alexa+'s user-level authorization-code/PKCE account-linking flow
+or represent a native Alexa+ connection. Configure OAuth credentials and
+`MCP_OAUTH_RESOURCE_URL` only in the Go API environment. Point it at the Go
+API's public MCP URL, such as
+`https://api.example.com/api/mcp/your-business`. The endpoint must use HTTPS
+outside local development. Follow [the receptionist and MCP guide](./docs/RECEPTIONIST.md)
+to configure and run an external Streamable HTTP MCP client.
+
+## Verification
 
 ```sh
-nvm use
-pnpm install --frozen-lockfile
-cp -n apps/web/.env.example apps/web/.env.local
-pnpm db:up
-pnpm db:migrate
-# Set BETTER_AUTH_SECRET in apps/web/.env.local to a unique random value (32+ characters).
-# Use 127.0.0.1 consistently with the configured BETTER_AUTH_URL.
-pnpm dev
+make check
+make build
 ```
 
-Open [127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up). All email uses ZeptoMail with the verified sender `noreply@hollen.app`. Set `ZEPTOMAIL_SEND_MAIL_TOKEN` privately in `apps/web/.env.local` before testing verification or recovery; there is no local email service. See [docs/ACCOUNTS.md](./docs/ACCOUNTS.md) for complete setup and ZeptoMail configuration. The local database uses development-only credentials from `apps/web/.env.example`; no hosted service account is required. Keep Docker Desktop or OrbStack running. `db:up` waits for PostgreSQL health; `docker compose stop db` stops it without deleting data.
+`make check` validates migration filename pairs, Go formatting, Go tests and vet,
+then runs the web type check and lint. `make build` builds the Go executable and
+the Next.js production app. GitHub Actions runs the same checks and provides an
+isolated PostgreSQL service for the database integration tests.
 
-## AI receptionist
+PostgreSQL integration tests are skipped unless
+`WELIO_TEST_DATABASE_URL` points to a local disposable database whose name ends
+in `_test`. Do not point tests at production or a database containing useful
+data. An external MCP client requires a reachable HTTPS endpoint and its
+server-side OAuth or bearer configuration.
 
-Owners configure greetings, instructions, FAQs, and allowed actions in **Receptionist**. **Test & publish** previews saved settings against real availability without creating appointments or emails, shows setup readiness, and provides publishing and booking-link controls.
-
-The public booking page includes customer chat backed by the Strands SDK and Amazon Bedrock, with scoped Model Context Protocol (MCP) tools. Live Bedrock inference has been tested successfully. Customers review and confirm each proposed appointment before the existing booking operations create it. See [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for server configuration, usage limits, data retention, and remaining release checks.
-
-The optional external MCP endpoint uses Streamable HTTP and exposes tenant-scoped receptionist tools to trusted MCP clients. It is a foundation for the Alexa+ track; it does not itself connect Welio to Alexa+. Real booking completion is an explicit server-side opt-in and requires customer approval and email consent. The external-client flow has not yet been verified end to end. See [docs/RECEPTIONIST.md](./docs/RECEPTIONIST.md) for setup, usage limits, and data retention.
-
-Appointment reminders are available in **Settings** and are off by default. See [docs/REMINDERS.md](./docs/REMINDERS.md) for consent, scheduling, and delivery setup.
-
-## Code style
-
-Prettier owns formatting, including Tailwind class ordering in JSX and `cn`,
-`clsx`, and `cva` calls. It reads the Tailwind v4 theme from
-`apps/web/src/app/globals.css`. ESLint checks Next.js, React, and TypeScript rules;
-formatting rules that conflict with Prettier are disabled. Shared ESLint spacing
-rules add blank lines between imports, declarations, control-flow blocks, and
-returns. Lint warnings fail the check so they cannot quietly accumulate.
-
-Install the recommended workspace extensions in VS Code for formatting and
-ESLint fixes on save. Other editors can use `.editorconfig` and the same
-Prettier configuration. Run `pnpm format` to format files and apply spacing
-rules, then `pnpm check` before pushing. CI already runs `pnpm check` on pushes
-and pull requests. Generated build files, the lockfile, and Drizzle metadata
-are excluded from formatting.
-
-## Commands
-
-| Command            | Purpose                            |
-| ------------------ | ---------------------------------- |
-| `pnpm dev`         | Start development.                 |
-| `pnpm build`       | Build for production.              |
-| `pnpm start`       | Serve the production build.        |
-| `pnpm lint`        | Check code rules.                  |
-| `pnpm format`      | Format files.                      |
-| `pnpm check`       | Check lint, types, and formatting. |
-| `pnpm db:up`       | Start local PostgreSQL.            |
-| `pnpm db:generate` | Generate a migration.              |
-| `pnpm db:migrate`  | Apply migrations.                  |
-
-## Structure
+## Repository layout
 
 ```text
-apps/web/
-  src/
-    app/               App Router pages, layouts, global styles, and HTTP routes
-      api/health/      Application liveness endpoint
-      api/ready/       Database/schema readiness endpoint
-    components/        Auth, dashboard, platform, and product UI
-    features/          Server queries and explicit feature view models
-    lib/               Next.js auth, email, AI, HTTP, and server integrations
-packages/ui/
-  src/components/      Shared shadcn/ui source components
-  src/hooks/           Shared UI hooks
-  src/lib/utils.ts     Shared class-name helper
-packages/domain/
-  src/bookings/        Booking contracts, enums, time helpers, and pure rules
-  src/workspaces/      Workspace contracts, enums, and domain errors
-  src/receptionist/    Receptionist contracts, settings, and proposal rules
-packages/db/
-  drizzle/             Reviewed SQL migrations and schema snapshots
-  src/schema/          Drizzle schema, grouped by database responsibility
-  src/connection.ts    PostgreSQL connection factory and Database type
-  src/bookings/        Booking, policy, reminder, and email-outbox queries
-  src/workspaces/      Workspace, team, invitation, and access queries
-  src/receptionist/    Chat-session, proposal, and settings persistence
-  drizzle.config.ts    Drizzle Kit configuration and database tasks
-docker-compose.yaml    Persistent local PostgreSQL 17 and Valkey 8 services
-turbo.json             Workspace task graph
-docs/DECISIONS.md      Stack choices and open decisions
-ROADMAP.md             Phases, acceptance checks, and release scope
-.github/workflows/     CI checks and production build
+cmd/welio/       Go API, migration, health-check, and version commands
+contracts/       HTTP and MCP contracts
+internal/        Core/auth/workspaces, catalog, bookings, receptionist, jobs, mailer, and app wiring
+migrations/      Versioned PostgreSQL schema and queue migrations
+web/             Standalone Next.js application and its package manifest
+docs/            Setup guides and product documentation
+Dockerfile       Go API and worker image
+docker-compose.dev.yml  Local PostgreSQL development dependency
 ```
 
-Use `@/` imports for app source, `@welio/ui/...` for shared components, `@welio/domain/...` for framework-independent contracts and rules, and `@welio/db/...` for database access. Keep credentials and server integrations on the server; `apps/web/src/lib/env.ts`, the database accessor, and database repositories are guarded by `server-only`. App server code gets a connection through `getDatabase` from `@welio/db`.
-
-Put input contracts and pure policy in `packages/domain`; put SQL, schema constraints, and atomic persistence operations in `packages/db`. Keep Next.js routes, server actions, provider calls, transport mapping, and feature composition in `apps/web`. `apps/web/src/features/workspaces` owns the dashboard query boundary and its explicit UI view types. Keep shadcn/ui primitives in `packages/ui`; compose them into product flows in the web app.
-
-## Configuration
-
-`APP_URL` is the absolute HTTP(S) application origin, used for metadata. It defaults to `http://127.0.0.1:3000` for development, matching `BETTER_AUTH_URL`; use that exact host when opening the local app because public write endpoints validate the request origin. Set both values to the actual application origin when deploying and rebuild. Invalid values fail with field names, without printing configuration values.
-
-Commit `apps/web/.env.example` with placeholders; keep `apps/web/.env.local` and real credentials out of Git. The local Compose database is bound to `127.0.0.1:5461`; it uses the development-only credentials shown in the example and does not reuse a PostgreSQL instance on port 5432. Hosted PostgreSQL needs its own credentials and verified TLS configuration from the provider; certificate verification is not disabled by the client. All email uses ZeptoMail’s Send Mail API. Only the Send Mail token and verified sender are configured server-side; the HTTPS endpoint is fixed in application code. The AI receptionist uses an AWS region, Bedrock model and server-side AWS credentials. Valkey is included in local Compose but is not currently used by application code.
-
-The application uses a light amber shadcn theme with white panels and a pale gray sidebar and locally bundled Inter, Source Serif 4, and JetBrains Mono fonts, so builds do not fetch fonts from Google. UI primitives use the official shadcn Base UI Nova preset and Lucide icons. To add a component, use the official registry explicitly:
-
-```sh
-pnpm --dir apps/web dlx shadcn@latest add @shadcn/input
-```
-
-## Verify and build
-
-```sh
-pnpm check
-pnpm build
-pnpm start
-curl -i http://localhost:3000/api/health
-```
-
-`DATABASE_URL` is required only when accessing the database. Database configuration loads `apps/web/.env.local`/`apps/web/.env` using Next.js environment precedence; existing process variables take priority. The database connection is lazy, so `pnpm build` and liveness work without PostgreSQL. Invalid database URLs fail without printing their values. The local Compose file maps PostgreSQL to `127.0.0.1:5461` with the development-only `user/password` credentials used by `.env.example`; Valkey is included in Compose but the application does not currently use it.
-
-The health endpoint returns `status: "ok"`, `service: "welio"`, and a generated request ID also available in `X-Request-Id`. It is not cached and reports process liveness only; `/api/ready` separately verifies the database and core migrated tables. It returns 200 with `status: "ready"` when usable, or 503 with `status: "not_ready"` when unconfigured, unreachable, or unmigrated. Both endpoints send `Cache-Control: no-store` and a generated `X-Request-Id`; raw database errors are not returned.
-
-GitHub Actions runs a frozen-lockfile install, code checks, and a production build on pushes and pull requests. It has not been run remotely until this repository is pushed to GitHub. Hosting and external services have not been configured.
-
-## Database workflow
-
-Change the relevant module under `packages/db/src/schema/`, run `pnpm db:generate`, review the generated SQL in `packages/db/drizzle/`, then run `pnpm db:migrate`. Turbo routes both tasks to `@welio/db`; its Drizzle config loads the schema barrel and local environment values from `apps/web/.env.local` or `apps/web/.env`. Commit schema, SQL, snapshots, and the lockfile together. Do not use schema push or automatically run migrations during web requests/builds. Reapplying migrations is a no-op when no changes are pending.
-
-Workspace foreign keys and server-side membership checks protect real business data. Real availability and booking operations now enforce working hours, time off, policies, idempotency, and database-level overlap exclusion. See [docs/BOOKINGS.md](./docs/BOOKINGS.md) for setup, public/customer routes, the email outbox, and verification.
-
-## Application UI
-
-The signed-in application lives at `/dashboard`; new accounts create a workspace through `/onboarding`. Each workspace starts with its own PostgreSQL records.
-
-Payment processing and reports remain future work. See [docs/UI-COMPONENTS.md](./docs/UI-COMPONENTS.md) for shared component guidance.
-
-See [ROADMAP.md](./ROADMAP.md) for remaining release work and [docs/DECISIONS.md](./docs/DECISIONS.md) for dated technical decisions.
+Go commands run from the repository root; frontend commands run from `web/`.
+See the focused guides for [accounts](./docs/ACCOUNTS.md),
+[bookings](./docs/BOOKINGS.md), and [reminders](./docs/REMINDERS.md).

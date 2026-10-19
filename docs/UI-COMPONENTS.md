@@ -21,10 +21,9 @@ controls independently.
 The brand SVG, page layout, booking steps, business content and application logic
 remain product code. These are not substitute implementations of shared controls.
 
-Use components from `packages/ui/src/components` for new shared controls and
-import them from `@welio/ui/components/...`. The shadcn CLI configuration lives
-in `apps/web/components.json` and `packages/ui/components.json`; keep their style
-and icon settings aligned. Theme changes belong in `apps/web/src/app/globals.css`.
+Use components from `web/src/components/ui` for new shared controls and
+import them from `@/components/ui/...`. The shadcn CLI configuration lives
+in `web/components.json`. Theme changes belong in `web/src/app/globals.css`.
 Preserve form names, values, validation and explicit booking consent when changing
 UI. Do not replace installed components with global native-element styling.
 Shared wrappers such as Grid, Panel and Notice should continue composing shadcn
