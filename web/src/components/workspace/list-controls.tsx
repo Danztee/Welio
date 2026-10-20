@@ -76,7 +76,7 @@ export function ListSearch({
       placeholder={placeholder[section] ?? "Search…"}
       value={value}
       onChange={updateSearch}
-      className="sm:max-w-[18rem]"
+      className="sm:max-w-[22rem]"
     />
   );
 }
