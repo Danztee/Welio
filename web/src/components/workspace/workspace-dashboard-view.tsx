@@ -392,6 +392,7 @@ function WorkspacePageContent({
           data={data}
           catalog={catalog}
           searchQuery={searchQuery}
+          now={model.now}
         />
       ) : null;
     case "Customers":

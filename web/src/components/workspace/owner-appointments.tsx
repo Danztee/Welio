@@ -3,6 +3,7 @@ import { changeWorkspaceBookingAction } from "@/app/dashboard/booking-actions";
 import { Confirm, Grid, Heading, Status } from "@/components/platform/shared";
 import { ListControls, ListPagination, ListSearch } from "./list-controls";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -24,13 +25,14 @@ import type {
 } from "@/lib/domain/bookings/contract";
 import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
-import { CalendarPlusIcon } from "lucide-react";
+import { CalendarDaysIcon, CalendarPlusIcon, ListIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import { apiUrl } from "@/lib/api-url";
 import { fromAPIContract } from "@/lib/api-contract";
 import { formatMoney, formatWhen } from "./booking-format";
+import { AppointmentCalendar } from "./appointment-calendar";
 import {
   BookingDetails,
   RealBookingForm,
@@ -66,6 +68,33 @@ async function save(workspaceId: string, input: unknown) {
 const slotSchema = z.array(
   z.object({ time: z.string(), staffId: z.uuid(), startsAt: z.string() }),
 );
+
+const bookingViewSchema = z.object({
+  workspaceId: z.uuid(),
+  id: z.uuid(),
+  version: z.number().int(),
+  status: z.enum(["confirmed", "completed", "cancelled", "no_show"]),
+  serviceId: z.uuid(),
+  staffId: z.uuid(),
+  serviceName: z.string(),
+  staffName: z.string(),
+  startsAt: z.iso.datetime({ offset: true }),
+  endsAt: z.iso.datetime({ offset: true }),
+  timeZone: z.string(),
+  priceMinor: z.number().int(),
+  currency: z.string(),
+  durationMinutes: z.number().int(),
+  name: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  business: z.string(),
+  contactEmail: z.string().nullable(),
+  businessPhone: z.string(),
+  canChange: z.boolean(),
+  cancelHours: z.number().int(),
+  slug: z.string(),
+});
 
 function toBookingView(
   data: Data,
@@ -127,6 +156,31 @@ async function loadAppointmentSlots(
   }
 
   return slotSchema.parse(fromAPIContract(payload));
+}
+
+async function loadAppointmentDetails(
+  workspaceId: string,
+  appointmentId: string,
+) {
+  const response = await fetch(
+    apiUrl(`/v1/workspaces/${workspaceId}/appointments/${appointmentId}`),
+    { cache: "no-store", credentials: "include" },
+  );
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    const error = z
+      .object({ detail: z.string().optional(), title: z.string().optional() })
+      .safeParse(payload);
+    throw Error(
+      error.success
+        ? (error.data.detail ??
+            error.data.title ??
+            "Could not load appointment details.")
+        : "Could not load appointment details.",
+    );
+  }
+
+  return bookingViewSchema.parse(fromAPIContract<BookingView>(payload));
 }
 
 function OwnerAppointmentTable({
@@ -227,10 +281,14 @@ function AppointmentDialogs({
   data,
   catalog,
   creating,
+  selected,
   view,
+  detailsLoading,
+  detailsError,
   rescheduling,
   command,
   onCreatingChange,
+  onRetryDetails,
   onReschedulingChange,
   onCommandChange,
   onCloseDetails,
@@ -240,10 +298,14 @@ function AppointmentDialogs({
   data: Data;
   catalog: Catalog;
   creating: boolean;
+  selected: string;
   view: BookingView | undefined;
+  detailsLoading: boolean;
+  detailsError: string;
   rescheduling: boolean;
   command: { action: "cancel" | "completed" | "no_show"; key: string } | null;
   onCreatingChange: (creating: boolean) => void;
+  onRetryDetails: () => void;
   onReschedulingChange: (rescheduling: boolean) => void;
   onCommandChange: (
     command: { action: "cancel" | "completed" | "no_show"; key: string } | null,
@@ -268,67 +330,93 @@ function AppointmentDialogs({
           </DialogContent>
         </Dialog>
       )}
-      {view && (
+      {selected && (
         <Sheet open onOpenChange={(open) => !open && onCloseDetails()}>
           <SheetContent
             side="right"
             className={appointmentDetailsSheetClassName}
           >
             <SheetHeader>
-              <SheetTitle>{view.name || "Appointment details"}</SheetTitle>
-              <SheetDescription>{view.serviceName}</SheetDescription>
+              <SheetTitle>
+                {view?.name ||
+                  (detailsLoading
+                    ? "Loading appointment"
+                    : "Appointment details")}
+              </SheetTitle>
+              <SheetDescription>
+                {view?.serviceName ?? "Appointment details"}
+              </SheetDescription>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className="flex flex-col gap-4">
-                <BookingDetails view={view} />
-                {view.status === "confirmed" && (
-                  <div className="grid grid-cols-2 gap-2 border-t pt-4">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => onReschedulingChange(true)}
-                    >
-                      Reschedule
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={() =>
-                        onCommandChange({
-                          action: "cancel",
-                          key: crypto.randomUUID(),
-                        })
-                      }
-                    >
-                      Cancel appointment
-                    </Button>
-                    <Button
-                      variant="success"
-                      className="w-full"
-                      onClick={() =>
-                        onCommandChange({
-                          action: "completed",
-                          key: crypto.randomUUID(),
-                        })
-                      }
-                    >
-                      Mark completed
-                    </Button>
-                    <Button
-                      variant="warning"
-                      className="w-full"
-                      onClick={() =>
-                        onCommandChange({
-                          action: "no_show",
-                          key: crypto.randomUUID(),
-                        })
-                      }
-                    >
-                      Mark no-show
-                    </Button>
-                  </div>
-                )}
-              </div>
+              {detailsLoading ? (
+                <div
+                  className="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground"
+                  role="status"
+                >
+                  <Spinner aria-hidden="true" />
+                  Loading appointment details…
+                </div>
+              ) : detailsError ? (
+                <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {detailsError}
+                  </p>
+                  <Button variant="outline" size="sm" onClick={onRetryDetails}>
+                    Try again
+                  </Button>
+                </div>
+              ) : view ? (
+                <div className="flex flex-col gap-4">
+                  <BookingDetails view={view} />
+                  {view.status === "confirmed" && (
+                    <div className="grid grid-cols-2 gap-2 border-t pt-4">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => onReschedulingChange(true)}
+                      >
+                        Reschedule
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() =>
+                          onCommandChange({
+                            action: "cancel",
+                            key: crypto.randomUUID(),
+                          })
+                        }
+                      >
+                        Cancel appointment
+                      </Button>
+                      <Button
+                        variant="success"
+                        className="w-full"
+                        onClick={() =>
+                          onCommandChange({
+                            action: "completed",
+                            key: crypto.randomUUID(),
+                          })
+                        }
+                      >
+                        Mark completed
+                      </Button>
+                      <Button
+                        variant="warning"
+                        className="w-full"
+                        onClick={() =>
+                          onCommandChange({
+                            action: "no_show",
+                            key: crypto.randomUUID(),
+                          })
+                        }
+                      >
+                        Mark no-show
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
           </SheetContent>
         </Sheet>
@@ -386,38 +474,120 @@ export function OwnerAppointments({
   data,
   catalog,
   searchQuery,
+  now,
 }: {
   data: Data;
   catalog: Catalog;
   searchQuery: string;
+  now: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState("");
+  const [loadedView, setLoadedView] = useState<BookingView>();
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
   const [rescheduling, setRescheduling] = useState(false);
   const [command, setCommand] = useState<{
     action: "cancel" | "completed" | "no_show";
     key: string;
   } | null>(null);
+  const detailRequest = useRef(0);
   const selectedBooking = data.bookings.find(
     (booking) => booking.id === selected,
   );
   const view = selectedBooking
     ? toBookingView(data, selectedBooking)
-    : undefined;
+    : loadedView;
+
+  async function selectAppointment(bookingId: string) {
+    detailRequest.current += 1;
+    const request = detailRequest.current;
+    setSelected(bookingId);
+    setDetailsError("");
+    const booking = data.bookings.find((item) => item.id === bookingId);
+    if (booking) {
+      setLoadedView(undefined);
+      setDetailsLoading(false);
+      return;
+    }
+
+    setLoadedView(undefined);
+    setDetailsLoading(true);
+    try {
+      const appointment = await loadAppointmentDetails(
+        data.workspace.id,
+        bookingId,
+      );
+      if (request === detailRequest.current) setLoadedView(appointment);
+    } catch (error) {
+      if (request === detailRequest.current) {
+        setDetailsError(
+          error instanceof Error
+            ? error.message
+            : "Could not load appointment details.",
+        );
+      }
+    } finally {
+      if (request === detailRequest.current) setDetailsLoading(false);
+    }
+  }
+
+  function retryAppointmentDetails() {
+    if (selected) void selectAppointment(selected);
+  }
 
   async function change(input: ChangeInput) {
-    if (!selectedBooking) return;
+    if (!view) return;
 
-    await save(data.workspace.id, { id: selectedBooking.id, change: input });
+    await save(data.workspace.id, { id: view.id, change: input });
+    setCalendarRefreshKey((key) => key + 1);
+    if (!selectedBooking) {
+      setLoadedView(await loadAppointmentDetails(data.workspace.id, view.id));
+    }
     router.refresh();
   }
 
   function closeDetails() {
+    detailRequest.current += 1;
     setSelected("");
+    setLoadedView(undefined);
+    setDetailsLoading(false);
+    setDetailsError("");
     setRescheduling(false);
     setCommand(null);
   }
+
+  const viewSwitcher = (
+    <div
+      className="inline-flex shrink-0 items-center rounded-lg border bg-muted/40 p-0.5"
+      role="group"
+      aria-label="Appointment view"
+    >
+      <Button
+        type="button"
+        variant={viewMode === "list" ? "secondary" : "ghost"}
+        size="sm"
+        aria-pressed={viewMode === "list"}
+        onClick={() => setViewMode("list")}
+      >
+        <ListIcon data-icon="inline-start" />
+        List
+      </Button>
+      <Button
+        type="button"
+        variant={viewMode === "calendar" ? "secondary" : "ghost"}
+        size="sm"
+        aria-pressed={viewMode === "calendar"}
+        onClick={() => setViewMode("calendar")}
+      >
+        <CalendarDaysIcon data-icon="inline-start" />
+        Calendar
+      </Button>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -425,6 +595,7 @@ export function OwnerAppointments({
         title="Appointments"
         action={
           <>
+            {viewSwitcher}
             <ListSearch data={data} section="Appointments" />
             <Button
               disabled={!catalog.services.length}
@@ -436,25 +607,56 @@ export function OwnerAppointments({
           </>
         }
       />
-      <OwnerAppointmentTable
-        data={data}
-        searchQuery={searchQuery}
-        onSelect={setSelected}
-      />
+      <div hidden={viewMode !== "list"}>
+        <OwnerAppointmentTable
+          data={data}
+          searchQuery={searchQuery}
+          onSelect={selectAppointment}
+        />
+      </div>
+      <div
+        hidden={viewMode !== "calendar"}
+        className="min-w-0 overflow-hidden rounded-xl border border-border bg-card"
+      >
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:px-4">
+          <ListControls
+            data={data}
+            section="Appointments"
+            idPrefix="calendar"
+          />
+        </div>
+        <AppointmentCalendar
+          workspaceId={data.workspace.id}
+          timeZone={data.workspace.timeZone}
+          now={now}
+          active={viewMode === "calendar"}
+          search={searchQuery}
+          status={data.pagination?.status ?? ""}
+          filterFrom={data.pagination?.from ?? ""}
+          filterTo={data.pagination?.to ?? ""}
+          refreshKey={calendarRefreshKey}
+          onSelect={selectAppointment}
+        />
+      </div>
       <AppointmentDialogs
         data={data}
         catalog={catalog}
         creating={creating}
+        selected={selected}
         view={view}
+        detailsLoading={detailsLoading}
+        detailsError={detailsError}
         rescheduling={rescheduling}
         command={command}
         onCreatingChange={setCreating}
+        onRetryDetails={retryAppointmentDetails}
         onReschedulingChange={setRescheduling}
         onCommandChange={setCommand}
         onCloseDetails={closeDetails}
         onChange={change}
         onCreated={() => {
           setCreating(false);
+          setCalendarRefreshKey((key) => key + 1);
           router.refresh();
         }}
       />

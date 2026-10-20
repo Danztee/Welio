@@ -84,22 +84,26 @@ export function ListSearch({
 export function ListControls({
   data,
   section,
+  idPrefix = "list",
 }: {
   data: WorkspaceDashboardData;
   section: DashboardSection;
+  idPrefix?: string;
 }) {
   const page = data.pagination;
   if (!page || section !== "Appointments") return null;
 
-  return <AppointmentFilters data={data} page={page} />;
+  return <AppointmentFilters data={data} page={page} idPrefix={idPrefix} />;
 }
 
 function AppointmentFilters({
   data,
   page,
+  idPrefix,
 }: {
   data: WorkspaceDashboardData;
   page: NonNullable<WorkspaceDashboardData["pagination"]>;
+  idPrefix: string;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -188,6 +192,7 @@ function AppointmentFilters({
 
   const hasFilters = hasStatus || hasDate;
   const dateLabel = [page.from, page.to].filter(Boolean).join(" – ");
+  const statusFilterId = `${idPrefix}-appointment-status-filter`;
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -221,7 +226,7 @@ function AppointmentFilters({
               <section className="border-b px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <label
-                    htmlFor="appointment-status-filter"
+                    htmlFor={statusFilterId}
                     className="text-sm font-medium"
                   >
                     Status
@@ -242,7 +247,7 @@ function AppointmentFilters({
                   </Button>
                 </div>
                 <NativeSelect
-                  id="appointment-status-filter"
+                  id={statusFilterId}
                   value={draft.status}
                   onChange={(event) =>
                     setFilterDraft({ ...draft, status: event.target.value })
