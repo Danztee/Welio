@@ -99,16 +99,12 @@ the Go API environment. Secrets must remain server-side. Configure the exact
 public resource URL and HTTPS origin for remote clients; see
 [`.env.api.example`](../.env.api.example) and the API guide.
 
-The OAuth integration currently uses the service-level `client_credentials`
-grant. This supports service discovery and controlled MCP clients, but Welio
-does not yet implement Alexa+'s user-level authorization-code/PKCE account
-linking or a verified native Alexa+ connection. Do not describe the current
-integration as a native Alexa+ booking connection.
-
-This limitation does not block the Amazon Developer Hackathon's Alexa+ track:
-its rules accept a self-hosted MCP server using Streamable HTTP. See the
-[hackathon demo guide](./HACKATHON-DEMO.md) for the local rehearsal and video
-flow.
+The endpoint exposes a self-hosted Streamable HTTP MCP service and its OAuth
+grant is service-level `client_credentials`. It does not link an individual
+Alexa+ account. The Amazon Developer Hackathon rules accept self-hosted MCP
+servers using Streamable HTTP. See the [MCP contract](../contracts/mcp.md) and
+[AWS integration notes](./AWS-INTEGRATIONS.md) for the endpoint and Bedrock
+details.
 
 ## Data limits and retention
 

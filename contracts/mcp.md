@@ -32,7 +32,3 @@ confirmation reuses the Go booking service and checks the proposal's workspace,
 expiry, approval token, idempotency, and current availability. A repeated
 confirmation returns the same appointment; a conflicting booking is rejected
 and requires a new proposal.
-
-The OAuth grant currently provides service-level access. It does not implement
-Alexa+'s user-level authorization-code/PKCE account-linking flow, so the
-endpoint is not a native Alexa+ connection.

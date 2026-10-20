@@ -14,14 +14,9 @@ requests use `NEXT_PUBLIC_WELIO_API_URL`; Next.js server components and actions
 use the private `WELIO_API_INTERNAL_URL`. The web app does not connect to
 PostgreSQL.
 
-The Go layout follows the OpenDesk area boundary: `internal/core` groups
-accounts and workspaces, `internal/jobs` owns durable River arguments and queue
-names, and `internal/mailer` owns the ZeptoMail adapter. Welio does not have
-OpenDesk's mailbox product, so it has no mailbox feature under `internal/email`.
-OpenDesk's `core/mcpserver` serves a workspace-wide helpdesk API; Welio's
-`/api/mcp/{slug}` exposes one business's receptionist tools, so that MCP server
-stays with `internal/receptionist` and uses the same booking service as chat and
-the web API.
+The backend is organized by business area. Chat, external MCP clients, and the
+dashboard use the same booking and availability services, so each entry point
+enforces the same workspace rules.
 
 ```text
 Browser ──> web/ (Next.js UI)
@@ -73,17 +68,16 @@ discovery, service discovery, availability checks, booking preparation, and
 booking confirmation after explicit customer approval. Proposal expiry,
 workspace scope, availability checks, and idempotency are enforced by the API.
 
-The optional external MCP OAuth integration currently supports a server-level
-`client_credentials` grant. It is a usable MCP integration point, but it does
-not implement Alexa+'s user-level authorization-code/PKCE account-linking flow
-or represent a native Alexa+ connection. Configure OAuth credentials and
+External MCP clients connect to the business-scoped Streamable HTTP endpoint.
+Authentication uses a business-specific bearer secret or the optional
+service-level OAuth `client_credentials` grant. Configure credentials and
 `MCP_OAUTH_RESOURCE_URL` only in the Go API environment. Point it at the Go
 API's public MCP URL, such as
 `https://api.example.com/api/mcp/your-business`. The endpoint must use HTTPS
 outside local development. Follow [the receptionist and MCP guide](./docs/RECEPTIONIST.md)
 to configure and run an external Streamable HTTP MCP client.
-For the Alexa+ hackathon rehearsal and video outline, see
-[the hackathon demo guide](./docs/HACKATHON-DEMO.md).
+See [AWS integration notes](./docs/AWS-INTEGRATIONS.md) for the Bedrock runtime
+integration and Kiro Crew's role in development.
 
 ## Verification
 
@@ -105,14 +99,14 @@ web, browser, and image checks.
 ## Repository layout
 
 ```text
-cmd/welio/       Go API, migration, health-check, and version commands
-contracts/       HTTP and MCP contracts
-internal/        Core/auth/workspaces, catalog, bookings, receptionist, jobs, mailer, and app wiring
-migrations/      Versioned PostgreSQL schema and queue migrations
-web/             Standalone Next.js application and its package manifest
-docs/            Setup guides and product documentation
-Dockerfile       Go API and worker image
-docker-compose.dev.yml  Local PostgreSQL development dependency
+cmd/welio/                Go API, migration, health-check, and version commands
+contracts/                HTTP and MCP contracts
+internal/                 Application areas and infrastructure
+migrations/               PostgreSQL schema and queue migrations
+web/                      Next.js application
+docs/                     Setup and product guides
+Dockerfile                Go API and worker image
+docker-compose.dev.yml    Local PostgreSQL dependency
 ```
 
 Go commands run from the repository root; frontend commands run from `web/`.
@@ -127,3 +121,8 @@ the same checks. API artifacts remain owned by `make contracts`.
 
 See [the architecture guide](./docs/ARCHITECTURE.md) for module boundaries,
 workspace data flow, and the patterns adapted from the local OpenDesk reference.
+
+## License
+
+Welio is licensed under the Apache License 2.0. See [LICENSE](./LICENSE) for
+the complete terms.

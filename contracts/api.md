@@ -23,14 +23,14 @@ at `GET /v1/openapi.json`.
 
 ## Route groups
 
-| Area | Routes |
-| --- | --- |
-| Authentication and account | `/v1/auth/*`, `/v1/me`, `/v1/me/session*` |
-| Workspaces and team access | `/v1/workspaces`, `/v1/workspaces/{workspaceID}/*`, `/v1/invitations/*` |
-| Service catalog and staff | `/v1/catalog/*` |
-| Public booking and customer self-service | `/v1/book/{slug}*`, `/v1/bookings/{id}` |
-| Workspace appointments and customers | `/v1/workspaces/{workspaceId}/appointments*`, `/customers*`, `/availability` |
-| Receptionist configuration and preview | `/v1/workspaces/{workspaceID}/receptionist*` |
+| Area                                     | Routes                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| Authentication and account               | `/v1/auth/*`, `/v1/me`, `/v1/me/session*`                                    |
+| Workspaces and team access               | `/v1/workspaces`, `/v1/workspaces/{workspaceID}/*`, `/v1/invitations/*`      |
+| Service catalog and staff                | `/v1/catalog/*`                                                              |
+| Public booking and customer self-service | `/v1/book/{slug}*`, `/v1/bookings/{id}`                                      |
+| Workspace appointments and customers     | `/v1/workspaces/{workspaceId}/appointments*`, `/customers*`, `/availability` |
+| Receptionist configuration and preview   | `/v1/workspaces/{workspaceID}/receptionist*`                                 |
 
 Public booking routes do not require the workspace access token. They still
 validate business publication, booking policy, slot availability, customer

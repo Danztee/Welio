@@ -32,9 +32,7 @@ production.
 
 Go derives workspace identity and roles from the authenticated principal and
 checks membership on each request. Owners manage business setup, invitations,
-catalog, and bookings; team members have limited access. The versioned SQL
-migrations create a fresh schema and do not import Better Auth accounts or the
-former Drizzle schema.
+catalog, and bookings; team members have limited access.
 
 Hosted deployments set environment values on each service: the web service gets
 only public web/API URLs, the API gets database, auth, Bedrock, and MCP settings,
@@ -50,13 +48,12 @@ Appointment reminders are checked every minute and queued for eligible appointme
 
 The receptionist maintenance worker runs every fifteen minutes. It removes expired chat sessions that have no active turn lease and purges expired, unconfirmed MCP booking proposals. Confirmed proposals retain their appointment reference for idempotent confirmation retries.
 
-River records job state and retry history in `river_job`; Welio does not maintain a separate `email_outbox` table.
+River records job state and retry history in `river_job`.
 
 The public receptionist chat, private owner preview, and Streamable HTTP MCP
-handlers are registered in the Go API. The browser calls the configured public
-Go API origin directly, following OpenDesk's web API pattern. Next.js server
-components and actions use the private internal origin. No business request
-reads or writes PostgreSQL from Next.js.
+handlers are registered in the Go API. Browser requests use the configured
+public API origin; Next.js server components and actions use the private
+internal origin. Business data is read and written by the Go API.
 
 ## Receptionist and MCP
 
@@ -81,15 +78,11 @@ the app and API are on separate subdomains, and keep `AUTH_COOKIE_PATH` at
 `/v1/auth`. If you allow remote MCP origins, configure those exact origins in
 the Go API's `MCP_ALLOWED_ORIGINS`.
 
-Configure the service-level OAuth client ID and secret only in the API service
-using `MCP_OAUTH_CLIENT_ID`, `MCP_OAUTH_CLIENT_SECRET`, and the exact public MCP URL in
+Configure service-level OAuth credentials only in the API environment using
+`MCP_OAUTH_CLIENT_ID`, `MCP_OAUTH_CLIENT_SECRET`, and the exact public MCP URL in
 `MCP_OAUTH_RESOURCE_URL`. Point it at the Go API's public MCP endpoint. Go
-serves OAuth metadata, token exchange, JWKS, and MCP bearer validation directly.
-This cutover supports service-level `client_credentials` discovery and shared
-service operations. It does not implement Alexa+'s user-level
-authorization-code/PKCE account-linking flow; Alexa+ user-specific booking is
-therefore not complete. A standards-compatible MCP client can use the service
-credential to exercise the customer-approved booking flow.
+serves OAuth metadata, token exchange, JWKS, and MCP bearer validation. See the
+[receptionist guide](./RECEPTIONIST.md) for the MCP authorization model.
 
 ## Verification
 

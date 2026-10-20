@@ -81,9 +81,9 @@ can result in a duplicate message.
 
 Configure a verified `EMAIL_FROM` and a server-only
 `ZEPTOMAIL_SEND_MAIL_TOKEN`. `sent` means ZeptoMail accepted the message; it
-does not guarantee inbox delivery. There is no Next.js email route or external
-cron endpoint. Run the Go worker role continuously so River can deliver email
-and schedule reminders. See [the API guide](./API.md) for worker configuration.
+does not guarantee inbox delivery. Run the Go worker role continuously so
+River can deliver email and schedule reminders. See [the API guide](./API.md)
+for worker configuration.
 
 ## Appointment reminders
 
