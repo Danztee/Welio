@@ -10,7 +10,7 @@ export function Heading({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-12 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex min-h-12 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance">
           {title}
@@ -22,7 +22,7 @@ export function Heading({
         )}
       </div>
       {action && (
-        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto">
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
           {action}
         </div>
       )}
