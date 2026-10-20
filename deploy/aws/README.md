@@ -1,18 +1,18 @@
 # AWS demo deployment
 
-The Alexa+ demo runs as one small AWS stack: an EC2 host runs the Go API,
-worker, Next.js app, PostgreSQL, and Caddy in separate containers. CloudFront
-provides the public HTTPS address and connects to Caddy over a private VPC
-origin. The app uses an EC2 instance role for Amazon Bedrock. PostgreSQL and API
-ports are not publicly reachable, and Systems Manager replaces SSH access.
+The Welio demo runs as one small AWS stack: an EC2 host runs the Go API, worker,
+Next.js app, PostgreSQL, and Caddy in separate containers. CloudFront provides
+the public HTTPS address and connects to Caddy over a private VPC origin. The
+app uses an EC2 instance role for Amazon Bedrock. PostgreSQL and API ports are
+not publicly reachable, and Systems Manager replaces SSH access.
 
 This is a single-host demo deployment, not a highly available production
 service. PostgreSQL lives on an encrypted EBS volume attached to that host.
 
 ## Sign in and deploy
 
-Install Python 3.10+, Git, and AWS CLI v2, then sign in to the AWS account that
-has your credits:
+Install Python 3.10+, Git, and AWS CLI v2, then authenticate to the AWS account
+you use for the demo:
 
 ```sh
 aws login --region eu-north-1
@@ -78,8 +78,8 @@ business bearer secret from `MCP_API_SECRETS_JSON` in `.env.production`.
 ## GitHub Actions deployment
 
 [Deploy production](../../.github/workflows/deploy.yml) is started manually on
-`main`. It runs the existing Go, web, browser, and container checks, then
-assumes an AWS role using GitHub OIDC. It uploads source only; production
+`main`. It runs the Go, web, and container checks, then assumes an AWS role
+using GitHub OpenID Connect (OIDC). It uploads source only; production
 credentials stay on the host. The GitHub `production` environment must allow
 only `main`. No AWS access keys or app secrets are stored in GitHub.
 
@@ -117,13 +117,10 @@ existing app installation; its role cannot modify infrastructure or start EC2.
 
 ## Cost boundary
 
-The stack uses a small `t4g.medium` instance, a 30 GiB encrypted `gp3` disk, and
-one public IPv4 address. These are expected to fit near the requested
-`$50/month` infrastructure budget in `eu-north-1`, but the amount is not a hard
-AWS spending cap. CloudFront requests, Bedrock requests, and outbound data
-transfer are usage-billed separately. Keep `AI_DAILY_CALL_LIMIT` low for a demo
-and monitor AWS billing; AWS Budgets can notify you but do not stop charges
-automatically.
+The stack uses a `t4g.medium` instance, a 30 GiB encrypted `gp3` disk, and one
+public IPv4 address. Charges vary with AWS prices, CloudFront requests, Bedrock
+requests, and outbound data transfer. Keep `AI_DAILY_CALL_LIMIT` low for a demo
+and monitor AWS billing. AWS Budgets can send alerts but do not stop charges.
 
 ## Validate changes locally
 

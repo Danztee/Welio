@@ -103,8 +103,8 @@ public resource URL and HTTPS origin for remote clients; see
 [`.env.api.example`](../.env.api.example) and the API guide.
 
 The OAuth grant is service-level `client_credentials`; it does not link an
-individual Alexa+ account. See [AWS integrations](./AWS-INTEGRATIONS.md) for
-runtime and development tooling.
+individual user's account. See the
+[AWS deployment guide](../deploy/aws/README.md) for hosted runtime details.
 
 ## Data limits and retention
 

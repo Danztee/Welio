@@ -36,9 +36,7 @@ generated Fetch client, operation functions, and models share one contract.
 Server requests use a request-scoped client so user cookies are never stored in
 shared state. The web queries convert generated response models for the UI;
 domain enum values are validated when converting them into UI models.
-`make contracts-check` and CI fail if either artifact is stale. Contract tests
-also validate serialized catalog, list, and overview responses against Huma's
-schema.
+`make contracts-check` and CI fail if either artifact is stale.
 
 Customer and appointment lists return `{ items, total, next_cursor }`. Send
 `limit` (1–200, default 50), `cursor`, and optional `search`. Appointments also

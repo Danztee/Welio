@@ -78,34 +78,21 @@ handlers are registered in the Go API. Browser requests use the configured
 public API origin; Next.js server components and actions use the private
 internal origin. Business data is read and written by the Go API.
 
-## Receptionist and MCP
+## Service URLs
 
-`app.Build` creates the Bedrock ConverseStream adapter from `AWS_REGION` and
-`BEDROCK_MODEL_ID`, then registers `/api/chat/{slug}` and `/api/mcp/{slug}` in
-the central Chi router. The Go AWS SDK supports the standard credential chain
-and `AWS_BEARER_TOKEN_BEDROCK` for Bedrock API-key authentication. Use a local
-profile or API key for development and an IAM role for a hosted API; never put
-AWS credentials in browser-visible variables.
+Set `PUBLIC_URL` to the public web origin. Go uses it for verification,
+invitation, booking, and chat links. Set `API_SERVER_URL` to the public Go API
+origin; the API publishes it in OpenAPI. Local development uses
+`http://127.0.0.1:3000` for the web app and `http://127.0.0.1:8081` for the API.
 
-Set `PUBLIC_URL` to the public web app origin. Go uses it for verification,
-invitation, booking, and chat links. Set `API_SERVER_URL` to the Go API origin;
-OpenAPI publishes this URL. In local development these are usually
-`http://127.0.0.1:3000` and `http://127.0.0.1:8081`, respectively.
+Set `NEXT_PUBLIC_WELIO_API_URL` in `.env.web` to the public API origin. Set
+`WELIO_API_INTERNAL_URL` only when Next.js server code needs a different private
+API origin. Configure exact web origins in `TRUSTED_ORIGINS`; use a shared
+parent cookie domain when web and API run on separate subdomains. Keep
+`AUTH_COOKIE_PATH` at `/v1/auth`.
 
-Set the web app's `NEXT_PUBLIC_WELIO_API_URL` in `.env.web` to the Go API's
-public origin. Set `WELIO_API_INTERNAL_URL` there only if Next.js server code
-must reach the API over a different, private origin. Set Go's
-`MCP_ALLOWED_HOSTS` to the public API hostname and configure the app's exact
-origin in Go's `TRUSTED_ORIGINS`. Use a shared parent cookie domain when the app
-and API are on separate subdomains, and keep `AUTH_COOKIE_PATH` at `/v1/auth`.
-If you allow remote MCP origins, configure those exact origins in the Go API's
-`MCP_ALLOWED_ORIGINS`.
-
-Configure service-level OAuth credentials only in the API environment using
-`MCP_OAUTH_CLIENT_ID`, `MCP_OAUTH_CLIENT_SECRET`, and the exact public MCP URL
-in `MCP_OAUTH_RESOURCE_URL`. Point it at the Go API's public MCP endpoint. Go
-serves OAuth metadata, token exchange, JWKS, and MCP bearer validation. See the
-[receptionist guide](./RECEPTIONIST.md) for the MCP authorization model.
+See the [receptionist guide](./RECEPTIONIST.md) for Bedrock, MCP host and origin
+allowlists, and OAuth configuration.
 
 ## Session renewal and shared limits
 
@@ -132,4 +119,4 @@ public URLs, trusted origins, and a shared parent cookie domain still need
 deployment-specific configuration.
 
 See [the contract guide](../contracts/README.md) for HTTP conventions and code
-generation, and [verification](../README.md#verification) for the test commands.
+generation, and [verification](../README.md#verify-changes) for project checks.
