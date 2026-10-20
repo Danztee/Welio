@@ -17,9 +17,6 @@ func Serve(ctx context.Context, d *deps.Deps) error {
 			return fmt.Errorf("start River workers: %w", err)
 		}
 		workerStarted = true
-		for _, feature := range areas {
-			go feature.background(ctx, d)
-		}
 		d.Log.Info("background workers started", "role", d.Cfg.Role)
 	}
 	server := &http.Server{

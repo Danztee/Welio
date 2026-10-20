@@ -2,8 +2,6 @@ package receptionist
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"time"
 
@@ -296,11 +294,6 @@ func cloneSession(session ChatSession) ChatSession {
 	var result ChatSession
 	_ = json.Unmarshal(encoded, &result)
 	return result
-}
-
-func hashTestToken(value string) string {
-	sum := sha256.Sum256([]byte(value))
-	return hex.EncodeToString(sum[:])
 }
 
 func stringsOf(char byte, length int) string {

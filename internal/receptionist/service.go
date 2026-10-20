@@ -31,17 +31,11 @@ func NewService(repository Repository, bookings BookingPort, model Model, config
 }
 
 func (service *Service) allowRequest(key string, maximum int, window time.Duration) bool {
-	if service.Limiter == nil {
-		return true
-	}
 	return service.Limiter.Allow(key, maximum, window)
 }
 
 func (service *Service) now() time.Time {
-	if service.Now != nil {
-		return service.Now().UTC()
-	}
-	return time.Now().UTC()
+	return service.Now().UTC()
 }
 
 func (service *Service) Start(ctx context.Context, slug string) (string, ChatState, []ChatSummary, error) {

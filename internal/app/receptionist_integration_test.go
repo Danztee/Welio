@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -113,8 +114,9 @@ func TestAppRouterMCPBooksThroughPostgresAndSharedBookingService(t *testing.T) {
 		t.Fatalf("catalog has %d services and %d staff, want one each", len(catalog.Services), len(catalog.Staff))
 	}
 
+	bookingDate := time.Now().UTC().AddDate(0, 0, 3).Format(time.DateOnly)
 	availability, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "check_availability", Arguments: map[string]any{
-		"serviceId": catalog.Services[0].ID, "date": "2026-10-20",
+		"serviceId": catalog.Services[0].ID, "date": bookingDate,
 	}})
 	if err != nil || availability.IsError {
 		t.Fatalf("check_availability: err=%v result=%s", err, integrationMCPText(availability))
@@ -122,7 +124,7 @@ func TestAppRouterMCPBooksThroughPostgresAndSharedBookingService(t *testing.T) {
 
 	prepared, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "prepare_booking", Arguments: map[string]any{
 		"serviceId": catalog.Services[0].ID, "staffId": catalog.Staff[0].ID,
-		"date": "2026-10-20", "time": "09:00", "serviceLocation": "business_address",
+		"date": bookingDate, "time": "09:00", "serviceLocation": "business_address",
 		"name": "MCP Demo Customer", "email": "mcp-demo@example.test", "phone": "+2348012345678",
 	}})
 	if err != nil || prepared.IsError {

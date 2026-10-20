@@ -1,8 +1,6 @@
 package bookings
 
 import (
-	"context"
-
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/riverqueue/river"
@@ -34,6 +32,3 @@ func RegisterWorkers(d *deps.Deps, workers *river.Workers) {
 
 // Periodic returns this area's scheduled jobs.
 func Periodic(*deps.Deps) []*river.PeriodicJob { return PeriodicJobs() }
-
-// Background runs this area's long-lived processes; bookings has none.
-func Background(context.Context, *deps.Deps) {}

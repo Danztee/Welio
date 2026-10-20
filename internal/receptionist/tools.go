@@ -2,7 +2,6 @@ package receptionist
 
 import (
 	"context"
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -258,10 +257,6 @@ func (service *Service) availabilityForBusiness(ctx context.Context, slug string
 	return service.Bookings.Availability(ctx, slug, input)
 }
 
-func (service *Service) systemPrompt(ctx context.Context, business Business, slug string, external bool) (string, error) {
-	return service.systemPromptForBusiness(ctx, business, slug, external, nil)
-}
-
 func (service *Service) systemPromptForBusiness(ctx context.Context, business Business, slug string, external bool, preview *ownerPreviewScope) (string, error) {
 	if service.Bookings == nil {
 		return "", ErrUnavailable
@@ -368,10 +363,4 @@ func publicToolError(err error) string {
 	default:
 		return "I couldn't complete that check. Please try again."
 	}
-}
-func constantTimeEqual(left, right string) bool {
-	if len(left) != len(right) {
-		return false
-	}
-	return subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1
 }

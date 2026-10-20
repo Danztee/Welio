@@ -88,10 +88,7 @@ type occupied struct {
 }
 
 func (service *Service) now() time.Time {
-	if service.Now != nil {
-		return service.Now().UTC()
-	}
-	return time.Now().UTC()
+	return service.Now().UTC()
 }
 
 func (service *Service) Catalog(ctx context.Context, slug string) (*Catalog, error) {

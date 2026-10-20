@@ -1,10 +1,7 @@
-// Package core composes account, workspace, and platform-mail capabilities into one
-// application area, following OpenDesk's core registration boundary.
+// Package core owns accounts, workspaces, and platform maintenance jobs.
 package core
 
 import (
-	"context"
-
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/riverqueue/river"
@@ -25,5 +22,3 @@ func RegisterWorkers(d *deps.Deps, workers *river.Workers) {
 }
 
 func Periodic(*deps.Deps) []*river.PeriodicJob { return retentionJobs() }
-
-func Background(context.Context, *deps.Deps) {}

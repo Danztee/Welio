@@ -266,10 +266,6 @@ func (service *Service) allowedMCPOrigin(origin string) bool {
 	return false
 }
 
-func MCPSecretEnvironmentName(slug string) string {
-	return "MCP_API_SECRET__" + strings.ToUpper(strings.ReplaceAll(slug, "-", "_"))
-}
-
 func writeMCPProblem(w http.ResponseWriter, status int, code, message string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.Header().Set("Cache-Control", "no-store")

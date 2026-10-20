@@ -17,9 +17,6 @@ type SharedBookingService struct {
 }
 
 func (adapter SharedBookingService) Catalog(ctx context.Context, slug string) (BookingCatalog, error) {
-	if adapter.Service == nil {
-		return BookingCatalog{}, ErrUnavailable
-	}
 	catalog, err := adapter.Service.Catalog(ctx, slug)
 	if err != nil {
 		return BookingCatalog{}, err
@@ -28,9 +25,6 @@ func (adapter SharedBookingService) Catalog(ctx context.Context, slug string) (B
 }
 
 func (adapter SharedBookingService) CatalogForOwner(ctx context.Context, userID, workspaceID uuid.UUID) (BookingCatalog, error) {
-	if adapter.Service == nil {
-		return BookingCatalog{}, ErrUnavailable
-	}
 	catalog, err := adapter.Service.CatalogForOwner(ctx, userID, workspaceID)
 	if err != nil {
 		return BookingCatalog{}, err
@@ -66,9 +60,6 @@ func bookingCatalog(catalog *bookings.Catalog) BookingCatalog {
 }
 
 func (adapter SharedBookingService) Availability(ctx context.Context, slug string, input SlotInput) ([]AvailableSlot, error) {
-	if adapter.Service == nil {
-		return nil, ErrUnavailable
-	}
 	serviceID, err := uuid.Parse(input.ServiceID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid service ID", ErrInvalid)
@@ -94,9 +85,6 @@ func (adapter SharedBookingService) Availability(ctx context.Context, slug strin
 }
 
 func (adapter SharedBookingService) AvailabilityForOwner(ctx context.Context, userID, workspaceID uuid.UUID, input SlotInput) ([]AvailableSlot, error) {
-	if adapter.Service == nil {
-		return nil, ErrUnavailable
-	}
 	serviceID, err := uuid.Parse(input.ServiceID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid service ID", ErrInvalid)
@@ -122,9 +110,6 @@ func (adapter SharedBookingService) AvailabilityForOwner(ctx context.Context, us
 }
 
 func (adapter SharedBookingService) Create(ctx context.Context, slug string, input BookingInput, origin string) (BookingResult, error) {
-	if adapter.Service == nil {
-		return BookingResult{}, ErrUnavailable
-	}
 	key, err := uuid.Parse(input.Key)
 	if err != nil {
 		return BookingResult{}, fmt.Errorf("%w: invalid idempotency key", ErrInvalid)
