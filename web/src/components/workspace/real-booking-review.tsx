@@ -68,7 +68,11 @@ export function RealBookingReview({
         Changes and cancellations require {catalog.cancelHours} hours’ notice.
         No payment is collected during booking.
       </p>
-      <DialogFooter className="justify-between">
+      <DialogFooter
+        className={
+          owner ? "justify-between" : "justify-between border-t-0 pt-0"
+        }
+      >
         <Button disabled={busy} variant="outline" onClick={onBack}>
           Back
         </Button>

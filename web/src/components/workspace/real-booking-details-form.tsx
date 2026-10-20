@@ -25,6 +25,7 @@ export function RealBookingDetailsForm({
   businessAddress,
   bookingLocation,
   details,
+  owner,
   onBack,
   onNext,
 }: {
@@ -32,6 +33,7 @@ export function RealBookingDetailsForm({
   businessAddress: string | null;
   bookingLocation: BookingLocation;
   details: BookingCustomerDetails;
+  owner: boolean;
   onBack: () => void;
   onNext: (event: FormEvent<HTMLFormElement>) => void;
 }) {
@@ -176,7 +178,11 @@ export function RealBookingDetailsForm({
           </FieldLabel>
         </Field>
       </FieldGroup>
-      <DialogFooter className="justify-between">
+      <DialogFooter
+        className={
+          owner ? "justify-between" : "justify-between border-t-0 pt-0"
+        }
+      >
         <Button type="button" variant="outline" onClick={onBack}>
           Back
         </Button>

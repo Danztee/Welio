@@ -528,6 +528,7 @@ function BookingSteps({
           businessAddress={catalog.businessAddress}
           bookingLocation={catalog.bookingLocation}
           details={details}
+          owner={owner}
           onBack={onBackToAvailability}
           onNext={onNext}
         />
