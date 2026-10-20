@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { dashboardRoutes } from "../../src/lib/dashboard-routes";
 
 test("dashboard sections remain usable on desktop and mobile", async ({
   page,
@@ -26,23 +27,15 @@ test("dashboard sections remain usable on desktop and mobile", async ({
   expect(response.ok()).toBeTruthy();
   for (const width of [1440, 375]) {
     await page.setViewportSize({ width, height: 1000 });
-    for (const section of [
-      "",
-      "/appointments",
-      "/customers",
-      "/services",
-      "/team",
-      "/members",
-      "/settings",
-      "/settings?tab=security",
-      "/settings?tab=business",
-      "/settings?tab=booking",
-      "/settings?tab=booking-page",
-      "/notifications",
-      "/time-off",
-      "/receptionist",
+    for (const path of [
+      ...Object.values(dashboardRoutes),
+      "/dashboard/settings?tab=security",
+      "/dashboard/settings?tab=business",
+      "/dashboard/settings?tab=booking",
+      "/dashboard/settings?tab=booking-page",
     ]) {
-      await page.goto(`/dashboard${section}`);
+      const section = path.slice("/dashboard".length);
+      await page.goto(path);
       await expect(page.locator("#dashboard-main")).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "Something went wrong" }),

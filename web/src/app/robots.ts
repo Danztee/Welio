@@ -16,8 +16,6 @@ export default function robots(): MetadataRoute.Robots {
         "/forgot-password",
         "/reset-password",
         "/verify-email",
-        "/invoice/",
-        "/checkout/",
       ],
     },
     host: env.APP_URL,

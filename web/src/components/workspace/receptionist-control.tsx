@@ -79,7 +79,7 @@ export function ReceptionistControl({
       faqs: settings.faqs.map(({ question, answer }) => ({ question, answer })),
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Check your settings.");
+      toast.error(parsed.error.issues[0].message);
 
       return;
     }

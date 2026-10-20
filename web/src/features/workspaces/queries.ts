@@ -94,7 +94,6 @@ async function loadOwnerSection(
       return { timeOff: await api.timeOff() };
     case "Notifications":
       return { notifications: await api.notifications() };
-    case "Members":
     case "Team":
       return { team: await api.teamAccess() };
     default:

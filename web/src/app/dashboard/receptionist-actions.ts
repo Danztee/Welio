@@ -8,8 +8,7 @@ import { backendClient, BackendError } from "@/lib/backend/server-api";
 import { workspaceReceptionistSettingsUpdate } from "@/lib/backend/generated/sdk.gen";
 
 function failure(error: unknown, fallback: string) {
-  if (error instanceof z.ZodError)
-    return error.issues[0]?.message ?? "Check the form fields.";
+  if (error instanceof z.ZodError) return error.issues[0].message;
 
   if (error instanceof BackendError) return error.message;
 

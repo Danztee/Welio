@@ -25,7 +25,8 @@ import { authClient } from "@/lib/auth-client";
 import { accountNamesSchema } from "@/lib/auth/validation";
 import { text } from "@/components/platform/form-utils";
 import { BusinessSettings } from "./business-settings";
-import { BookingPolicies, PublicBookingSettings } from "./booking-operations";
+import { BookingPolicies } from "./booking-policies";
+import { PublicBookingSettings } from "./public-booking-settings";
 import { SessionSettings } from "./session-settings";
 import { toast } from "sonner";
 
@@ -82,7 +83,7 @@ export function WorkspaceSettingsPanel({
       lastName: text(form, "lastName"),
     });
     if (!names.success) {
-      toast.error(names.error.issues[0]?.message ?? "Check your name.");
+      toast.error(names.error.issues[0].message);
 
       return;
     }

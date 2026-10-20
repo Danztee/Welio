@@ -8,16 +8,6 @@ export const staffWeek = [
   { short: "Sat", long: "Saturday", value: 6 },
 ];
 
-export function toggleScheduleDay(
-  days: number[],
-  day: number,
-  checked: boolean,
-) {
-  return checked
-    ? [...new Set([...days, day])].sort((a, b) => a - b)
-    : days.filter((value) => value !== day);
-}
-
 function summarizeDays(days: number[]) {
   const sorted = [...new Set(days)].sort((a, b) => a - b);
   if (sorted.length === 7) return "every day";

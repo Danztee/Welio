@@ -1,6 +1,6 @@
 "use client";
 
-import type { APIModel, CamelFields } from "./backend/contract";
+import type { CamelFields } from "./backend/contract";
 import { createClient } from "./backend/generated/client";
 import * as sdk from "./backend/generated/sdk.gen";
 import { refreshSession } from "./auth/refresh";
@@ -15,8 +15,6 @@ type Problem = {
 
 type AuthError = { code: string; status: number; message: string };
 type Result<T> = { data: T | null; error: AuthError | null };
-export type AuthUser = APIModel<"User">;
-export type AuthSession = APIModel<"Session">;
 
 function browserClient() {
   return createClient({
@@ -52,7 +50,7 @@ async function send<T>(
         data: null,
         error: {
           code: problem?.code ?? "request_failed",
-          status: problem?.status ?? result.response?.status,
+          status: problem?.status ?? result.response.status,
           message: problem?.detail ?? "",
         },
       };

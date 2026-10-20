@@ -62,12 +62,9 @@ export function Editor({
     Record<string, string[]>
   >(() =>
     Object.fromEntries(
-      fields
-        .filter((field) => field.type === "multi-select")
-        .map((field) => [
-          field.name,
-          Array.isArray(field.value) ? field.value : [],
-        ]),
+      fields.flatMap((field) =>
+        field.type === "multi-select" ? [[field.name, field.value ?? []]] : [],
+      ),
     ),
   );
 
@@ -150,9 +147,9 @@ export function Editor({
                 f.type === "multi-select" ? (
                   <FieldSet key={f.name}>
                     <FieldLegend variant="label">{f.label}</FieldLegend>
-                    {f.options?.length ? (
+                    {f.options.length ? (
                       <MultiSelectField
-                        field={{ ...f, options: f.options }}
+                        field={f}
                         value={multiSelectValues[f.name] ?? []}
                         invalid={Boolean(fieldErrors[f.name])}
                         onChange={(value) =>
@@ -182,7 +179,7 @@ export function Editor({
                       </p>
                     )}
                     <FieldGroup className="gap-2">
-                      {f.options?.length ? (
+                      {f.options.length ? (
                         f.options.map((o) => (
                           <Field key={o.value} orientation="horizontal">
                             <Checkbox
@@ -195,10 +192,7 @@ export function Editor({
                                   : undefined
                               }
                               value={o.value}
-                              defaultChecked={
-                                Array.isArray(f.value) &&
-                                f.value.includes(o.value)
-                              }
+                              defaultChecked={f.value?.includes(o.value)}
                             />
                             <FieldLabel htmlFor={`${f.name}-${o.value}`}>
                               {o.label}
@@ -234,7 +228,7 @@ export function Editor({
                         required={f.required}
                         className="w-full"
                       >
-                        {f.options?.map((o) => (
+                        {f.options.map((o) => (
                           <NativeSelectOption
                             key={o.value}
                             value={o.value}
@@ -315,7 +309,7 @@ function MultiSelectField({
   invalid,
   onChange,
 }: {
-  field: EditorField & { options: NonNullable<EditorField["options"]> };
+  field: Extract<EditorField, { type: "multi" | "multi-select" }>;
   value: string[];
   invalid: boolean;
   onChange: (value: string[]) => void;
@@ -341,14 +335,14 @@ function MultiSelectField({
       value={value}
       onValueChange={onChange}
       itemToStringLabel={(value) =>
-        field.options?.find((option) => option.value === value)?.label ?? value
+        field.options.find((option) => option.value === value)?.label ?? value
       }
     >
       <ComboboxChips ref={anchor}>
         <ComboboxValue>
           {value.map((value) => (
             <ComboboxChip key={value}>
-              {field.options?.find((option) => option.value === value)?.label ??
+              {field.options.find((option) => option.value === value)?.label ??
                 value}
             </ComboboxChip>
           ))}
@@ -368,7 +362,7 @@ function MultiSelectField({
         <ComboboxList>
           {(value: string) => (
             <ComboboxItem key={value} value={value}>
-              {field.options?.find((option) => option.value === value)?.label ??
+              {field.options.find((option) => option.value === value)?.label ??
                 value}
             </ComboboxItem>
           )}

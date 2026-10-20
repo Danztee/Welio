@@ -55,7 +55,7 @@ export function WorkspaceApp({
 }: {
   user: User;
   list: List;
-  data: Data | null;
+  data: Data;
   catalog: Catalog | null;
   section: DashboardSection;
   aiConfigured: boolean;
@@ -64,11 +64,11 @@ export function WorkspaceApp({
 }) {
   const [notifications, setNotifications] = useState<
     Data["notifications"] | null
-  >(section === "Notifications" ? (data?.notifications ?? []) : null);
+  >(section === "Notifications" ? data.notifications : null);
   const [notificationError, setNotificationError] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   async function loadNotifications() {
-    if (!data || loadingNotifications) return;
+    if (loadingNotifications) return;
     setLoadingNotifications(true);
     setNotificationError(false);
     try {
@@ -91,15 +91,10 @@ export function WorkspaceApp({
       : "profile";
   const [editor, setEditor] = useState<EditorKind>(null);
   const [recordId, setRecordId] = useState("");
-  const [revoke, setRevoke] = useState<{
-    target: string;
-    kind: "member" | "invitation";
-  } | null>(null);
-  const w = data?.workspace;
-  const owner = data?.role === "owner";
-  const service = data?.services.find((s) => s.id === recordId);
-  const worker = data?.staff.find((s) => s.id === recordId);
-  const nav = (name: DashboardSection, id = w?.id) => {
+  const w = data.workspace;
+  const owner = data.role === "owner";
+  const service = data.services.find((s) => s.id === recordId);
+  const nav = (name: DashboardSection, id = w.id) => {
     router.push(dashboardHref(name, id));
   };
 
@@ -111,22 +106,20 @@ export function WorkspaceApp({
   const fields = getEditorFields({
     editor,
     service,
-    worker,
-    workspace: w,
     data,
     recordId,
     user,
   });
 
   const { mutate, save, resendInvite } = createWorkspaceAppActions({
-    workspaceId: w?.id ?? "",
+    workspaceId: w.id,
     data,
     editor,
     recordId,
     refresh: () => router.refresh(),
   });
 
-  const money = (v: number) => formatCurrency(v, w?.currency ?? "NGN");
+  const money = (v: number) => formatCurrency(v, w.currency);
 
   const accountMenu = (
     <AccountMenu
@@ -134,9 +127,7 @@ export function WorkspaceApp({
       email={user.email}
       onProfile={() => {
         if (owner)
-          router.push(
-            `${dashboardHref("Settings", w?.id)}${w?.id ? "&" : "?"}tab=profile`,
-          );
+          router.push(`${dashboardHref("Settings", w.id)}&tab=profile`);
         else open("account");
       }}
       onSignOut={async () => {
@@ -155,75 +146,71 @@ export function WorkspaceApp({
   const picker = (
     <WorkspaceSwitcher
       workspaces={list.map((x) => x.workspace)}
-      activeId={w?.id ?? ""}
-      activeLogo={w?.logo ?? null}
+      activeId={w.id}
+      activeLogo={w.logo}
       onSwitch={(id) => nav("Overview", id)}
       createHref="/onboarding?new=true"
     />
   );
-  const bellPanel =
-    owner && data ? (
-      <Sheet
-        onOpenChange={(open) => {
-          if (open) void loadNotifications();
-        }}
+  const bellPanel = owner ? (
+    <Sheet
+      onOpenChange={(open) => {
+        if (open) void loadNotifications();
+      }}
+    >
+      <SheetTrigger
+        render={
+          <Button variant="ghost" size="icon" aria-label="Notifications" />
+        }
       >
-        <SheetTrigger
-          render={
-            <Button variant="ghost" size="icon" aria-label="Notifications" />
-          }
-        >
-          <BellIcon />
-        </SheetTrigger>
-        <SheetContent side="right" className={floatingSheetClassName}>
-          <SheetHeader className="border-b px-4 py-3 pr-12">
-            <SheetTitle>Notifications</SheetTitle>
-          </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="flex flex-col divide-y">
-              {notificationError ? (
-                <p className="px-4 py-6 text-sm">
-                  Could not load notifications.{" "}
-                  <Button
-                    variant="outline"
-                    onClick={() => void loadNotifications()}
-                  >
-                    Try again
-                  </Button>
-                </p>
-              ) : notifications === null ? (
-                <p className="px-4 py-6 text-sm" role="status">
-                  Loading notifications…
-                </p>
-              ) : notifications.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-muted-foreground">
-                  No notifications yet.
-                </p>
-              ) : (
-                notifications
-                  .slice()
-                  .slice(0, 20)
-                  .map((n) => (
-                    <div key={n.id} className="flex flex-col gap-1 px-4 py-3">
-                      <p className="text-sm leading-snug font-medium">
-                        {n.subject}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {n.recipient} ·{" "}
-                        {n.kind === "reminder" ? "Reminder" : "Booking update"}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {n.status}
-                        {n.attempts > 1 ? ` · ${n.attempts} attempts` : ""}
-                      </p>
-                    </div>
-                  ))
-              )}
-            </div>
+        <BellIcon />
+      </SheetTrigger>
+      <SheetContent side="right" className={floatingSheetClassName}>
+        <SheetHeader className="border-b px-4 py-3 pr-12">
+          <SheetTitle>Notifications</SheetTitle>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex flex-col divide-y">
+            {notificationError ? (
+              <p className="px-4 py-6 text-sm">
+                Could not load notifications.{" "}
+                <Button
+                  variant="outline"
+                  onClick={() => void loadNotifications()}
+                >
+                  Try again
+                </Button>
+              </p>
+            ) : notifications === null ? (
+              <p className="px-4 py-6 text-sm" role="status">
+                Loading notifications…
+              </p>
+            ) : notifications.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground">
+                No notifications yet.
+              </p>
+            ) : (
+              notifications.slice(0, 20).map((n) => (
+                <div key={n.id} className="flex flex-col gap-1 px-4 py-3">
+                  <p className="text-sm leading-snug font-medium">
+                    {n.subject}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {n.recipient} ·{" "}
+                    {n.kind === "reminder" ? "Reminder" : "Booking update"}
+                  </p>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {n.status}
+                    {n.attempts > 1 ? ` · ${n.attempts} attempts` : ""}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
-        </SheetContent>
-      </Sheet>
-    ) : null;
+        </div>
+      </SheetContent>
+    </Sheet>
+  ) : null;
   const model: WorkspaceRenderModel = {
     user,
     data,
@@ -236,8 +223,6 @@ export function WorkspaceApp({
     editor,
     setEditor,
     recordId,
-    revoke,
-    setRevoke,
     w,
     owner,
     service,

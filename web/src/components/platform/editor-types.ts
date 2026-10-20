@@ -1,25 +1,29 @@
-export type EditorField = {
+type FieldBase = {
   name: string;
   label: string;
   autoComplete?: string;
   description?: string;
   emptyMessage?: string;
   placeholder?: string;
-  type?:
-    | "text"
-    | "email"
-    | "number"
-    | "date"
-    | "time"
-    | "textarea"
-    | "select"
-    | "multi"
-    | "multi-select";
-  value?: string | number | string[];
-  options?: { value: string; label: string }[];
   required?: boolean;
   min?: number;
   max?: number;
   maxLength?: number;
   step?: number;
 };
+
+type FieldOption = { value: string; label: string };
+
+export type EditorField = FieldBase &
+  (
+    | {
+        type?: "text" | "email" | "number" | "date" | "time" | "textarea";
+        value?: string | number;
+      }
+    | { type: "select"; value?: string | number; options: FieldOption[] }
+    | {
+        type: "multi" | "multi-select";
+        value?: string[];
+        options: FieldOption[];
+      }
+  );

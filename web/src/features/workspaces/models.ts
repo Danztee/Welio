@@ -33,7 +33,6 @@ export function appointmentModel(
     startsAt: new Date(a.startsAt),
     endsAt: new Date(a.endsAt),
     createdAt: new Date(a.createdAt),
-    idempotencyKey: null,
   };
 }
 

@@ -3,7 +3,7 @@ import { BookingLocation } from "./enums";
 
 export { BookingLocation } from "./enums";
 
-export const bookingLocation = z.enum(BookingLocation);
+const bookingLocation = z.enum(BookingLocation);
 
 const name = z.string().trim().min(2).max(100);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -107,9 +107,3 @@ export const staffInput = z
   });
 
 export type WorkspaceInput = z.infer<typeof workspaceInput>;
-
-export type ServiceInput = z.infer<typeof serviceInput>;
-
-export type StaffInput = z.infer<typeof staffInput>;
-
-export type ServiceStaffInput = z.infer<typeof serviceStaffInput>;

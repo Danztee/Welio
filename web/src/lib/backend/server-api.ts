@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { createClient } from "./generated/client";
 import { backendOrigin } from "./origin";
+import { env } from "@/lib/env";
 
 type Problem = { code?: string; detail?: string; status?: number };
 
@@ -27,10 +28,7 @@ async function backendHeaders(workspaceId?: string): Promise<Headers> {
         cookie.startsWith("welio_access=") ||
         cookie.startsWith("welio_refresh="),
     );
-  const origin =
-    requestHeaders.get("origin") ??
-    process.env.APP_URL ??
-    "http://localhost:3000";
+  const origin = requestHeaders.get("origin") ?? env.APP_URL;
   const headersOut = new Headers({
     Accept: "application/json, application/problem+json",
     Origin: origin,

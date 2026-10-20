@@ -26,7 +26,7 @@ export function createWorkspaceAppActions({
   refresh,
 }: {
   workspaceId: string;
-  data: Data | null;
+  data: Data;
   editor: WorkspaceEditorKind;
   recordId: string;
   refresh: () => void;
@@ -73,11 +73,7 @@ export function createWorkspaceAppActions({
       return;
     }
 
-    toast.success(
-      editor === "invite"
-        ? "Invitation sent. It expires in 7 days."
-        : "Changes saved.",
-    );
+    toast.success("Changes saved.");
   }
 
   async function resendInvite(email: string) {
@@ -133,8 +129,6 @@ function buildEditorInput(
         bufferAfterMinutes: number(form, "bufferAfterMinutes"),
         isActive: text(form, "active") === "true",
       };
-    case "invite":
-      return text(form, "email").toLowerCase();
   }
 }
 
@@ -156,18 +150,16 @@ async function saveEditorInput(
       await mutate(saveServiceAction, input);
 
       return;
-    case "invite":
-      await mutate(inviteWorkspaceMemberAction, input);
   }
 }
 
 async function inviteNewStaffMember(
   form: FormData,
-  data: Data | null,
+  data: Data,
   mutate: (operation: MutateOperation, input: unknown) => Promise<unknown>,
 ) {
   const email = text(form, "email").toLowerCase();
-  const alreadyHasAccess = data?.members.some(
+  const alreadyHasAccess = data.members.some(
     (member) => member.email.toLowerCase() === email,
   );
 

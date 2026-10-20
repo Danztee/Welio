@@ -1,3 +1,5 @@
+import type * as API from "@/lib/backend/generated/types.gen";
+import type { CamelFields } from "@/lib/backend/contract";
 import type { AppointmentStatus } from "@/lib/domain/bookings/enums";
 import type { ReceptionistSettings } from "@/lib/domain/receptionist/settings";
 import type {
@@ -5,11 +7,16 @@ import type {
   MembershipRole,
 } from "@/lib/domain/workspaces/enums";
 
-export type WorkspaceSummary = {
-  id: string;
-  name: string;
-  onboarded: boolean;
-};
+type Appointment = CamelFields<API.Appointment>;
+type Customer = CamelFields<API.Customer>;
+type Invitation = CamelFields<API.Invitation>;
+type Notification = CamelFields<API.Notification>;
+type Overview = CamelFields<API.Overview>;
+type Staff = CamelFields<API.StaffOutput>;
+type Member = CamelFields<API.TeamMemberAccess>;
+type Workspace = CamelFields<API.Workspace>;
+
+export type WorkspaceSummary = CamelFields<API.WorkspaceSummary>["workspace"];
 
 export type WorkspaceMembership = {
   workspace: WorkspaceSummary;
@@ -17,15 +24,12 @@ export type WorkspaceMembership = {
 };
 
 export type WorkspaceDashboardData = {
-  overview: {
-    today: string;
-    customers: number;
-    todayCount: number;
-    confirmed: number;
-    completed: number;
-    daily: { date: string; count: number }[];
-    activity: { id: string; title: string; createdAt: string }[];
-  } | null;
+  overview:
+    | (Omit<Overview, "todayAppointments" | "daily" | "activity"> & {
+        daily: NonNullable<Overview["daily"]>;
+        activity: NonNullable<Overview["activity"]>;
+      })
+    | null;
   pagination: {
     total: number;
     nextCursor: string;
@@ -34,126 +38,33 @@ export type WorkspaceDashboardData = {
     from: string;
     to: string;
   } | null;
-  workspace: {
-    id: string;
-    name: string;
-    logo: string | null;
-    slug: string;
-    timeZone: string;
-    currency: string;
-    contactEmail: string | null;
-    serviceArea: string | null;
-    businessAddress: string | null;
+  workspace: Omit<Workspace, "bookingLocation"> & {
     bookingLocation: BookingLocation;
-    isPublished: boolean;
-    phone: string;
-    onboarded: boolean;
-    leadHours: number;
-    horizonDays: number;
-    cancelHours: number;
-    slotMinutes: number;
     receptionistSettings: ReceptionistSettings;
-    remindersEnabled: boolean;
   };
   role: MembershipRole;
-  bookings: {
-    id: string;
-    workspaceId: string;
-    customerId: string;
-    serviceId: string;
-    staffId: string;
+  bookings: (Omit<
+    Appointment,
+    "status" | "startsAt" | "endsAt" | "createdAt"
+  > & {
     status: AppointmentStatus;
     startsAt: Date;
     endsAt: Date;
-    serviceName: string;
-    staffName: string;
-    durationMinutes: number;
-    bufferBeforeMinutes: number;
-    bufferAfterMinutes: number;
-    priceMinor: number;
-    currency: string;
-    serviceAddress: string | null;
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
-    notificationConsent: boolean;
-    timeZone: string;
-    source: string;
-    version: number;
-    idempotencyKey: string | null;
     createdAt: Date;
-  }[];
-  customers: {
-    appointmentCount: number;
-    id: string;
-    workspaceId: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    createdAt: Date;
-  }[];
-  timeOff: {
-    id: string;
-    workspaceId: string;
-    staffId: string;
-    from: string;
-    to: string;
-    reason: string;
-  }[];
-  notifications: {
-    id: string;
-    recipient: string;
-    subject: string;
-    kind: string;
-    status: string;
-    attempts: number;
-    createdAt: Date;
-  }[];
-  services: {
-    id: string;
-    workspaceId: string;
-    name: string;
-    description: string | null;
-    durationMinutes: number;
-    bufferBeforeMinutes: number;
-    bufferAfterMinutes: number;
-    priceMinor: number;
-    isActive: boolean;
-  }[];
-  staff: {
-    id: string;
-    workspaceId: string;
-    userId: string | null;
-    name: string;
-    email: string;
-    jobTitle: string;
-    schedule: {
-      start: string;
-      end: string;
-      breakStart: string;
-      breakEnd: string;
-      days: number[];
-    };
-    isActive: boolean;
+  })[];
+  customers: (Omit<Customer, "createdAt"> & { createdAt: Date })[];
+  timeOff: CamelFields<API.TimeOff>[];
+  notifications: (Omit<Notification, "createdAt"> & { createdAt: Date })[];
+  services: CamelFields<API.ServiceItem>[];
+  staff: (Omit<Staff, "schedule" | "role"> & {
+    schedule: Omit<Staff["schedule"], "days"> & { days: number[] };
     role: MembershipRole | null;
-  }[];
-  assignments: {
-    workspaceId: string;
-    staffId: string;
-    serviceId: string;
-    isActive: boolean;
-  }[];
-  members: {
-    userId: string;
-    name: string;
-    email: string;
-    role: MembershipRole;
-  }[];
-  invitations: {
-    id: string;
-    email: string;
+  })[];
+  assignments: CamelFields<API.Assignment>[];
+  members: (Omit<Member, "role"> & { role: MembershipRole })[];
+  invitations: (Omit<Invitation, "expiresAt" | "acceptedAt" | "revokedAt"> & {
     expiresAt: Date;
     acceptedAt: Date | null;
     revokedAt: Date | null;
-  }[];
+  })[];
 };

@@ -60,9 +60,7 @@ export function BookingPolicies({ data }: { data: Data }) {
       slotMinutes: text(form, "slotMinutes"),
     });
     if (!result.success) {
-      setPolicyValidationError(
-        result.error.issues[0]?.message ?? "Check the booking rules.",
-      );
+      setPolicyValidationError(result.error.issues[0].message);
 
       return;
     }

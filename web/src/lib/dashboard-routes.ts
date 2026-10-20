@@ -7,7 +7,6 @@ export const dashboardRoutes = {
   Services: "/dashboard/services",
   Team: "/dashboard/team",
   "Time off": "/dashboard/time-off",
-  Members: "/dashboard/members",
   Settings: "/dashboard/settings",
 } as const;
 

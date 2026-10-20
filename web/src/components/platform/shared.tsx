@@ -15,5 +15,3 @@ export { Editor } from "./editor";
 export { Confirm } from "./confirm";
 
 export { Heading } from "./heading";
-
-export { ErrorPage } from "./error-page";

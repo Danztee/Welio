@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type * as API from "@/lib/backend/generated/types.gen";
+import type { CamelFields } from "@/lib/backend/contract";
 import { BookingLocation } from "../workspaces/enums";
 
 export const serviceLocationInput = z.enum([
@@ -19,8 +21,6 @@ export const policyInput = z.object({
     .refine((v) => [15, 30, 60].includes(v), "Choose 15, 30, or 60 minutes."),
 });
 
-export type PolicyInput = z.infer<typeof policyInput>;
-
 export const timeOffInput = z
   .object({
     staffId: z.uuid(),
@@ -32,16 +32,6 @@ export const timeOffInput = z
     (v) => v.from <= v.to,
     "End date must be on or after the start date.",
   );
-
-export type TimeOffInput = z.infer<typeof timeOffInput>;
-
-export const slotInput = z.strictObject({
-  serviceId: z.uuid(),
-  staffId: z.uuid().optional(),
-  date: dateInput,
-});
-
-export type SlotInput = z.infer<typeof slotInput>;
 
 export const serviceAddressInput = z.string().trim().min(3).max(500);
 
@@ -91,61 +81,18 @@ export type BookingInput = z.infer<typeof bookingInput>;
 
 export type ChangeInput = z.infer<typeof changeInput>;
 
-export type Catalog = {
-  id: string;
-  name: string;
-  logo: string | null;
-  slug: string;
-  contactEmail: string | null;
-  phone: string;
-  serviceArea: string | null;
-  businessAddress: string | null;
+type CatalogResponse = CamelFields<API.Catalog>;
+type CatalogService = CamelFields<API.CatalogEntry>;
+
+export type Catalog = Omit<
+  CatalogResponse,
+  "bookingLocation" | "services" | "staff"
+> & {
   bookingLocation: BookingLocation;
-  timeZone: string;
-  currency: string;
-  leadHours: number;
-  horizonDays: number;
-  cancelHours: number;
-  slotMinutes: number;
-  today: string;
-  maxDate: string;
-  services: {
-    id: string;
-    name: string;
-    description: string | null;
-    durationMinutes: number;
-    priceMinor: number;
-    quote: string;
-    staffIds: string[];
-  }[];
-  staff: { id: string; name: string }[];
+  services: (Omit<CatalogService, "staffIds"> & { staffIds: string[] })[];
+  staff: NonNullable<CatalogResponse["staff"]>;
 };
 
-export type Slot = { time: string; staffId: string; startsAt: string };
+export type Slot = CamelFields<API.Slot>;
 
-export type BookingView = {
-  workspaceId: string;
-  id: string;
-  version: number;
-  status: string;
-  serviceId: string;
-  staffId: string;
-  serviceName: string;
-  staffName: string;
-  startsAt: string;
-  endsAt: string;
-  timeZone: string;
-  priceMinor: number;
-  currency: string;
-  durationMinutes: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  business: string;
-  contactEmail: string | null;
-  businessPhone: string;
-  canChange: boolean;
-  cancelHours: number;
-  slug: string;
-};
+export type BookingView = CamelFields<API.BookingView>;

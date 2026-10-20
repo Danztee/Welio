@@ -41,7 +41,7 @@ async function completeBookingMutation(
     if (error instanceof z.ZodError)
       return {
         ok: false,
-        error: error.issues[0]?.message ?? "Check the form fields.",
+        error: error.issues[0].message,
       };
 
     if (error instanceof BackendError)

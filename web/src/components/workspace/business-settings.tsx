@@ -385,9 +385,7 @@ export function BusinessSettings({
       currency: text(form, "currency"),
     });
     if (!result.success) {
-      toast.error(
-        result.error.issues[0]?.message ?? "Check the business details.",
-      );
+      toast.error(result.error.issues[0].message);
 
       return;
     }

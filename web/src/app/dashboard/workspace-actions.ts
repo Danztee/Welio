@@ -21,8 +21,6 @@ import {
   catalogStaffUpdate,
   workspaceFinishSetup,
   workspaceInvitationCreate,
-  workspaceInvitationRevoke,
-  workspaceMemberRevoke,
   workspaceInvitationAccept,
 } from "@/lib/backend/generated/sdk.gen";
 import type { WorkspaceInput } from "@/lib/domain/workspaces/contract";
@@ -59,7 +57,7 @@ async function completeWorkspaceMutation(
     if (error instanceof z.ZodError)
       return {
         ok: false,
-        error: error.issues[0]?.message ?? "Check the form fields.",
+        error: error.issues[0].message,
       };
 
     if (error instanceof BackendError)
@@ -209,34 +207,6 @@ export async function inviteWorkspaceMemberAction(
     });
 
     return result.data.id;
-  });
-}
-
-export async function revokeWorkspaceAccessAction(
-  workspaceId: string,
-  input: unknown,
-) {
-  return completeWorkspaceMutation("revoke", async () => {
-    const id = z.uuid().parse(workspaceId);
-    const target = z
-      .object({ target: z.uuid(), kind: z.enum(["member", "invitation"]) })
-      .parse(input);
-    const client = await backendClient(id);
-    if (target.kind === "member") {
-      await workspaceMemberRevoke({
-        client,
-        throwOnError: true,
-        path: { workspaceID: id, userID: target.target },
-      });
-    } else {
-      await workspaceInvitationRevoke({
-        client,
-        throwOnError: true,
-        path: { workspaceID: id, invitationID: target.target },
-      });
-    }
-
-    return id;
   });
 }
 

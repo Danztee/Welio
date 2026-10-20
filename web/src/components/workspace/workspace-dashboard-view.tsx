@@ -1,20 +1,15 @@
 "use client";
 
 import {
-  Confirm,
   Editor,
   Heading,
-  Notice,
   Panel,
   type EditorField,
 } from "@/components/platform/shared";
 import { BookingNotifications } from "./booking-notifications";
 import { BusinessOverview } from "@/components/dashboard/business-overview";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import {
-  revokeWorkspaceAccessAction,
-  saveBusinessAction,
-} from "@/app/dashboard/workspace-actions";
+import { saveBusinessAction } from "@/app/dashboard/workspace-actions";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,12 +29,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import {
-  OwnerAppointments,
-  RealCustomers,
-  StaffEditor,
-  TeamTimeOff,
-} from "./booking-operations";
+import { OwnerAppointments } from "./owner-appointments";
+import { RealCustomers } from "./real-customers";
+import { StaffEditor } from "./staff-editor";
+import { TeamTimeOff } from "./team-time-off";
+import { Notice } from "@/components/platform/notice";
 import { ReceptionistControl } from "./receptionist-control";
 import { WorkspaceSettingsPanel } from "./workspace-settings-panel";
 import { WorkspaceTables } from "./workspace-tables";
@@ -56,35 +50,31 @@ export type WorkspaceAppUser = {
 
 function formatDate(
   value: string | Date,
-  timeZone: string | undefined,
-  locale: string,
+  timeZone: string,
   options: Intl.DateTimeFormatOptions,
 ) {
   const instant = Temporal.Instant.from(
     value instanceof Date ? value.toISOString() : new Date(value).toISOString(),
   );
-  const date = instant.toZonedDateTimeISO(timeZone ?? "UTC");
+  const date = instant.toZonedDateTimeISO(timeZone);
   if (options.hour)
     return `${String(date.hour).padStart(2, "0")}:${String(date.minute).padStart(2, "0")}`;
 
   if (options.dateStyle === "medium") {
-    const months =
-      locale === "en-GB"
-        ? [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ]
-        : [];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
 
     return `${months[date.month - 1]} ${date.day}, ${date.year}`;
   }
@@ -103,14 +93,9 @@ const sections = [
   { name: "Settings", icon: SettingsIcon },
 ] as const;
 
-export type RevokeTarget = {
-  target: string;
-  kind: "member" | "invitation";
-} | null;
-
 export type WorkspaceRenderModel = {
   user: WorkspaceAppUser;
-  data: Data | null;
+  data: Data;
   catalog: Catalog | null;
   section: DashboardSection;
   aiConfigured: boolean;
@@ -120,9 +105,7 @@ export type WorkspaceRenderModel = {
   editor: EditorKind;
   setEditor: Dispatch<SetStateAction<EditorKind>>;
   recordId: string;
-  revoke: RevokeTarget;
-  setRevoke: Dispatch<SetStateAction<RevokeTarget>>;
-  w: Data["workspace"] | undefined;
+  w: Data["workspace"];
   owner: boolean;
   service: Data["services"][number] | undefined;
   open: (kind: Exclude<EditorKind, null>, id?: string) => void;
@@ -156,7 +139,6 @@ function SetupAlert({
   const { section, owner, w } = model;
   if (
     section !== "Overview" ||
-    !model.data ||
     !owner ||
     (hasActiveStaff && hasActiveService && hasAssignedActiveService)
   ) {
@@ -180,7 +162,7 @@ function SetupAlert({
           <Button
             variant="outline"
             nativeButton={false}
-            render={<Link href={dashboardHref("Team", w?.id)} />}
+            render={<Link href={dashboardHref("Team", w.id)} />}
           >
             <PlusIcon data-icon="inline-start" />
             Add team member
@@ -190,7 +172,7 @@ function SetupAlert({
           <Button
             variant="outline"
             nativeButton={false}
-            render={<Link href={dashboardHref("Services", w?.id)} />}
+            render={<Link href={dashboardHref("Services", w.id)} />}
           >
             <PlusIcon data-icon="inline-start" />
             Add service
@@ -200,7 +182,7 @@ function SetupAlert({
           <Button
             variant="outline"
             nativeButton={false}
-            render={<Link href={dashboardHref("Services", w?.id)} />}
+            render={<Link href={dashboardHref("Services", w.id)} />}
           >
             <UsersIcon data-icon="inline-start" />
             Assign team members
@@ -213,12 +195,11 @@ function SetupAlert({
 
 function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
   const { data, owner, now, w } = model;
-  if (!data || !w || model.section !== "Overview") return null;
 
   if (!owner) {
     return (
       <Panel
-        title={w.name ?? "Your workspace"}
+        title={w.name}
         description="View your business’s services and team."
       >
         <div className="flex flex-wrap gap-3">
@@ -246,12 +227,12 @@ function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
         id: appointment.id,
         customer: appointment.customerName,
         service: appointment.serviceName,
-        date: formatDate(appointment.startsAt, w.timeZone, "en-CA", {
+        date: formatDate(appointment.startsAt, w.timeZone, {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
         }),
-        time: formatDate(appointment.startsAt, w.timeZone, "en-GB", {
+        time: formatDate(appointment.startsAt, w.timeZone, {
           hour: "2-digit",
           minute: "2-digit",
         }),
@@ -265,19 +246,19 @@ function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
                 : appointment.status,
       }))}
       summary={data.overview}
-      today={formatDate(now, w.timeZone, "en-CA", {
+      today={formatDate(now, w.timeZone, {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
       })}
-      currency={w.currency ?? "NGN"}
+      currency={w.currency}
       receptionistHref={dashboardHref("Receptionist", w.id)}
       appointmentsHref={dashboardHref("Appointments", w.id)}
       bookingHref={w.isPublished ? `/book/${w.slug}` : undefined}
       activity={data.overview.activity.map((item) => ({
         id: item.id,
         title: item.title,
-        date: formatDate(item.createdAt, w.timeZone, "en-GB", {
+        date: formatDate(item.createdAt, w.timeZone, {
           dateStyle: "medium",
         }),
       }))}
@@ -286,7 +267,7 @@ function DashboardOverview({ model }: { model: WorkspaceRenderModel }) {
 }
 
 function SectionHeading({ model }: { model: WorkspaceRenderModel }) {
-  const { section, owner, w, open } = model;
+  const { section, owner, open } = model;
   const usesSharedHeading = [
     "Appointments",
     "Overview",
@@ -308,152 +289,83 @@ function SectionHeading({ model }: { model: WorkspaceRenderModel }) {
       </Button>
     ) : undefined;
 
-  return <Heading title={w ? section : "Welcome to Welio"} action={action} />;
-}
-
-function AppointmentSection({ model }: { model: WorkspaceRenderModel }) {
-  const { data, catalog, owner, section } = model;
-  if (section !== "Appointments" || !owner || !data || !catalog) return null;
-
-  return <OwnerAppointments data={data} catalog={catalog} />;
-}
-
-function CustomerSection({ model }: { model: WorkspaceRenderModel }) {
-  const { data, owner, section } = model;
-  if (section !== "Customers" || !owner || !data) return null;
-
-  return <RealCustomers data={data} />;
-}
-
-function ReceptionistSection({ model }: { model: WorkspaceRenderModel }) {
-  const { data, owner, section, aiConfigured } = model;
-  if (section !== "Receptionist" || !owner || !data) return null;
-
-  return <ReceptionistControl data={data} aiConfigured={aiConfigured} />;
-}
-
-function TableSection({
-  model,
-  section,
-}: {
-  model: WorkspaceRenderModel;
-  section: "Services" | "Team";
-}) {
-  const { data, owner, money, open, resendInvite } = model;
-  if (model.section !== section || !data) return null;
-
-  return (
-    <WorkspaceTables
-      section={section}
-      data={data}
-      owner={owner}
-      money={money}
-      onOpen={open}
-      onInvite={resendInvite}
-    />
-  );
-}
-
-function TimeOffSection({ model }: { model: WorkspaceRenderModel }) {
-  const { data, owner, section } = model;
-  if (section !== "Time off" || !owner || !data) return null;
-
-  return <TeamTimeOff data={data} />;
-}
-
-function SettingsSection({ model }: { model: WorkspaceRenderModel }) {
-  const { data, user, owner, section, settingsTab, publicAppOrigin, mutate } =
-    model;
-  if (section !== "Settings" || !owner || !data) return null;
-
-  return (
-    <WorkspaceSettingsPanel
-      data={data}
-      user={user}
-      tab={settingsTab}
-      publicAppOrigin={publicAppOrigin}
-      onSaveBusiness={(input) =>
-        mutate(saveBusinessAction, input).then(() => undefined)
-      }
-    />
-  );
-}
-
-function SectionNotices({ model }: { model: WorkspaceRenderModel }) {
-  const { data, owner, section } = model;
-  const knownSections = [
-    "Overview",
-    "Notifications",
-    "Setup",
-    "Services",
-    "Team",
-    "Time off",
-    "Members",
-    "Settings",
-    "Appointments",
-    "Customers",
-    "Receptionist",
-  ];
-
-  return (
-    <>
-      {data && section === "Members" && owner && (
-        <Notice>Choose a section from the navigation.</Notice>
-      )}
-      {data && !knownSections.includes(section) && (
-        <Notice>Choose a section from the navigation.</Notice>
-      )}
-      {!owner && !["Overview", "Services", "Team"].includes(section) && (
-        <Notice>Your role does not have access to this section.</Notice>
-      )}
-    </>
-  );
+  return <Heading title={section} action={action} />;
 }
 
 function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
-  const activeStaffIds = new Set(
-    model.data?.staff
-      .filter((person) => person.isActive)
-      .map((person) => person.id),
-  );
-  const hasActiveStaff = activeStaffIds.size > 0;
-  const hasActiveService = Boolean(
-    model.data?.services.some((item) => item.isActive),
-  );
-  const hasAssignedActiveService = Boolean(
-    model.data?.services.some(
-      (item) =>
-        item.isActive &&
-        model.data?.assignments.some(
+  const { data, catalog, owner, section, money, open, resendInvite } = model;
+  if (!owner && !["Overview", "Services", "Team"].includes(section)) {
+    return <Notice>Your role does not have access to this section.</Notice>;
+  }
+
+  switch (section) {
+    case "Overview": {
+      const activeStaffIds = new Set(
+        data.staff
+          .filter((person) => person.isActive)
+          .map((person) => person.id),
+      );
+      const activeServices = data.services.filter(
+        (service) => service.isActive,
+      );
+      const hasAssignedActiveService = activeServices.some((service) =>
+        data.assignments.some(
           (assignment) =>
-            assignment.serviceId === item.id &&
+            assignment.serviceId === service.id &&
             activeStaffIds.has(assignment.staffId),
         ),
-    ),
-  );
-
-  return (
-    <>
-      <SetupAlert
-        model={model}
-        hasActiveStaff={hasActiveStaff}
-        hasActiveService={hasActiveService}
-        hasAssignedActiveService={hasAssignedActiveService}
-      />
-      <DashboardOverview model={model} />
-      {model.section === "Notifications" && model.owner && model.data && (
-        <BookingNotifications data={model.data} />
-      )}
-      <AppointmentSection model={model} />
-      <CustomerSection model={model} />
-      <ReceptionistSection model={model} />
-      <TableSection model={model} section="Services" />
-      <TableSection model={model} section="Team" />
-      <TimeOffSection model={model} />
-      <SettingsSection model={model} />
-      <SectionNotices model={model} />
-    </>
-  );
+      );
+      return (
+        <>
+          <SetupAlert
+            model={model}
+            hasActiveStaff={activeStaffIds.size > 0}
+            hasActiveService={activeServices.length > 0}
+            hasAssignedActiveService={hasAssignedActiveService}
+          />
+          <DashboardOverview model={model} />
+        </>
+      );
+    }
+    case "Appointments":
+      return catalog ? (
+        <OwnerAppointments data={data} catalog={catalog} />
+      ) : null;
+    case "Customers":
+      return <RealCustomers data={data} />;
+    case "Receptionist":
+      return (
+        <ReceptionistControl data={data} aiConfigured={model.aiConfigured} />
+      );
+    case "Services":
+    case "Team":
+      return (
+        <WorkspaceTables
+          section={section}
+          data={data}
+          owner={owner}
+          money={money}
+          onOpen={open}
+          onInvite={resendInvite}
+        />
+      );
+    case "Time off":
+      return <TeamTimeOff data={data} />;
+    case "Notifications":
+      return <BookingNotifications data={data} />;
+    case "Settings":
+      return (
+        <WorkspaceSettingsPanel
+          data={data}
+          user={model.user}
+          tab={model.settingsTab}
+          publicAppOrigin={model.publicAppOrigin}
+          onSaveBusiness={(input) =>
+            model.mutate(saveBusinessAction, input).then(() => undefined)
+          }
+        />
+      );
+  }
 }
 
 function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
@@ -486,22 +398,11 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
 }
 
 function WorkspaceDialogLayers({ model }: { model: WorkspaceRenderModel }) {
-  const {
-    data,
-    editor,
-    setEditor,
-    recordId,
-    service,
-    fields,
-    save,
-    revoke,
-    setRevoke,
-    mutate,
-  } = model;
+  const { data, editor, setEditor, recordId, service, fields, save } = model;
 
   return (
     <>
-      {editor === "staff" && data && (
+      {editor === "staff" && (
         <StaffEditor
           key={`staff-${recordId}`}
           data={data}
@@ -521,20 +422,6 @@ function WorkspaceDialogLayers({ model }: { model: WorkspaceRenderModel }) {
           successMessage={false}
         />
       )}
-      {revoke && (
-        <Confirm
-          title="Revoke access?"
-          label="Revoke access"
-          variant="destructive"
-          onClose={() => setRevoke(null)}
-          onConfirm={async () => {
-            await mutate(revokeWorkspaceAccessAction, revoke);
-          }}
-        >
-          This person will no longer be able to access this workspace. You can
-          invite them again later.
-        </Confirm>
-      )}
     </>
   );
 }
@@ -547,8 +434,6 @@ function editorTitle(
 
   if (editor === "service") return service ? "Edit service" : "Add service";
 
-  if (editor === "invite") return "Invite staff member";
-
   return "Edit profile";
 }
 
@@ -558,10 +443,6 @@ function editorDescription(
 ) {
   if (editor === "assignments") {
     return `Choose who can take appointments for ${service?.name ?? "this service"}.`;
-  }
-
-  if (editor === "invite") {
-    return "An invitation will be emailed to this person. They must verify and sign in with that address.";
   }
 
   if (editor === "service") {
@@ -586,7 +467,7 @@ export function WorkspaceDashboardView({
           (item) =>
             owner || ["Overview", "Services", "Team"].includes(item.name),
         )
-        .map((item) => ({ ...item, href: dashboardHref(item.name, w?.id) }))}
+        .map((item) => ({ ...item, href: dashboardHref(item.name, w.id) }))}
       picker={picker}
       accountMenu={accountMenu}
       headerActions={bellPanel}
