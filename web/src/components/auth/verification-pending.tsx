@@ -8,6 +8,84 @@ import { TextLink } from "@/components/ui/text-link";
 import { safeReturnPath } from "@/lib/auth-path";
 import { AuthShell } from "./auth-shell";
 
+function VerificationMessage({
+  token,
+  failed,
+  email,
+}: {
+  token: string | null;
+  failed: boolean;
+  email: string;
+}) {
+  const title = token
+    ? failed
+      ? "That link didn’t work"
+      : "Verifying your email…"
+    : "Check your inbox";
+  const instruction = token
+    ? failed
+      ? "Request another verification email below."
+      : "Please wait while we confirm your email address."
+    : null;
+
+  return (
+    <div className="flex flex-col gap-1.5 text-center">
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <p className="text-sm leading-6 text-muted-foreground">
+        {instruction ? (
+          instruction
+        ) : (
+          <>
+            Follow the link we sent to{" "}
+            {email ? (
+              <span className="break-words font-medium text-foreground">
+                {email}
+              </span>
+            ) : (
+              "your email address"
+            )}{" "}
+            to verify your account.
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function VerificationActions({
+  visible,
+  email,
+  busy,
+  sent,
+  onResend,
+}: {
+  visible: boolean;
+  email: string;
+  busy: boolean;
+  sent: boolean;
+  onResend: () => void;
+}) {
+  if (!visible) return null;
+
+  return (
+    <div className="flex flex-col gap-4 text-center">
+      <p className="text-sm leading-6 text-muted-foreground">
+        Can’t find it? Check your spam folder.
+      </p>
+      {email && (
+        <Button className="h-10 w-full" disabled={busy} onClick={onResend}>
+          {busy ? "Sending…" : "Resend verification email"}
+        </Button>
+      )}
+      {sent && (
+        <p role="status" className="text-sm leading-6 text-success-foreground">
+          Another verification email is on its way.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function VerificationPending() {
   const query = useSearchParams();
   const [accountEmail, setAccountEmail] = useState("");
@@ -83,62 +161,20 @@ export function VerificationPending() {
   return (
     <AuthShell>
       <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-1.5 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {token
-              ? failed
-                ? "That link didn’t work"
-                : "Verifying your email…"
-              : "Check your inbox"}
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            {token ? (
-              failed ? (
-                "Request another verification email below."
-              ) : (
-                "Please wait while we confirm your email address."
-              )
-            ) : (
-              <>
-                Follow the link we sent to{" "}
-                {email ? (
-                  <span className="break-words font-medium text-foreground">
-                    {email}
-                  </span>
-                ) : (
-                  "your email address"
-                )}{" "}
-                to verify your account.
-              </>
-            )}
-          </p>
-        </div>
+        <VerificationMessage token={token} failed={failed} email={email} />
         {query.has("error") && (
           <p role="alert" className="text-sm leading-6 text-destructive">
             That verification link is invalid or has expired. Request a new
             email below.
           </p>
         )}
-        {(!token || failed) && (
-          <div className="flex flex-col gap-4 text-center">
-            <p className="text-sm leading-6 text-muted-foreground">
-              Can’t find it? Check your spam folder.
-            </p>
-            {email && (
-              <Button className="h-10 w-full" disabled={busy} onClick={resend}>
-                {busy ? "Sending…" : "Resend verification email"}
-              </Button>
-            )}
-            {sent && (
-              <p
-                role="status"
-                className="text-sm leading-6 text-muted-foreground"
-              >
-                Another verification email is on its way.
-              </p>
-            )}
-          </div>
-        )}
+        <VerificationActions
+          visible={!token || failed}
+          email={email}
+          busy={busy}
+          sent={sent}
+          onResend={resend}
+        />
         {error && (
           <p role="alert" className="text-sm leading-6 text-destructive">
             {error}

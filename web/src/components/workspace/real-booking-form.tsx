@@ -377,6 +377,106 @@ export function RealBookingForm({
     );
 
   return (
+    <BookingSteps
+      catalog={catalog}
+      owner={owner}
+      serviceId={serviceId}
+      date={date}
+      staffId={staffId}
+      slots={slots}
+      selected={selected}
+      loaded={loaded}
+      busy={busy}
+      availabilityError={availabilityError}
+      step={step}
+      choice={choice}
+      details={details}
+      onService={(value) => {
+        setService(value);
+        setStaff("");
+        resetSlots();
+        if (date) void loadAvailability({ serviceId: value, staffId: "" });
+      }}
+      onDate={(value) => {
+        setDate(value);
+        resetSlots();
+        void loadAvailability({ date: value });
+      }}
+      onStaff={(value) => {
+        setStaff(value);
+        resetSlots();
+        if (date) void loadAvailability({ staffId: value });
+      }}
+      onSelected={setSelected}
+      onRetry={() => void loadAvailability()}
+      onContinue={() => setStep(2)}
+      onBackToAvailability={() => setStep(1)}
+      onNext={next}
+      onBackToDetails={() => setStep(2)}
+      onConfirm={() => void confirm()}
+    />
+  );
+}
+
+function BookingSteps({
+  catalog,
+  owner,
+  serviceId,
+  date,
+  staffId,
+  slots,
+  selected,
+  loaded,
+  busy,
+  availabilityError,
+  step,
+  choice,
+  details,
+  onService,
+  onDate,
+  onStaff,
+  onSelected,
+  onRetry,
+  onContinue,
+  onBackToAvailability,
+  onNext,
+  onBackToDetails,
+  onConfirm,
+}: {
+  catalog: Catalog;
+  owner: boolean;
+  serviceId: string;
+  date: string;
+  staffId: string;
+  slots: Slot[];
+  selected: string;
+  loaded: boolean;
+  busy: boolean;
+  availabilityError: string;
+  step: number;
+  choice: Slot | undefined;
+  details: BookingCustomerDetails;
+  onService: (value: string) => void;
+  onDate: (value: string) => void;
+  onStaff: (value: string) => void;
+  onSelected: (value: string) => void;
+  onRetry: () => void;
+  onContinue: () => void;
+  onBackToAvailability: () => void;
+  onNext: (event: FormEvent<HTMLFormElement>) => void;
+  onBackToDetails: () => void;
+  onConfirm: () => void;
+}) {
+  const showWaitlist =
+    step === 1 &&
+    !owner &&
+    loaded &&
+    !busy &&
+    !availabilityError &&
+    slots.length === 0 &&
+    Boolean(date);
+
+  return (
     <div className="flex flex-col gap-5">
       {step === 1 && (
         <RealBookingAvailability
@@ -390,48 +490,29 @@ export function RealBookingForm({
           loaded={loaded}
           busy={busy}
           error={availabilityError}
-          onService={(value) => {
-            setService(value);
-            setStaff("");
-            resetSlots();
-            if (date) void loadAvailability({ serviceId: value, staffId: "" });
-          }}
-          onDate={(value) => {
-            setDate(value);
-            resetSlots();
-            void loadAvailability({ date: value });
-          }}
-          onStaff={(value) => {
-            setStaff(value);
-            resetSlots();
-            if (date) void loadAvailability({ staffId: value });
-          }}
-          onSelected={setSelected}
-          onRetry={() => void loadAvailability()}
-          onContinue={() => setStep(2)}
+          onService={onService}
+          onDate={onDate}
+          onStaff={onStaff}
+          onSelected={onSelected}
+          onRetry={onRetry}
+          onContinue={onContinue}
         />
       )}
-      {step === 1 &&
-        !owner &&
-        loaded &&
-        !busy &&
-        !availabilityError &&
-        slots.length === 0 &&
-        date && (
-          <WaitlistJoinForm
-            key={`${serviceId}:${date}:${staffId}`}
-            catalog={catalog}
-            selection={{ serviceId, date, staffId }}
-          />
-        )}
+      {showWaitlist && (
+        <WaitlistJoinForm
+          key={`${serviceId}:${date}:${staffId}`}
+          catalog={catalog}
+          selection={{ serviceId, date, staffId }}
+        />
+      )}
       {step === 2 && (
         <RealBookingDetailsForm
           serviceArea={catalog.serviceArea}
           businessAddress={catalog.businessAddress}
           bookingLocation={catalog.bookingLocation}
           details={details}
-          onBack={() => setStep(1)}
-          onNext={next}
+          onBack={onBackToAvailability}
+          onNext={onNext}
         />
       )}
       {step === 3 && choice && (
@@ -442,8 +523,8 @@ export function RealBookingForm({
           details={details}
           owner={owner}
           busy={busy}
-          onBack={() => setStep(2)}
-          onConfirm={() => void confirm()}
+          onBack={onBackToDetails}
+          onConfirm={onConfirm}
         />
       )}
     </div>

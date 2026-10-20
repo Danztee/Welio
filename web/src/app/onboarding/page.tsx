@@ -7,6 +7,39 @@ import {
 } from "@/features/workspaces/queries";
 import { BackendError } from "@/lib/backend/server-api";
 import { WorkspaceOnboarding } from "@/components/workspace/onboarding";
+import type { WorkspaceMembership } from "@/features/workspaces/types";
+
+type OnboardingParams = Awaited<PageProps<"/onboarding">["searchParams"]>;
+
+function returnTo(params: OnboardingParams) {
+  if (params.new === "true") return "/onboarding?new=true";
+  if (typeof params.workspace === "string")
+    return `/onboarding?workspace=${encodeURIComponent(params.workspace)}`;
+
+  return "/onboarding";
+}
+
+function selectedWorkspace(
+  params: OnboardingParams,
+  workspaces: WorkspaceMembership[],
+) {
+  if (typeof params.workspace === "string") return params.workspace;
+  if (params.new === "true") return undefined;
+
+  return workspaces.find(
+    (item) => item.role === "owner" && !item.workspace.onboarded,
+  )?.workspace.id;
+}
+
+async function loadSetup(selected: string) {
+  try {
+    return await getWorkspaceDashboard(selected);
+  } catch (error) {
+    if (error instanceof BackendError && error.status === 404) notFound();
+
+    throw error;
+  }
+}
 
 export const metadata = {
   title: "Set up your workspace",
@@ -15,22 +48,9 @@ export const metadata = {
 
 export default async function Page({ searchParams }: PageProps<"/onboarding">) {
   const params = await searchParams;
-  const user = await requireUser(
-    "/onboarding" +
-      (params.new === "true"
-        ? "?new=true"
-        : typeof params.workspace === "string"
-          ? `?workspace=${encodeURIComponent(params.workspace)}`
-          : ""),
-  );
+  const user = await requireUser(returnTo(params));
   const list = await listWorkspaces();
-  const selected =
-    typeof params.workspace === "string"
-      ? params.workspace
-      : params.new === "true"
-        ? undefined
-        : list.find((x) => x.role === "owner" && !x.workspace.onboarded)
-            ?.workspace.id;
+  const selected = selectedWorkspace(params, list);
   if (!selected) {
     if (list.length && params.new !== "true") redirect("/dashboard");
 
@@ -39,14 +59,7 @@ export default async function Page({ searchParams }: PageProps<"/onboarding">) {
 
   if (!z.uuid().safeParse(selected).success) notFound();
 
-  let data;
-  try {
-    data = await getWorkspaceDashboard(selected);
-  } catch (error) {
-    if (error instanceof BackendError && error.status === 404) notFound();
-
-    throw error;
-  }
+  const data = await loadSetup(selected);
 
   if (data.role !== "owner" || data.workspace.onboarded)
     redirect(`/dashboard?workspace=${selected}`);

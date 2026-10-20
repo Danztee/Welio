@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -316,34 +316,41 @@ function MultiSelectField({
 }) {
   const anchor = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
+  const selectedValues = useMemo(() => new Set(value), [value]);
+  const optionsByValue = useMemo(
+    () => new Map(field.options.map((option) => [option.value, option])),
+    [field.options],
+  );
+  const filteredItems = useMemo(
+    () =>
+      field.options
+        .filter(
+          (option) =>
+            !selectedValues.has(option.value) &&
+            option.label
+              .toLocaleLowerCase()
+              .includes(query.toLocaleLowerCase()),
+        )
+        .map((option) => option.value),
+    [field.options, query, selectedValues],
+  );
   return (
     <Combobox
       items={field.options.map((option) => option.value)}
       inputValue={query}
       onInputValueChange={setQuery}
-      filteredItems={field.options
-        .filter(
-          (option) =>
-            !value.includes(option.value) &&
-            option.label
-              .toLocaleLowerCase()
-              .includes(query.toLocaleLowerCase()),
-        )
-        .map((option) => option.value)}
+      filteredItems={filteredItems}
       multiple
       name={field.name}
       value={value}
       onValueChange={onChange}
-      itemToStringLabel={(value) =>
-        field.options.find((option) => option.value === value)?.label ?? value
-      }
+      itemToStringLabel={(value) => optionsByValue.get(value)?.label ?? value}
     >
       <ComboboxChips ref={anchor}>
         <ComboboxValue>
           {value.map((value) => (
             <ComboboxChip key={value}>
-              {field.options.find((option) => option.value === value)?.label ??
-                value}
+              {optionsByValue.get(value)?.label ?? value}
             </ComboboxChip>
           ))}
         </ComboboxValue>
@@ -355,15 +362,14 @@ function MultiSelectField({
       </ComboboxChips>
       <ComboboxContent anchor={anchor}>
         <ComboboxEmpty>
-          {field.options.every((option) => value.includes(option.value))
+          {field.options.every((option) => selectedValues.has(option.value))
             ? "All team members selected."
             : "No matching team members."}
         </ComboboxEmpty>
         <ComboboxList>
           {(value: string) => (
             <ComboboxItem key={value} value={value}>
-              {field.options.find((option) => option.value === value)?.label ??
-                value}
+              {optionsByValue.get(value)?.label ?? value}
             </ComboboxItem>
           )}
         </ComboboxList>

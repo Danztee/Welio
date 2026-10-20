@@ -30,6 +30,7 @@ import { SetupInput } from "./setup-input";
 import { ServiceAreasField } from "./service-areas-field";
 
 type Data = WorkspaceDashboardData;
+type BookingLocationValue = Data["workspace"]["bookingLocation"];
 
 function slugifyBusinessName(name: string) {
   const slug = name
@@ -46,6 +47,112 @@ function slugifyBusinessName(name: string) {
   if (!slug) return "my-business";
 
   return slug.length < 3 ? `${slug}-business` : slug;
+}
+
+function BookingLocationField({
+  value,
+  onChange,
+}: {
+  value: BookingLocationValue;
+  onChange: (value: BookingLocationValue) => void;
+}) {
+  const description =
+    value === "both"
+      ? "Customers can choose your business address or request service at their address."
+      : value === "business_address"
+        ? "Customers will see this address and won’t be asked to enter theirs."
+        : "Customers will enter the address where you’ll provide the service.";
+
+  return (
+    <Field>
+      <FieldLabel htmlFor="setup-bookingLocation">
+        Where do appointments take place?
+      </FieldLabel>
+      <NativeSelect
+        id="setup-bookingLocation"
+        name="bookingLocation"
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value as BookingLocationValue)
+        }
+      >
+        <NativeSelectOption value="customer_address">
+          At the customer’s address
+        </NativeSelectOption>
+        <NativeSelectOption value="business_address">
+          At our business address
+        </NativeSelectOption>
+        <NativeSelectOption value="both">
+          Both (customer chooses)
+        </NativeSelectOption>
+      </NativeSelect>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </Field>
+  );
+}
+
+function BookingAddressFields({
+  bookingLocation,
+  workspace,
+}: {
+  bookingLocation: BookingLocationValue;
+  workspace: Data["workspace"] | undefined;
+}) {
+  const businessAddressDescription =
+    bookingLocation === "both"
+      ? "Customers can book here or enter their own service address."
+      : "Customers will book appointments at this address.";
+  const serviceAreaDescription =
+    bookingLocation === "both"
+      ? "Customers enter their exact address when booking at home."
+      : "Customers enter the exact appointment address when booking.";
+
+  return (
+    <>
+      {bookingLocation !== "customer_address" && (
+        <Field>
+          <FieldLabel htmlFor="setup-businessAddress">
+            Business address
+          </FieldLabel>
+          <Textarea
+            id="setup-businessAddress"
+            name="businessAddress"
+            autoComplete="street-address"
+            defaultValue={workspace?.businessAddress ?? ""}
+            minLength={2}
+            maxLength={200}
+            rows={3}
+            required
+          />
+          <p className="text-sm text-muted-foreground">
+            {businessAddressDescription}
+          </p>
+        </Field>
+      )}
+      {bookingLocation !== "business_address" ? (
+        <ServiceAreasField
+          id="setup-service-area"
+          value={workspace?.serviceArea ?? null}
+          label={`Areas you serve${bookingLocation === "both" ? " (optional)" : ""}`}
+          required={bookingLocation === "customer_address"}
+          description={serviceAreaDescription}
+        />
+      ) : (
+        <input
+          type="hidden"
+          name="serviceArea"
+          value={workspace?.serviceArea ?? ""}
+        />
+      )}
+      {bookingLocation === "customer_address" && (
+        <input
+          type="hidden"
+          name="businessAddress"
+          value={workspace?.businessAddress ?? ""}
+        />
+      )}
+    </>
+  );
 }
 
 export function WorkspaceOnboarding({
@@ -183,86 +290,14 @@ export function WorkspaceOnboarding({
                     maxLength={40}
                   />
                 </div>
-                <Field>
-                  <FieldLabel htmlFor="setup-bookingLocation">
-                    Where do appointments take place?
-                  </FieldLabel>
-                  <NativeSelect
-                    id="setup-bookingLocation"
-                    name="bookingLocation"
-                    value={bookingLocation}
-                    onChange={(event) =>
-                      setBookingLocation(
-                        event.target.value as typeof bookingLocation,
-                      )
-                    }
-                  >
-                    <NativeSelectOption value="customer_address">
-                      At the customer’s address
-                    </NativeSelectOption>
-                    <NativeSelectOption value="business_address">
-                      At our business address
-                    </NativeSelectOption>
-                    <NativeSelectOption value="both">
-                      Both (customer chooses)
-                    </NativeSelectOption>
-                  </NativeSelect>
-                  <p className="text-sm text-muted-foreground">
-                    {bookingLocation === "both"
-                      ? "Customers can choose your business address or request service at their address."
-                      : bookingLocation === "business_address"
-                        ? "Customers will see this address and won’t be asked to enter theirs."
-                        : "Customers will enter the address where you’ll provide the service."}
-                  </p>
-                </Field>
-                {bookingLocation !== "customer_address" && (
-                  <Field>
-                    <FieldLabel htmlFor="setup-businessAddress">
-                      Business address
-                    </FieldLabel>
-                    <Textarea
-                      id="setup-businessAddress"
-                      name="businessAddress"
-                      autoComplete="street-address"
-                      defaultValue={workspace?.businessAddress ?? ""}
-                      minLength={2}
-                      maxLength={200}
-                      rows={3}
-                      required
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      {bookingLocation === "both"
-                        ? "Customers can book here or enter their own service address."
-                        : "Customers will book appointments at this address."}
-                    </p>
-                  </Field>
-                )}
-                {bookingLocation !== "business_address" ? (
-                  <ServiceAreasField
-                    id="setup-service-area"
-                    value={workspace?.serviceArea ?? null}
-                    label={`Areas you serve${bookingLocation === "both" ? " (optional)" : ""}`}
-                    required={bookingLocation === "customer_address"}
-                    description={
-                      bookingLocation === "both"
-                        ? "Customers enter their exact address when booking at home."
-                        : "Customers enter the exact appointment address when booking."
-                    }
-                  />
-                ) : (
-                  <input
-                    type="hidden"
-                    name="serviceArea"
-                    value={workspace?.serviceArea ?? ""}
-                  />
-                )}
-                {bookingLocation === "customer_address" && (
-                  <input
-                    type="hidden"
-                    name="businessAddress"
-                    value={workspace?.businessAddress ?? ""}
-                  />
-                )}
+                <BookingLocationField
+                  value={bookingLocation}
+                  onChange={setBookingLocation}
+                />
+                <BookingAddressFields
+                  bookingLocation={bookingLocation}
+                  workspace={workspace}
+                />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="setup-timeZone">Time zone</FieldLabel>

@@ -14,6 +14,11 @@ export async function GET() {
       cache: "no-store",
       signal: AbortSignal.timeout(3_000),
     });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ status: "not_ready" }));
+
+      return Response.json(body, { status: response.status, headers });
+    }
     const body = await response.json().catch(() => ({ status: "not_ready" }));
 
     return Response.json(body, { status: response.status, headers });

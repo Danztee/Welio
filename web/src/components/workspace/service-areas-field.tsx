@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 
+type ServiceArea = { id: string; value: string };
+
 function initialAreas(value: string | null) {
   const savedAreas = value
     ?.split(/\r?\n/)
@@ -28,18 +30,23 @@ export function ServiceAreasField({
   required?: boolean;
   description: string;
 }) {
-  const [areas, setAreas] = useState(() => initialAreas(value));
+  const [areas, setAreas] = useState<ServiceArea[]>(() =>
+    initialAreas(value).map((area, index) => ({
+      id: `${id}-saved-${index}`,
+      value: area,
+    })),
+  );
   const serializedAreas = areas
-    .map((area) => area.trim())
+    .map(({ value }) => value.trim())
     .filter(Boolean)
     .join("\n");
 
-  function updateArea(index: number, value: string) {
-    const nextAreas = areas.map((area, areaIndex) =>
-      areaIndex === index ? value : area,
+  function updateArea(id: number, value: string) {
+    const nextAreas = areas.map((area) =>
+      area.id === id ? { ...area, value } : area,
     );
     const nextSerialized = nextAreas
-      .map((area) => area.trim())
+      .map(({ value }) => value.trim())
       .filter(Boolean)
       .join("\n");
 
@@ -52,8 +59,8 @@ export function ServiceAreasField({
       <div className="flex flex-col gap-2">
         {areas.map((area, index) => {
           const otherAreasLength = areas
-            .filter((_, areaIndex) => areaIndex !== index)
-            .map((item) => item.trim())
+            .filter((item) => item.id !== area.id)
+            .map(({ value }) => value.trim())
             .filter(Boolean)
             .join("\n").length;
           const maxLength = Math.max(
@@ -61,19 +68,19 @@ export function ServiceAreasField({
             200 - otherAreasLength - (otherAreasLength ? 1 : 0),
           );
           const anotherAreaIsFilled = areas.some(
-            (item, areaIndex) => areaIndex !== index && item.trim().length > 0,
+            (item) => item.id !== area.id && item.value.trim().length > 0,
           );
 
           return (
-            <div key={`${id}-${index}`} className="flex items-center gap-2">
+            <div key={area.id} className="flex items-center gap-2">
               <Input
                 id={`${id}-${index}`}
                 aria-label={`Service area ${index + 1}`}
-                value={area}
+                value={area.value}
                 required={required && index === 0 && !anotherAreaIsFilled}
                 maxLength={maxLength}
                 onChange={(event) =>
-                  updateArea(index, event.currentTarget.value)
+                  updateArea(area.id, event.currentTarget.value)
                 }
               />
               <Button
@@ -81,15 +88,17 @@ export function ServiceAreasField({
                 variant="ghost"
                 size="icon"
                 aria-label={`Remove service area ${index + 1}`}
-                onClick={() =>
+                onClick={() => {
+                  const replacement = {
+                    id: crypto.randomUUID(),
+                    value: "",
+                  };
                   setAreas((current) => {
-                    const next = current.filter(
-                      (_, areaIndex) => areaIndex !== index,
-                    );
+                    const next = current.filter((item) => item.id !== area.id);
 
-                    return next.length ? next : [""];
-                  })
-                }
+                    return next.length ? next : [replacement];
+                  });
+                }}
               >
                 <Trash2Icon />
               </Button>
@@ -101,7 +110,10 @@ export function ServiceAreasField({
           variant="outline"
           size="sm"
           className="self-start"
-          onClick={() => setAreas((current) => [...current, ""])}
+          onClick={() => {
+            const newArea = { id: crypto.randomUUID(), value: "" };
+            setAreas((current) => [...current, newArea]);
+          }}
         >
           <PlusIcon data-icon="inline-start" />
           Add area
