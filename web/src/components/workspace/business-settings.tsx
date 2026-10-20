@@ -418,21 +418,51 @@ export function BusinessSettings({
         aria-busy={saving || preparingLogo}
         className="mt-6 max-w-2xl"
       >
-        <FieldGroup>
-          <BusinessLogoField
-            logo={logo}
-            saving={saving}
-            preparing={preparingLogo}
-            inputRef={logoInput}
-            onChoose={(file) => void chooseLogo(file)}
-            onRemove={() => setLogo(null)}
-          />
-          <BusinessIdentityFields workspace={workspace} />
-          <BusinessLocationFields
-            workspace={workspace}
-            bookingLocation={bookingLocation}
-            onBookingLocationChange={setBookingLocationOverride}
-          />
+        <div className="flex flex-col gap-8">
+          <section
+            className="flex flex-col gap-5"
+            aria-labelledby="business-profile-heading"
+          >
+            <div>
+              <h3 id="business-profile-heading" className="font-medium">
+                Business profile
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Your name, booking link, and contact details.
+              </p>
+            </div>
+            <FieldGroup>
+              <BusinessLogoField
+                logo={logo}
+                saving={saving}
+                preparing={preparingLogo}
+                inputRef={logoInput}
+                onChoose={(file) => void chooseLogo(file)}
+                onRemove={() => setLogo(null)}
+              />
+              <BusinessIdentityFields workspace={workspace} />
+            </FieldGroup>
+          </section>
+          <section
+            className="flex flex-col gap-5 border-t pt-8"
+            aria-labelledby="business-booking-heading"
+          >
+            <div>
+              <h3 id="business-booking-heading" className="font-medium">
+                Booking details
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Set service location, time zone, and currency.
+              </p>
+            </div>
+            <FieldGroup>
+              <BusinessLocationFields
+                workspace={workspace}
+                bookingLocation={bookingLocation}
+                onBookingLocationChange={setBookingLocationOverride}
+              />
+            </FieldGroup>
+          </section>
           <Button
             type="submit"
             disabled={saving || preparingLogo}
@@ -440,7 +470,7 @@ export function BusinessSettings({
           >
             {saving ? "Saving…" : "Save changes"}
           </Button>
-        </FieldGroup>
+        </div>
       </form>
     </>
   );

@@ -47,7 +47,7 @@ const groups = [
     heading: "Personal",
     items: [
       { id: "profile", label: "Profile", icon: UserRoundIcon },
-      { id: "security", label: "Authentication", icon: ShieldCheckIcon },
+      { id: "security", label: "Security", icon: ShieldCheckIcon },
     ],
   },
   {
@@ -158,7 +158,7 @@ export function WorkspaceSettingsPanel({
       </aside>
 
       <section
-        className="max-w-3xl min-w-0"
+        className="max-w-4xl min-w-0"
         aria-labelledby="settings-section-title"
       >
         {tab === "profile" && (
@@ -218,7 +218,17 @@ export function WorkspaceSettingsPanel({
             </form>
           </>
         )}
-        {tab === "security" && <SessionSettings />}
+        {tab === "security" && (
+          <>
+            <h2 id="settings-section-title" className="text-lg font-semibold">
+              Security
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Review signed-in devices and end sessions you don’t recognize.
+            </p>
+            <SessionSettings />
+          </>
+        )}
         {tab === "business" && (
           <BusinessSettings
             key={workspace.id}
@@ -234,7 +244,7 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Set booking rules and appointment reminders.
             </p>
-            <div className="mt-6 flex flex-col gap-6">
+            <div className="mt-6 flex flex-col gap-8">
               <BookingPolicies data={data} />
             </div>
           </>
