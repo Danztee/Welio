@@ -38,15 +38,6 @@ const nextConfig: NextConfig = {
 export default function config(phase: string): NextConfig {
   return {
     ...nextConfig,
-    experimental: {
-      // Browser fixtures are disposable; retaining compiler caches only grows test output.
-      turbopackFileSystemCacheForDev: process.env.WELIO_E2E !== "1",
-    },
-    distDir:
-      process.env.WELIO_E2E === "1"
-        ? ".next-e2e"
-        : phase === PHASE_DEVELOPMENT_SERVER
-          ? ".next"
-          : ".next-build",
+    distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next" : ".next-build",
   };
 }

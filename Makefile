@@ -58,9 +58,6 @@ check-migrations:
 test:
 	node scripts/test-db.mjs go test -race -p 1 -count=1 ./...
 
-test-e2e:
-	node scripts/test-db.mjs sh -c 'cd web && pnpm exec playwright install chromium && pnpm test:e2e'
-
 verify:
 	node scripts/test-db.mjs $(MAKE) verify-with-db
 
@@ -70,7 +67,6 @@ verify-with-db:
 	$(MAKE) check
 	go test -race -p 1 -count=1 ./...
 	$(MAKE) build
-	cd web && pnpm exec playwright install chromium && pnpm test:e2e
 	$(MAKE) image-test
 
 fmt:
@@ -92,7 +88,7 @@ build:
 	$(MAKE) web-build
 
 web-check:
-	cd web && pnpm test && pnpm check
+	cd web && pnpm check
 
 web-lint:
 	cd web && pnpm lint

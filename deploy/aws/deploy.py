@@ -36,8 +36,6 @@ EXCLUDED_PATH_PARTS = {
     ".turbo",
     ".vercel",
     "node_modules",
-    "playwright-report",
-    "test-results",
     "__pycache__",
     "bin",
     "coverage",

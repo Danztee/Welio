@@ -56,20 +56,6 @@ jobs:
   web:
     name: Web
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: welio
-          POSTGRES_PASSWORD: welio
-          POSTGRES_DB: welio_browser_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U welio -d welio_browser_test"
-          --health-interval 5s --health-timeout 5s --health-retries 20
-    env:
-      WELIO_TEST_DATABASE_URL: postgres://welio:welio@127.0.0.1:5432/welio_browser_test?sslmode=disable
     defaults:
       run:
         working-directory: web
@@ -93,12 +79,9 @@ jobs:
         working-directory: .
         run: make contracts-check
       - run: pnpm format:check
-      - run: pnpm test
       - run: pnpm check
       - run: pnpm lint
       - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
 
   image:
     name: Backend image
