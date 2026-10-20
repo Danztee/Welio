@@ -27,6 +27,12 @@ test("dashboard sections remain usable on desktop and mobile", async ({
   expect(response.ok()).toBeTruthy();
   for (const width of [1440, 375]) {
     await page.setViewportSize({ width, height: 1000 });
+    let workspaceFrame: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null = null;
     for (const path of [
       ...Object.values(dashboardRoutes),
       "/dashboard/settings?tab=security",
@@ -40,6 +46,41 @@ test("dashboard sections remain usable on desktop and mobile", async ({
       await expect(
         page.getByRole("heading", { name: "Something went wrong" }),
       ).toHaveCount(0);
+      const workspaceCard = page.locator('[data-slot="workspace-card"]');
+      if (await workspaceCard.count()) {
+        const bounds = (await workspaceCard.boundingBox())!;
+        expect(bounds.height).toBeGreaterThan(800);
+        expect(bounds.y + bounds.height).toBeLessThanOrEqual(1000);
+        if (workspaceFrame) {
+          for (const key of ["x", "y", "width", "height"] as const) {
+            expect(
+              Math.abs(bounds[key] - workspaceFrame[key]),
+            ).toBeLessThanOrEqual(1);
+          }
+        }
+        workspaceFrame = bounds;
+        if (section.startsWith("/settings")) {
+          const content = page.locator(
+            'section[aria-labelledby="settings-section-title"]',
+          );
+          await content.evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+          });
+          const afterScroll = (await workspaceCard.boundingBox())!;
+          expect(afterScroll).toEqual(bounds);
+          await expect(
+            page.getByRole("heading", { name: "Settings", exact: true }),
+          ).toBeVisible();
+          if (section === "/settings?tab=business") {
+            expect(
+              await content.evaluate((element) => element.scrollTop),
+            ).toBeGreaterThan(0);
+          }
+          await content.evaluate((element) => {
+            element.scrollTop = 0;
+          });
+        }
+      }
       if (section === "/settings?tab=business") {
         const area = page.getByRole("textbox", {
           name: "Service area 1",

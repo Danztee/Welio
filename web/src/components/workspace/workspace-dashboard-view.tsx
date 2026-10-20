@@ -443,6 +443,7 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
     "Team",
     "Time off",
     "Notifications",
+    "Settings",
   ].includes(section);
 
   return (
@@ -454,6 +455,7 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
       )}
     >
       <div
+        data-slot={usesMainWorkspaceCard ? "workspace-card" : undefined}
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
           usesMainWorkspaceCard && "rounded-xl border border-border bg-card",
@@ -461,8 +463,14 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
       >
         <div
           className={cn(
-            "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain [&>*]:shrink-0",
-            usesMainWorkspaceCard ? "p-4 sm:p-6" : "px-1 py-4 sm:px-2 sm:py-6",
+            "flex min-h-0 flex-1 flex-col",
+            section === "Settings"
+              ? "overflow-hidden"
+              : "gap-6 overflow-y-auto overscroll-contain [&>*]:shrink-0",
+            section !== "Settings" &&
+              (usesMainWorkspaceCard
+                ? "p-4 sm:p-6"
+                : "px-1 py-4 sm:px-2 sm:py-6"),
             section === "Overview" && "p-0",
           )}
           role="region"

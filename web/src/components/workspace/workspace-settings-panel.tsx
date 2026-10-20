@@ -108,8 +108,11 @@ export function WorkspaceSettingsPanel({
   }
 
   return (
-    <div className="grid min-w-0 gap-8 rounded-2xl border bg-card p-5 shadow-xs sm:p-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
-      <aside className="min-w-0" aria-label="Settings navigation">
+    <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-6 overflow-hidden p-5 sm:p-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-12">
+      <aside
+        className="min-h-0 min-w-0 lg:overflow-y-auto"
+        aria-label="Settings navigation"
+      >
         <h1 className="mb-5 text-lg font-semibold tracking-tight">Settings</h1>
         <Field className="lg:hidden">
           <FieldLabel htmlFor="settings-section">Settings section</FieldLabel>
@@ -163,7 +166,9 @@ export function WorkspaceSettingsPanel({
       </aside>
 
       <section
-        className="max-w-4xl min-w-0"
+        className="min-h-0 max-w-4xl min-w-0 overflow-y-auto overscroll-contain px-1 pb-1"
+        role="region"
+        tabIndex={0}
         aria-labelledby="settings-section-title"
       >
         {tab === "profile" && (
