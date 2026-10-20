@@ -1,6 +1,6 @@
 "use client";
 import { Blank, Grid, Status } from "@/components/platform/shared";
-import { ListControls, ListPagination } from "./list-controls";
+import { ListPagination } from "./list-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,13 @@ import { formatWhen, formatMoney } from "./booking-format";
 
 type Data = WorkspaceDashboardData;
 
-export function RealCustomers({ data }: { data: Data }) {
+export function RealCustomers({
+  data,
+  searchQuery,
+}: {
+  data: Data;
+  searchQuery: string;
+}) {
   const [selected, setSelected] = useState("");
   const customer = data.customers.find((c) => c.id === selected);
   const [history, setHistory] = useState<{
@@ -96,8 +102,8 @@ export function RealCustomers({ data }: { data: Data }) {
     <>
       <Grid
         externalSearch
+        searchQuery={searchQuery}
         footer={<ListPagination data={data} section="Customers" />}
-        toolbar={<ListControls data={data} section="Customers" />}
         empty={
           data.pagination?.search || data.customers.length
             ? "No customers found"

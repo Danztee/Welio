@@ -29,7 +29,13 @@ async function save(workspaceId: string, input: unknown) {
   return result;
 }
 
-export function BookingNotifications({ data }: { data: Data }) {
+export function BookingNotifications({
+  data,
+  searchQuery,
+}: {
+  data: Data;
+  searchQuery: string;
+}) {
   const router = useRouter();
   const [retry, setRetry] = useState("");
   const [status, setStatus] = useState("all");
@@ -37,6 +43,8 @@ export function BookingNotifications({ data }: { data: Data }) {
   return (
     <div className="flex flex-col gap-6">
       <Grid
+        externalSearch
+        searchQuery={searchQuery}
         searchText={(notification) =>
           [
             notification.subject,

@@ -4,18 +4,23 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 
 export function SearchField({
   label,
   value,
   onChange,
+  placeholder = "Search…",
+  className,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
 }) {
   return (
-    <InputGroup className="w-full sm:max-w-xs">
+    <InputGroup className={cn("w-full sm:max-w-xs", className)}>
       <InputGroupAddon>
         <SearchIcon aria-hidden="true" />
       </InputGroupAddon>
@@ -23,7 +28,7 @@ export function SearchField({
         type="search"
         autoComplete="off"
         aria-label={label}
-        placeholder="Search…"
+        placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />

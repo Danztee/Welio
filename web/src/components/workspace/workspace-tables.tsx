@@ -26,6 +26,7 @@ type Props = {
   data: Data;
   owner: boolean;
   money: (minorUnits: number) => string;
+  searchQuery: string;
   onOpen: (kind: EditorKind, id?: string) => void;
   onInvite: (email: string) => Promise<void>;
 };
@@ -35,12 +36,19 @@ export function WorkspaceTables({
   data,
   owner,
   money,
+  searchQuery,
   onOpen,
   onInvite,
 }: Props) {
   if (section === "Services")
     return (
-      <ServiceTable data={data} owner={owner} money={money} onOpen={onOpen} />
+      <ServiceTable
+        data={data}
+        owner={owner}
+        money={money}
+        searchQuery={searchQuery}
+        onOpen={onOpen}
+      />
     );
 
   return (
@@ -48,6 +56,7 @@ export function WorkspaceTables({
       data={data}
       owner={owner}
       money={money}
+      searchQuery={searchQuery}
       onOpen={onOpen}
       onInvite={onInvite}
     />
@@ -58,10 +67,13 @@ function ServiceTable({
   data,
   owner,
   money,
+  searchQuery,
   onOpen,
 }: Omit<Props, "section" | "onInvite">) {
   return (
     <Grid
+      externalSearch
+      searchQuery={searchQuery}
       empty={data.services.length ? "No services found" : "No services yet"}
       emptyDescription={
         data.services.length
@@ -176,7 +188,13 @@ function ServiceTable({
   );
 }
 
-function TeamTable({ data, owner, onOpen, onInvite }: Omit<Props, "section">) {
+function TeamTable({
+  data,
+  owner,
+  searchQuery,
+  onOpen,
+  onInvite,
+}: Omit<Props, "section">) {
   const accessFor = (email: string) => {
     const normalizedEmail = email.toLowerCase();
     if (
@@ -202,6 +220,8 @@ function TeamTable({ data, owner, onOpen, onInvite }: Omit<Props, "section">) {
 
   return (
     <Grid
+      externalSearch
+      searchQuery={searchQuery}
       empty={
         data.staff.length ? "No team members found" : "No team members yet"
       }

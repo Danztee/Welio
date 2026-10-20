@@ -28,6 +28,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { OwnerAppointments } from "./owner-appointments";
 import { RealCustomers } from "./real-customers";
@@ -38,6 +39,7 @@ import { ReceptionistControl } from "./receptionist-control";
 import { WorkspaceSettingsPanel } from "./workspace-settings-panel";
 import { WorkspaceTables } from "./workspace-tables";
 import type { WorkspaceEditorKind as EditorKind } from "./workspace-editor-fields";
+import { ListSearch } from "./list-controls";
 
 type Data = WorkspaceDashboardData;
 export type WorkspaceAppUser = {
@@ -292,17 +294,36 @@ function SectionHeading({ model }: { model: WorkspaceRenderModel }) {
   const descriptions: Partial<Record<DashboardSection, string>> = {
     Receptionist: "Shape the customer conversation and test it before sharing.",
   };
+  const searchable = [
+    "Customers",
+    "Services",
+    "Team",
+    "Notifications",
+  ].includes(section);
+  const headingAction =
+    searchable || action ? (
+      <>
+        {searchable && <ListSearch data={model.data} section={section} />}
+        {action}
+      </>
+    ) : undefined;
 
   return (
     <Heading
       title={section}
       description={descriptions[section]}
-      action={action}
+      action={headingAction}
     />
   );
 }
 
-function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
+function WorkspacePageContent({
+  model,
+  searchQuery,
+}: {
+  model: WorkspaceRenderModel;
+  searchQuery: string;
+}) {
   const { data, catalog, owner, section, money, open, resendInvite } = model;
   if (!owner && !["Overview", "Services", "Team"].includes(section)) {
     return <Notice>Your role does not have access to this section.</Notice>;
@@ -339,10 +360,14 @@ function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
     }
     case "Appointments":
       return catalog ? (
-        <OwnerAppointments data={data} catalog={catalog} />
+        <OwnerAppointments
+          data={data}
+          catalog={catalog}
+          searchQuery={searchQuery}
+        />
       ) : null;
     case "Customers":
-      return <RealCustomers data={data} />;
+      return <RealCustomers data={data} searchQuery={searchQuery} />;
     case "Receptionist":
       return (
         <ReceptionistControl data={data} aiConfigured={model.aiConfigured} />
@@ -355,14 +380,15 @@ function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
           data={data}
           owner={owner}
           money={money}
+          searchQuery={searchQuery}
           onOpen={open}
           onInvite={resendInvite}
         />
       );
     case "Time off":
-      return <TeamTimeOff data={data} />;
+      return <TeamTimeOff data={data} searchQuery={searchQuery} />;
     case "Notifications":
-      return <BookingNotifications data={data} />;
+      return <BookingNotifications data={data} searchQuery={searchQuery} />;
     case "Settings":
       return (
         <WorkspaceSettingsPanel
@@ -380,6 +406,8 @@ function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
 
 function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
   const { section } = model;
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") ?? "";
   const usesMainWorkspaceCard = [
     "Appointments",
     "Customers",
@@ -415,7 +443,7 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
         >
           {section === "Overview" && <h1 className="sr-only">Overview</h1>}
           <SectionHeading model={model} />
-          <WorkspacePageContent model={model} />
+          <WorkspacePageContent model={model} searchQuery={searchQuery} />
         </div>
       </div>
     </main>

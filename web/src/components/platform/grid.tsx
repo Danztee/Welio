@@ -12,7 +12,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Blank } from "./blank";
 import { SearchField } from "./search-field";
-import { cn } from "@/lib/utils";
 
 export function Grid<T>({
   rows,
@@ -22,6 +21,7 @@ export function Grid<T>({
   toolbar,
   footer,
   externalSearch = false,
+  searchQuery = "",
   compact = false,
   searchText = (row) => JSON.stringify(row),
 }: {
@@ -32,29 +32,30 @@ export function Grid<T>({
   toolbar?: ReactNode;
   footer?: ReactNode;
   externalSearch?: boolean;
+  searchQuery?: string;
   compact?: boolean;
   searchText?: (row: T) => string;
 }) {
   const [search, setSearch] = useState("");
-  const query = search.trim().toLocaleLowerCase();
+  const query = (externalSearch ? searchQuery : search)
+    .trim()
+    .toLocaleLowerCase();
   const visibleRows =
-    externalSearch || compact || !query
+    compact || !query
       ? rows
       : rows.filter((row) =>
           searchText(row).toLocaleLowerCase().includes(query),
         );
-  const emptyTitle =
-    query && !externalSearch
-      ? "No matching records"
-      : (empty ?? "No records found");
-  const emptyMessage =
-    query && !externalSearch
-      ? "Try a different search."
-      : (emptyDescription ?? "There’s nothing to show here yet.");
+  const emptyTitle = query
+    ? "No matching records"
+    : (empty ?? "No records found");
+  const emptyMessage = query
+    ? "Try a different search."
+    : (emptyDescription ?? "There’s nothing to show here yet.");
 
   const content = (
     <>
-      {!compact && (
+      {!compact && (!externalSearch || toolbar) && (
         <GridToolbar
           externalSearch={externalSearch}
           search={search}

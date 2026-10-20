@@ -18,6 +18,7 @@ import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { MoreHorizontalIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ListSearch } from "./list-controls";
 
 type Data = WorkspaceDashboardData;
 const timeOffDateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -40,7 +41,13 @@ async function save(
   return result;
 }
 
-export function TeamTimeOff({ data }: { data: Data }) {
+export function TeamTimeOff({
+  data,
+  searchQuery,
+}: {
+  data: Data;
+  searchQuery: string;
+}) {
   const router = useRouter();
   const [adding, setAdding] = useState(false),
     [remove, setRemove] = useState("");
@@ -51,16 +58,21 @@ export function TeamTimeOff({ data }: { data: Data }) {
         <Heading
           title="Time off"
           action={
-            <Button
-              disabled={!data.staff.length}
-              onClick={() => setAdding(true)}
-            >
-              <PlusIcon data-icon="inline-start" />
-              Add time off
-            </Button>
+            <>
+              <ListSearch data={data} section="Time off" />
+              <Button
+                disabled={!data.staff.length}
+                onClick={() => setAdding(true)}
+              >
+                <PlusIcon data-icon="inline-start" />
+                Add time off
+              </Button>
+            </>
           }
         />
         <Grid
+          externalSearch
+          searchQuery={searchQuery}
           rows={data.timeOff}
           searchText={(entry) =>
             [

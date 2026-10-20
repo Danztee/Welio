@@ -1,7 +1,7 @@
 "use client";
 import { changeWorkspaceBookingAction } from "@/app/dashboard/booking-actions";
 import { Confirm, Grid, Heading, Status } from "@/components/platform/shared";
-import { ListControls, ListPagination } from "./list-controls";
+import { ListControls, ListPagination, ListSearch } from "./list-controls";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -131,14 +131,17 @@ async function loadAppointmentSlots(
 
 function OwnerAppointmentTable({
   data,
+  searchQuery,
   onSelect,
 }: {
   data: Data;
+  searchQuery: string;
   onSelect: (bookingId: string) => void;
 }) {
   return (
     <Grid
       externalSearch
+      searchQuery={searchQuery}
       footer={<ListPagination data={data} section="Appointments" />}
       toolbar={<ListControls data={data} section="Appointments" />}
       empty={
@@ -384,9 +387,11 @@ function AppointmentDialogs({
 export function OwnerAppointments({
   data,
   catalog,
+  searchQuery,
 }: {
   data: Data;
   catalog: Catalog;
+  searchQuery: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState("");
@@ -421,16 +426,23 @@ export function OwnerAppointments({
       <Heading
         title="Appointments"
         action={
-          <Button
-            disabled={!catalog.services.length}
-            onClick={() => setCreating(true)}
-          >
-            <CalendarPlusIcon data-icon="inline-start" />
-            New appointment
-          </Button>
+          <>
+            <ListSearch data={data} section="Appointments" />
+            <Button
+              disabled={!catalog.services.length}
+              onClick={() => setCreating(true)}
+            >
+              <CalendarPlusIcon data-icon="inline-start" />
+              New appointment
+            </Button>
+          </>
         }
       />
-      <OwnerAppointmentTable data={data} onSelect={setSelected} />
+      <OwnerAppointmentTable
+        data={data}
+        searchQuery={searchQuery}
+        onSelect={setSelected}
+      />
       <AppointmentDialogs
         data={data}
         catalog={catalog}
