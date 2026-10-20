@@ -1,6 +1,6 @@
 "use client";
 import { setBookingPublishedAction } from "@/app/dashboard/booking-actions";
-import { Confirm, Status } from "@/components/platform/shared";
+import { Confirm } from "@/components/platform/shared";
 import { Button } from "@/components/ui/button";
 import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
@@ -44,7 +44,6 @@ export function PublicBookingSettings({
                 : "Publish when your services and team are ready."}
             </p>
           </div>
-          <Status value={w.isPublished ? "Published" : "Unpublished"} />
         </div>
         {w.isPublished && (
           <div className="mt-5 flex max-w-full flex-col gap-1">

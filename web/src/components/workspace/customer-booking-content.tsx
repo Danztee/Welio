@@ -28,15 +28,6 @@ function BookingStatusHeader({ view }: { view: BookingView }) {
     : isCancelled
       ? "danger"
       : "neutral";
-  const title =
-    view.status === "confirmed"
-      ? "Appointment confirmed"
-      : view.status === "cancelled"
-        ? "Appointment cancelled"
-        : view.status === "completed"
-          ? "Appointment complete"
-          : "Your appointment";
-
   return (
     <header className="flex flex-col gap-3">
       <Badge variant="outline" tone={statusTone} className="capitalize">
@@ -48,7 +39,9 @@ function BookingStatusHeader({ view }: { view: BookingView }) {
         {view.status.replaceAll("_", " ")}
       </Badge>
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Appointment details
+        </h1>
         <p className="text-sm text-muted-foreground">
           {view.serviceName} <span aria-hidden="true">·</span> {view.business}
         </p>
