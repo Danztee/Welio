@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
+import { Spinner } from "@/components/ui/spinner";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -11,6 +12,18 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { NavigationItem } from "./dashboard-shell-types";
+
+function NavigationIcon({
+  name,
+  icon: Icon,
+}: Pick<NavigationItem, "name" | "icon">) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <Spinner aria-label={`Opening ${name}`} />
+  ) : (
+    <Icon aria-hidden="true" />
+  );
+}
 
 export function DashboardNavigation({
   section,
@@ -40,7 +53,7 @@ export function DashboardNavigation({
                       onClick={() => setOpenMobile(false)}
                       className="h-11 gap-3 md:h-10"
                     >
-                      <Icon aria-hidden="true" />
+                      <NavigationIcon name={name} icon={Icon} />
                       <span>{name}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -1,5 +1,5 @@
 import { WorkspaceApp } from "@/components/workspace/workspace-app";
-import { requireUser } from "@/lib/auth/session";
+import { requireUser, redirectToSessionRenewal } from "@/lib/auth/session";
 import { env } from "@/lib/env";
 import { dashboardHref, type DashboardSection } from "@/lib/dashboard-routes";
 import {
@@ -25,9 +25,11 @@ async function loadWorkspace(
   selected: string,
   section: DashboardSection,
   params: Awaited<DashboardSearchParams>,
+  owner: boolean,
+  returnTo: string,
 ) {
   try {
-    return await getWorkspaceDashboard(selected, section, {
+    const options = {
       cursor: params.cursor,
       search: params.search,
       status: z
@@ -36,9 +38,17 @@ async function loadWorkspace(
         .parse(params.status || undefined),
       from: params.from,
       to: params.to,
-    });
+    };
+    return await Promise.all([
+      getWorkspaceDashboard(selected, section, options),
+      owner && section === "Appointments"
+        ? getWorkspaceCatalog(selected)
+        : null,
+    ]);
   } catch (error) {
     if (error instanceof BackendError && error.status === 404) notFound();
+    if (error instanceof BackendError && error.status === 401)
+      redirectToSessionRenewal(returnTo);
 
     throw error;
   }
@@ -65,10 +75,17 @@ export async function DashboardPage({
     const value = params[key];
     if (typeof value === "string") returnParams.set(key, value);
   }
-  const user = await requireUser(
-    dashboardHref(section) + (returnParams.size ? `?${returnParams}` : ""),
-  );
-  const list = await listWorkspaces();
+  const returnTo =
+    dashboardHref(section) + (returnParams.size ? `?${returnParams}` : "");
+  const userPromise = requireUser(returnTo);
+  const listPromise = listWorkspaces().catch(async (error) => {
+    // Let authentication redirects win over errors from the parallel resource read.
+    await userPromise;
+    if (error instanceof BackendError && error.status === 401)
+      redirectToSessionRenewal(returnTo);
+    throw error;
+  });
+  const [user, list] = await Promise.all([userPromise, listPromise]);
   const selected =
     typeof params.workspace === "string"
       ? params.workspace
@@ -77,14 +94,16 @@ export async function DashboardPage({
 
   if (!z.uuid().safeParse(selected).success) notFound();
 
-  const data = await loadWorkspace(selected, section, params);
+  const [data, catalog] = await loadWorkspace(
+    selected,
+    section,
+    params,
+    list.find((item) => item.workspace.id === selected)?.role === "owner",
+    returnTo,
+  );
   if (data.role === "owner" && !data.workspace.onboarded)
     redirect(`/onboarding?workspace=${selected}`);
 
-  const catalog =
-    data.role === "owner" && section === "Appointments"
-      ? await getWorkspaceCatalog(selected)
-      : null;
   const now = new Date().toISOString();
 
   return (

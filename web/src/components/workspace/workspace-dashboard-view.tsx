@@ -7,7 +7,8 @@ import {
   type EditorField,
 } from "@/components/platform/shared";
 import { BookingNotifications } from "./booking-notifications";
-import { BusinessOverview } from "@/components/dashboard/business-overview";
+import dynamic from "next/dynamic";
+import { Spinner } from "@/components/ui/spinner";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { saveBusinessAction } from "@/app/dashboard/workspace-actions";
 import { Button } from "@/components/ui/button";
@@ -30,16 +31,43 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { OwnerAppointments } from "./owner-appointments";
 import { RealCustomers } from "./real-customers";
 import { StaffEditor } from "./staff-editor";
 import { TeamTimeOff } from "./team-time-off";
 import { Notice } from "@/components/platform/notice";
-import { ReceptionistControl } from "./receptionist-control";
 import { WorkspaceSettingsPanel } from "./workspace-settings-panel";
 import { WorkspaceTables } from "./workspace-tables";
 import type { WorkspaceEditorKind as EditorKind } from "./workspace-editor-fields";
 import { ListSearch } from "./list-controls";
+
+function SectionLoading() {
+  return (
+    <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
+      <Spinner />
+      Loading page…
+    </div>
+  );
+}
+
+const BusinessOverview = dynamic(
+  () =>
+    import("@/components/dashboard/business-overview").then(
+      (module) => module.BusinessOverview,
+    ),
+  { loading: SectionLoading },
+);
+const OwnerAppointments = dynamic(
+  () =>
+    import("./owner-appointments").then((module) => module.OwnerAppointments),
+  { loading: SectionLoading },
+);
+const ReceptionistControl = dynamic(
+  () =>
+    import("./receptionist-control").then(
+      (module) => module.ReceptionistControl,
+    ),
+  { loading: SectionLoading },
+);
 
 type Data = WorkspaceDashboardData;
 export type WorkspaceAppUser = {

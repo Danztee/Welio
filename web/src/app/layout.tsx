@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
 import { Toaster } from "@/components/ui/toast";
+import { SessionMaintenance } from "@/components/auth/session-maintenance";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full overflow-x-clip antialiased">
       <body className="min-h-full overflow-x-clip">
+        <SessionMaintenance />
         {children}
         <Toaster />
       </body>

@@ -29,14 +29,17 @@ export const currentUser = cache(async function currentUser() {
   }
 });
 
+export function redirectToSessionRenewal(returnTo?: string): never {
+  redirect(
+    returnTo
+      ? `/session/renew?next=${encodeURIComponent(safeReturnPath(returnTo))}`
+      : "/session/renew",
+  );
+}
+
 export async function requireUser(returnTo?: string) {
   const user = await currentUser();
-  if (!user)
-    redirect(
-      returnTo
-        ? `/session/renew?next=${encodeURIComponent(safeReturnPath(returnTo))}`
-        : "/session/renew",
-    );
+  if (!user) redirectToSessionRenewal(returnTo);
 
   if (!user.emailVerified) redirect("/verify-email");
 

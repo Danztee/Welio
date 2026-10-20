@@ -1,6 +1,27 @@
 import { apiUrl } from "../api-url.ts";
 
 let pending: Promise<boolean> | undefined;
+let renewAt = 0;
+const renewalLeadSeconds = 60;
+
+function rememberLifetime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0)
+    throw new Error("Could not read your session lifetime. Please try again.");
+  renewAt = Date.now() + Math.max(0, seconds - renewalLeadSeconds) * 1_000;
+}
+
+function hasTimeRemaining(response: Response): boolean {
+  const value = response.headers.get("X-Welio-Access-TTL");
+  if (value === null || value.trim() === "")
+    throw new Error("Could not read your session lifetime. Please try again.");
+  const seconds = Number(value);
+  rememberLifetime(seconds);
+  return seconds > renewalLeadSeconds;
+}
+
+export function sessionRenewalDelay(): number {
+  return Math.max(0, renewAt - Date.now());
+}
 
 async function renew(): Promise<boolean> {
   const request = (path: string, method = "GET") =>
@@ -14,11 +35,15 @@ async function renew(): Promise<boolean> {
 
   // Another request or tab may already have renewed while we waited for the lock.
   const account = await request("/me");
-  if (account.ok) return true;
-  if (account.status !== 401)
+  if (account.ok && hasTimeRemaining(account)) return true;
+  if (!account.ok && account.status !== 401)
     throw new Error("Could not check your session. Please try again.");
   const response = await request("/auth/refresh", "POST");
-  if (response.ok) return true;
+  if (response.ok) {
+    const result = await response.json();
+    rememberLifetime(result.expires_in);
+    return true;
+  }
   if (response.status !== 401)
     throw new Error("Could not renew your session. Please try again.");
   const problem = await response.json().catch(() => ({}));
@@ -27,8 +52,8 @@ async function renew(): Promise<boolean> {
     for (const delay of [100, 250, 500]) {
       await new Promise((resolve) => setTimeout(resolve, delay));
       const account = await request("/me");
-      if (account.ok) return true;
-      if (account.status !== 401)
+      if (account.ok && hasTimeRemaining(account)) return true;
+      if (!account.ok && account.status !== 401)
         throw new Error("Could not check your session. Please try again.");
     }
     throw new Error("Session renewal is still in progress. Please try again.");

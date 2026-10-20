@@ -1,7 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { safeReturnPath } from "../../src/lib/auth-path.ts";
-import { refreshSession } from "../../src/lib/auth/refresh.ts";
+import {
+  refreshSession,
+  sessionRenewalDelay,
+} from "../../src/lib/auth/refresh.ts";
+
+function authenticated(lifetime = 900) {
+  return Response.json(
+    {},
+    { headers: { "X-Welio-Access-TTL": String(lifetime) } },
+  );
+}
 
 test("renewal preserves supported destinations and refuses external redirects", () => {
   for (const target of [
@@ -31,9 +41,9 @@ test("parallel expired requests share renewal and wait for rotated cookies", asy
       refreshes++;
       await new Promise((resolve) => setTimeout(resolve, 10));
       current = true;
-      return Response.json({});
+      return Response.json({ expires_in: 900 });
     }
-    return Response.json({}, { status: current ? 200 : 401 });
+    return current ? authenticated() : Response.json({}, { status: 401 });
   };
   try {
     assert.deepEqual(
@@ -53,7 +63,7 @@ test("parallel expired requests share renewal and wait for rotated cookies", asy
       if (String(input).endsWith("/auth/refresh"))
         return Response.json({ code: "refresh_race" }, { status: 401 });
       checks++;
-      return Response.json({}, { status: checks > 1 ? 200 : 401 });
+      return checks > 1 ? authenticated() : Response.json({}, { status: 401 });
     };
     assert.equal(
       await refreshSession(),
@@ -75,6 +85,45 @@ test("parallel expired requests share renewal and wait for rotated cookies", asy
       false,
       "a revoked session must require sign-in",
     );
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("near-expiry requests renew once before the token expires", async () => {
+  const original = globalThis.fetch;
+  let refreshes = 0;
+  globalThis.fetch = async (input) => {
+    if (String(input).endsWith("/auth/refresh")) {
+      refreshes++;
+      return Response.json({ expires_in: 900 });
+    }
+    return authenticated(30);
+  };
+  try {
+    assert.deepEqual(await Promise.all([refreshSession(), refreshSession()]), [
+      true,
+      true,
+    ]);
+    assert.equal(refreshes, 1);
+    assert.ok(sessionRenewalDelay() > 13 * 60 * 1_000);
+    assert.ok(sessionRenewalDelay() <= 14 * 60 * 1_000);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("temporary authentication service errors remain retryable", async () => {
+  const original = globalThis.fetch;
+  const requests: string[] = [];
+  globalThis.fetch = async (input) => {
+    requests.push(String(input));
+    return Response.json({ code: "auth_unavailable" }, { status: 503 });
+  };
+  try {
+    await assert.rejects(refreshSession(), /Could not check your session/);
+    assert.equal(requests.length, 1);
+    assert.ok(requests[0].endsWith("/v1/me"));
   } finally {
     globalThis.fetch = original;
   }
