@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/ui/spinner";
 import { acceptInviteAction } from "@/app/dashboard/workspace-actions";
 import { Button } from "@/components/ui/button";
 import { runServerAction } from "@/lib/run-server-action";
@@ -35,6 +36,7 @@ export function AcceptInvite({ token }: { token: string }) {
           }
         }}
       >
+        {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
         {busy ? "Joining…" : "Accept invitation"}
       </Button>
     </>

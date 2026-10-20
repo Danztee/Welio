@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authClient } from "@/lib/auth-client";
@@ -148,6 +149,9 @@ function SessionListHeader({
           onClick={onRevokeOthers}
           disabled={Boolean(pending) || loading}
         >
+          {pending === "others" && (
+            <Spinner data-icon="inline-start" aria-hidden="true" />
+          )}
           {pending === "others" ? "Signing out…" : "Sign out other devices"}
         </Button>
       )}
@@ -175,7 +179,11 @@ function SessionListContent({
   if (loading) {
     return (
       <div className="mt-6 flex flex-col gap-4">
-        <p role="status" className="text-sm text-muted-foreground">
+        <p
+          role="status"
+          className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
+        >
+          <Spinner aria-hidden="true" />
           Loading sessions…
         </p>
       </div>
@@ -257,6 +265,9 @@ function SessionRow({
           onClick={() => onRevoke(session)}
           aria-label={`Sign out ${deviceName(session.userAgent)} session from ${session.createdAtLabel}`}
         >
+          {pending === session.id && (
+            <Spinner data-icon="inline-start" aria-hidden="true" />
+          )}
           {pending === session.id ? "Signing out…" : "Sign out"}
         </Button>
       )}

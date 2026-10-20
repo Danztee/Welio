@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
@@ -118,13 +119,17 @@ export function ReceptionistConversationHeader({
               aria-live="polite"
               className="flex items-center gap-1.5 text-xs leading-4 text-muted-foreground"
             >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "size-1.5 shrink-0 rounded-full",
-                  statusColors[status],
-                )}
-              />
+              {status === "connecting" ? (
+                <Spinner aria-hidden="true" className="size-3" />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "size-1.5 shrink-0 rounded-full",
+                    statusColors[status],
+                  )}
+                />
+              )}
               {statusLabels[status]}
             </p>
           </div>

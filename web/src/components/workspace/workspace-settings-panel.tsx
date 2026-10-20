@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -217,6 +218,9 @@ export function WorkspaceSettingsPanel({
                   disabled={savingProfile}
                   className="self-start"
                 >
+                  {savingProfile && (
+                    <Spinner data-icon="inline-start" aria-hidden="true" />
+                  )}
                   {savingProfile ? "Saving…" : "Save changes"}
                 </Button>
               </FieldGroup>

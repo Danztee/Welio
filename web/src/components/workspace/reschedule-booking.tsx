@@ -313,6 +313,7 @@ function RescheduleTimeCard({
       </CardContent>
       <CardFooter className="justify-end bg-transparent">
         <Button disabled={!selection || busy} onClick={onConfirm}>
+          {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
           {busy ? "Saving…" : "Confirm new time"}
         </Button>
       </CardFooter>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { refreshSession } from "@/lib/auth/refresh";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export function SessionRenewal({ next }: { next: string }) {
   const [error, setError] = useState(false);
@@ -28,6 +29,7 @@ export function SessionRenewal({ next }: { next: string }) {
       className="flex min-h-dvh flex-col items-center justify-center gap-4"
       aria-live="polite"
     >
+      {!error && <Spinner className="size-6" aria-hidden="true" />}
       <p>
         {error
           ? "We couldn’t reach Welio to restore your session."

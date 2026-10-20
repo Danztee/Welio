@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/ui/spinner";
 import {
   saveBookingPoliciesAction,
   saveReminderPolicyAction,
@@ -194,6 +195,9 @@ export function BookingPolicies({ data }: { data: Data }) {
               disabled={savingPolicies}
               className="self-start"
             >
+              {savingPolicies && (
+                <Spinner data-icon="inline-start" aria-hidden="true" />
+              )}
               {savingPolicies ? "Saving…" : "Save booking policies"}
             </Button>
           </FieldGroup>
@@ -237,6 +241,9 @@ export function BookingPolicies({ data }: { data: Data }) {
               disabled={savingReminder}
               className="self-start"
             >
+              {savingReminder && (
+                <Spinner data-icon="inline-start" aria-hidden="true" />
+              )}
               {savingReminder ? "Saving…" : "Save reminder settings"}
             </Button>
           </FieldGroup>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { text } from "@/components/platform/form-utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +71,11 @@ function BusinessLogoField({
           disabled={saving || preparing}
           onClick={() => inputRef.current?.click()}
         >
-          <ImagePlusIcon data-icon="inline-start" />
+          {preparing ? (
+            <Spinner data-icon="inline-start" aria-hidden="true" />
+          ) : (
+            <ImagePlusIcon data-icon="inline-start" />
+          )}
           {preparing ? "Preparing…" : logo ? "Change logo" : "Add logo"}
         </Button>
         {logo && (
@@ -481,6 +486,7 @@ export function BusinessSettings({
             disabled={saving || preparingLogo}
             className="self-start"
           >
+            {saving && <Spinner data-icon="inline-start" aria-hidden="true" />}
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </div>

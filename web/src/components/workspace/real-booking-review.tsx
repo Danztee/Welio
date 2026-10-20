@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/spinner";
 import { Panel } from "@/components/platform/shared";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -72,6 +73,7 @@ export function RealBookingReview({
           Back
         </Button>
         <Button disabled={busy} onClick={onConfirm}>
+          {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
           {busy ? "Confirming…" : "Confirm booking"}
         </Button>
       </DialogFooter>

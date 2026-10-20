@@ -3,6 +3,7 @@ import { Blank, Grid, Status } from "@/components/platform/shared";
 import { ListPagination } from "./list-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Card,
   CardContent,
@@ -184,7 +185,13 @@ export function RealCustomers({
                     to try again.
                   </p>
                 ) : history?.id !== selected ? (
-                  <p role="status">Loading appointments…</p>
+                  <p
+                    role="status"
+                    className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
+                  >
+                    <Spinner aria-hidden="true" />
+                    Loading appointments…
+                  </p>
                 ) : appointments.length ? (
                   <div className="flex flex-col gap-3">
                     {appointments.map((appointment) => {
@@ -262,7 +269,12 @@ export function RealCustomers({
                     disabled={loadingHistory}
                     onClick={() => void loadMoreHistory()}
                   >
-                    Load more appointments
+                    {loadingHistory && (
+                      <Spinner data-icon="inline-start" aria-hidden="true" />
+                    )}
+                    {loadingHistory
+                      ? "Loading appointments…"
+                      : "Load more appointments"}
                   </Button>
                 )}
               </section>

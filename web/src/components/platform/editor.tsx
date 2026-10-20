@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "@/components/ui/toast";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -296,6 +297,7 @@ export function Editor({
               Cancel
             </Button>
             <Button type="submit" disabled={busy}>
+              {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
               {busy ? "Saving…" : submitLabel}
             </Button>
           </DialogFooter>

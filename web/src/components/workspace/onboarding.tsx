@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -345,6 +346,9 @@ export function WorkspaceOnboarding({
                 disabled={busy}
                 className="w-full sm:w-auto"
               >
+                {busy && (
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
+                )}
                 {busy
                   ? "Saving…"
                   : workspace

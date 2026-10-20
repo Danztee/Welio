@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/ui/spinner";
 import { createWorkspaceBookingAction } from "@/app/dashboard/booking-actions";
 import { text } from "@/components/platform/form-utils";
 import { Blank, Notice } from "@/components/platform/shared";
@@ -169,6 +170,9 @@ function WaitlistJoinForm({
                 disabled={busy}
                 className="sm:col-span-2 sm:justify-self-start"
               >
+                {busy && (
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
+                )}
                 {busy ? "Joining…" : "Notify me if a time opens"}
               </Button>
             </FieldGroup>

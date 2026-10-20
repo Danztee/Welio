@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { Notice } from "@/components/platform/shared";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
@@ -26,6 +27,7 @@ export function AccountForm({
       </FieldGroup>
       {fieldError && <Notice error>{fieldError}</Notice>}
       <Button type="submit" className="h-10 w-full" disabled={busy}>
+        {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
         {busy ? "Please wait…" : copy[mode].submit}
       </Button>
     </form>

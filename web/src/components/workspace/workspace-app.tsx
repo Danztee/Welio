@@ -3,6 +3,7 @@ import { dashboardNotifications } from "@/app/dashboard/read-actions";
 import { AccountMenu } from "@/components/dashboard/account-menu";
 import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Sheet,
   SheetContent,
@@ -182,7 +183,11 @@ export function WorkspaceApp({
                 </Button>
               </p>
             ) : notifications === null ? (
-              <p className="px-4 py-6 text-sm" role="status">
+              <p
+                className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-muted-foreground"
+                role="status"
+              >
+                <Spinner aria-hidden="true" />
                 Loading notifications…
               </p>
             ) : notifications.length === 0 ? (

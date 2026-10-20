@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -249,6 +250,9 @@ export function ReceptionistConfiguration({
             </section>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={saving || testing || !dirty}>
+                {saving && (
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
+                )}
                 {saving ? "Saving…" : "Save settings"}
               </Button>
               {dirty && (

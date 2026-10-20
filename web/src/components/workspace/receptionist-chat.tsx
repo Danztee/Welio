@@ -317,6 +317,12 @@ function ReceptionistChatBody({
                           void sendMessage(state.retry!.text, state.retry!.key)
                         }
                       >
+                        {busy && (
+                          <Spinner
+                            data-icon="inline-start"
+                            aria-hidden="true"
+                          />
+                        )}
                         {busy ? "Retrying…" : "Retry reply"}
                       </Button>
                     </div>

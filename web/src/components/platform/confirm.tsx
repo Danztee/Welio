@@ -3,6 +3,7 @@
 import { useState, ReactNode } from "react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +67,7 @@ export function Confirm({
               }
             }}
           >
+            {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
             {label}
           </Button>
         </DialogFooter>

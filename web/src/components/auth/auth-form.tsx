@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useState, useTransition, type FormEvent } from "react";
@@ -137,6 +138,9 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           className="h-10 w-full"
           disabled={busy || navigating}
         >
+          {(busy || navigating) && (
+            <Spinner data-icon="inline-start" aria-hidden="true" />
+          )}
           {busy || navigating
             ? "Please wait…"
             : isSignUp

@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 
@@ -37,6 +38,7 @@ export function StaffEditorFooter({
         Back
       </Button>
       <Button type="submit" form="staff-editor-form" disabled={busy}>
+        {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
         {busy ? "Saving…" : hasWorker ? "Save changes" : "Add team member"}
       </Button>
     </DialogFooter>

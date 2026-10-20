@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -30,6 +31,9 @@ function VerificationMessage({
 
   return (
     <div className="flex flex-col gap-1.5 text-center">
+      {token && !failed && (
+        <Spinner className="mx-auto mb-2 size-6" aria-hidden="true" />
+      )}
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="text-sm leading-6 text-muted-foreground">
         {instruction ? (
@@ -74,6 +78,7 @@ function VerificationActions({
       </p>
       {email && (
         <Button className="h-10 w-full" disabled={busy} onClick={onResend}>
+          {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
           {busy ? "Sending…" : "Resend verification email"}
         </Button>
       )}

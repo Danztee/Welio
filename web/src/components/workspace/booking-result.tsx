@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -92,6 +93,7 @@ export function BookingResult({
               })
             }
           >
+            {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
             {busy ? "Please wait…" : "Confirm appointment"}
           </Button>
           <Button
