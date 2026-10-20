@@ -122,7 +122,10 @@ export function ReceptionistControl({
         {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Welio-Workspace": w.id,
+          },
           body: JSON.stringify({
             text: message,
             turns: turns.slice(-5).map(({ text, reply }) => ({ text, reply })),
