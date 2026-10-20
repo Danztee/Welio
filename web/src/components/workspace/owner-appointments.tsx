@@ -276,9 +276,7 @@ function AppointmentDialogs({
           >
             <SheetHeader>
               <SheetTitle>{view.name || "Appointment details"}</SheetTitle>
-              <SheetDescription>
-                {view.serviceName} · {view.status.replace("_", " ")}
-              </SheetDescription>
+              <SheetDescription>{view.serviceName}</SheetDescription>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               <div className="flex flex-col gap-4">
