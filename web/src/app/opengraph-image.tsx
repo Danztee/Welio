@@ -28,7 +28,7 @@ export default function OpenGraphImage() {
               alignItems: "center",
               justifyContent: "center",
               borderRadius: 18,
-              background: "#f59b00",
+              background: "#b45309",
             }}
           >
             <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
