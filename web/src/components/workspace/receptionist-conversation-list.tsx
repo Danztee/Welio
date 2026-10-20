@@ -91,7 +91,7 @@ export function ReceptionistConversationList({
           ))}
         </ul>
       ) : (
-        <Empty className="min-h-48 border-0">
+        <Empty className="min-h-48">
           <EmptyHeader>
             <EmptyTitle>No conversations yet</EmptyTitle>
             <EmptyDescription>

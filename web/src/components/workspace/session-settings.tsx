@@ -199,7 +199,7 @@ function SessionListContent({
 
   if (!sessions.length) {
     return (
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         No active sessions found.
       </p>
     );

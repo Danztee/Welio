@@ -173,7 +173,7 @@ export function ReceptionistConfiguration({
                 </Button>
               </div>
               {!settings.faqs.length && (
-                <p className="rounded-lg border border-dashed border-neutral-border bg-card px-4 py-5 text-sm leading-6 text-muted-foreground">
+                <p className="px-4 py-5 text-center text-sm leading-6 text-muted-foreground">
                   Add answers about service areas, preparation, or business
                   policies.
                 </p>

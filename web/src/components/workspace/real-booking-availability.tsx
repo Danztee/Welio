@@ -192,7 +192,7 @@ function AvailabilityFeedback({
 
   if (!date) {
     return (
-      <p className="py-2 text-sm text-muted-foreground">
+      <p className="py-2 text-center text-sm text-muted-foreground">
         Choose a day on the calendar to check its available times.
       </p>
     );
@@ -200,7 +200,7 @@ function AvailabilityFeedback({
 
   if (loaded && !hasChoices) {
     return (
-      <p className="py-2 text-sm text-muted-foreground">
+      <p className="py-2 text-center text-sm text-muted-foreground">
         No times are available on this day. Choose another date.
       </p>
     );

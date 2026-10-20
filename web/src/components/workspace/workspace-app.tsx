@@ -186,7 +186,7 @@ export function WorkspaceApp({
                 Loading notifications…
               </p>
             ) : notifications.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-muted-foreground">
+              <p className="flex min-h-48 items-center justify-center px-6 py-8 text-center text-sm text-muted-foreground">
                 No notifications yet.
               </p>
             ) : (
