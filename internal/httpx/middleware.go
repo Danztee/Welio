@@ -14,6 +14,9 @@ import (
 
 type requestMetaKey struct{}
 
+// AccessTTLHeader lets browser clients renew short-lived access tokens before expiry.
+const AccessTTLHeader = "X-Welio-Access-TTL"
+
 type RequestMeta struct {
 	Origin        string
 	IP            string
@@ -218,6 +221,7 @@ func CORSExceptPathPrefix(origins []string, bypassPrefix string) func(http.Handl
 				}
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				w.Header().Set("Access-Control-Expose-Headers", "X-Request-Id, "+AccessTTLHeader)
 				w.Header().Add("Vary", "Origin")
 			}
 			if r.Method == http.MethodOptions {

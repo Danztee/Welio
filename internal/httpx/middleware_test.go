@@ -23,6 +23,21 @@ func TestCORSRejectsUntrustedOrigin(t *testing.T) {
 	}
 }
 
+func TestCORSExposesSessionLifetimeToTrustedBrowser(t *testing.T) {
+	t.Parallel()
+	handler := CORS([]string{"https://app.example"})(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set(AccessTTLHeader, "30")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	request := httptest.NewRequest(http.MethodGet, "/v1/me", nil)
+	request.Header.Set("Origin", "https://app.example")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Header().Get(AccessTTLHeader) != "30" || !strings.Contains(response.Header().Get("Access-Control-Expose-Headers"), AccessTTLHeader) {
+		t.Fatal("browser cannot read the session lifetime from the API response")
+	}
+}
+
 func TestCORSRequiresOriginForCookieAuthenticatedWrites(t *testing.T) {
 	handler := CORS([]string{"https://app.example"})(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)

@@ -36,7 +36,7 @@ func Router(d *deps.Deps) http.Handler {
 	// the rest of the authenticated API.
 	router.Use(httpx.CORSExceptPathPrefix(d.Cfg.TrustedOrigins, "/api/mcp/"))
 	router.Use(httpx.MaxBodyBytes(1 << 20))
-	resolver := &auth.Resolver{DB: d.DB, Tokens: auth.NewTokens(d.Cfg.AuthSecret)}
+	resolver := &auth.Resolver{DB: d.DB, Tokens: auth.NewTokens(d.Cfg.AuthSecret), Log: d.Log}
 	router.Use(resolver.Middleware)
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteProblem(w, r, httpx.E(http.StatusNotFound, "not_found", "No route matches this request."))

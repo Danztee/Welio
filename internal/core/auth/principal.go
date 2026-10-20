@@ -3,10 +3,15 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/danztee/welio/internal/db"
 	"github.com/danztee/welio/internal/httpx"
@@ -15,12 +20,13 @@ import (
 const WorkspaceHeader = "X-Welio-Workspace"
 
 type Principal struct {
-	UserID        uuid.UUID
-	SessionID     uuid.UUID
-	Email         string
-	EmailVerified bool
-	WorkspaceID   uuid.UUID
-	Role          string
+	UserID          uuid.UUID
+	SessionID       uuid.UUID
+	Email           string
+	EmailVerified   bool
+	WorkspaceID     uuid.UUID
+	Role            string
+	accessExpiresAt time.Time
 }
 
 type principalKey struct{}
@@ -37,18 +43,30 @@ func FromContext(ctx context.Context) *Principal {
 type Resolver struct {
 	DB     *db.DB
 	Tokens *Tokens
+	Log    *slog.Logger
 }
 
 func (resolver *Resolver) Middleware(next http.Handler) http.Handler {
+	log := resolver.Log
+	if log == nil {
+		log = slog.Default()
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if principal := resolver.resolve(r); principal != nil {
+		principal, err := resolver.resolve(r)
+		if err != nil {
+			log.ErrorContext(r.Context(), "resolve browser session", "request_id", httpx.RequestIDFrom(r.Context()), "error", err)
+			httpx.WriteProblem(w, r, httpx.E(http.StatusServiceUnavailable, "auth_unavailable", "We couldn’t check your session. Please try again."))
+			return
+		}
+		if principal != nil {
+			w.Header().Set(httpx.AccessTTLHeader, strconv.Itoa(max(0, int(time.Until(principal.accessExpiresAt).Seconds()))))
 			r = r.WithContext(WithPrincipal(r.Context(), principal))
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (resolver *Resolver) resolve(r *http.Request) *Principal {
+func (resolver *Resolver) resolve(r *http.Request) (*Principal, error) {
 	var token string
 	if scheme, value, ok := strings.Cut(r.Header.Get("Authorization"), " "); ok && strings.EqualFold(scheme, "Bearer") {
 		token = strings.TrimSpace(value)
@@ -56,25 +74,28 @@ func (resolver *Resolver) resolve(r *http.Request) *Principal {
 		token = httpx.RequestMetaFrom(r.Context()).AccessCookie
 	}
 	if token == "" {
-		return nil
+		return nil, nil
 	}
 	claims, err := resolver.Tokens.Verify(token, PurposeAccess)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 	userID, userErr := uuid.Parse(claims.Subject)
 	sessionID, sessionErr := uuid.Parse(claims.SessionID)
 	if userErr != nil || sessionErr != nil {
-		return nil
+		return nil, nil
 	}
-	principal := &Principal{UserID: userID, SessionID: sessionID}
+	principal := &Principal{UserID: userID, SessionID: sessionID, accessExpiresAt: claims.ExpiresAt.Time}
 	err = resolver.DB.Pool.QueryRow(r.Context(), `SELECT u.email, u.email_verified
 		FROM welio_auth_sessions s JOIN users u ON u.id = s.user_id
 		WHERE s.id = $1 AND s.user_id = $2 AND s.revoked_at IS NULL
 		  AND s.expires_at > now() AND s.max_expires_at > now()`, sessionID, userID).
 		Scan(&principal.Email, &principal.EmailVerified)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("read account session: %w", err)
 	}
 	if workspaceID, err := uuid.Parse(r.Header.Get(WorkspaceHeader)); err == nil {
 		err := resolver.DB.Pool.QueryRow(r.Context(), `SELECT m.role
@@ -82,9 +103,11 @@ func (resolver *Resolver) resolve(r *http.Request) *Principal {
 			WHERE m.workspace_id = $1 AND m.user_id = $2`, workspaceID, userID).Scan(&principal.Role)
 		if err == nil {
 			principal.WorkspaceID = workspaceID
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("read workspace membership: %w", err)
 		}
 	}
-	return principal
+	return principal, nil
 }
 
 var (
