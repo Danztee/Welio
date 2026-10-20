@@ -36,10 +36,7 @@ export function DashboardNavigation({
                   <SidebarMenuItem key={name}>
                     <SidebarMenuButton
                       render={
-                        <Link
-                          href={href}
-                          onNavigate={() => onNavigate(name)}
-                        />
+                        <Link href={href} onNavigate={() => onNavigate(name)} />
                       }
                       isActive={section === name}
                       aria-current={section === name ? "page" : undefined}
