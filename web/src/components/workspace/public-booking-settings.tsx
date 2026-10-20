@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { TextLink } from "@/components/ui/text-link";
+import { toast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
+import { CopyIcon } from "lucide-react";
 import { useState } from "react";
 
 type Data = WorkspaceDashboardData;
@@ -30,6 +32,18 @@ export function PublicBookingSettings({
   const bookingUrl = new URL(`/book/${w.slug}`, publicAppOrigin).toString();
   const [publishing, setPublishing] = useState(false);
 
+  async function copyBookingUrl() {
+    try {
+      await navigator.clipboard.writeText(bookingUrl);
+      toast.add({ title: "Booking page link copied.", type: "success" });
+    } catch {
+      toast.add({
+        title: "Could not copy the booking page link.",
+        type: "error",
+      });
+    }
+  }
+
   return (
     <>
       <section aria-labelledby="public-access-heading">
@@ -50,14 +64,26 @@ export function PublicBookingSettings({
             <p className="text-xs font-medium text-muted-foreground">
               Booking page link
             </p>
-            <TextLink
-              className="max-w-full text-sm break-all"
-              href={bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {bookingUrl}
-            </TextLink>
+            <div className="flex min-w-0 items-center gap-2">
+              <TextLink
+                className="min-w-0 flex-1 text-sm break-all"
+                href={bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {bookingUrl}
+              </TextLink>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Copy booking page link"
+                title="Copy booking page link"
+                onClick={() => void copyBookingUrl()}
+              >
+                <CopyIcon aria-hidden="true" />
+              </Button>
+            </div>
           </div>
         )}
         <Button
