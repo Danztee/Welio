@@ -26,7 +26,10 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: "pnpm exec next dev --hostname 127.0.0.1 --port 3101",
+      command:
+        process.env.WELIO_E2E_PRODUCTION === "1"
+          ? "pnpm exec next start --hostname 127.0.0.1 --port 3101"
+          : "pnpm exec next dev --hostname 127.0.0.1 --port 3101",
       url: "http://127.0.0.1:3101/sign-in",
       timeout: 120_000,
       reuseExistingServer: false,

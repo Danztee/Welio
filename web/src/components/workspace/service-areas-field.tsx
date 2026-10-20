@@ -41,7 +41,7 @@ export function ServiceAreasField({
     .filter(Boolean)
     .join("\n");
 
-  function updateArea(id: number, value: string) {
+  function updateArea(id: string, value: string) {
     const nextAreas = areas.map((area) =>
       area.id === id ? { ...area, value } : area,
     );

@@ -40,6 +40,16 @@ test("dashboard sections remain usable on desktop and mobile", async ({
       await expect(
         page.getByRole("heading", { name: "Something went wrong" }),
       ).toHaveCount(0);
+      if (section === "/settings?tab=business") {
+        const area = page.getByRole("textbox", {
+          name: "Service area 1",
+          exact: true,
+        });
+        const savedArea = await area.inputValue();
+        await area.fill("Lekki");
+        await expect(area).toHaveValue("Lekki");
+        await area.fill(savedArea);
+      }
       const overflow = await page.evaluate(() => ({
         width: innerWidth,
         actual: document.documentElement.scrollWidth,

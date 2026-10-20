@@ -28,6 +28,7 @@ import {
 } from "@/app/dashboard/workspace-actions";
 import { SetupInput } from "./setup-input";
 import { ServiceAreasField } from "./service-areas-field";
+import { BookingLocation } from "@/lib/domain/workspaces/enums";
 
 type Data = WorkspaceDashboardData;
 type BookingLocationValue = Data["workspace"]["bookingLocation"];
@@ -166,8 +167,8 @@ export function WorkspaceOnboarding({
   const workspace = data?.workspace;
   const [businessName, setBusinessName] = useState(workspace?.name ?? "");
   const [slug, setSlug] = useState(workspace?.slug ?? "");
-  const [bookingLocation, setBookingLocation] = useState(
-    workspace?.bookingLocation ?? "customer_address",
+  const [bookingLocation, setBookingLocation] = useState<BookingLocationValue>(
+    workspace?.bookingLocation ?? BookingLocation.CustomerAddress,
   );
   const slugEdited = useRef(Boolean(workspace));
   const [busy, setBusy] = useState(false);
