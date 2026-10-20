@@ -9,7 +9,15 @@ import type {
 } from "@/lib/domain/bookings/contract";
 import { runServerAction } from "@/lib/run-server-action";
 import { TextLink } from "@/components/ui/text-link";
-import { useRef, useState, type FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { formatWhen } from "./booking-format";
@@ -27,6 +35,8 @@ const slotsSchema = z.array(
   z.object({ time: z.string(), staffId: z.uuid(), startsAt: z.iso.datetime() }),
 );
 const receiptSchema = z.object({ id: z.uuid() });
+const waitlistReceiptSchema = z.object({ joined: z.boolean() });
+type BookingSelection = { serviceId: string; date: string; staffId: string };
 
 async function responseData<T extends z.ZodType>(
   response: Response,
@@ -65,19 +75,116 @@ async function post<T extends z.ZodType>(
   );
 }
 
+function WaitlistJoinForm({
+  catalog,
+  selection,
+}: {
+  catalog: Catalog;
+  selection: BookingSelection;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [joined, setJoined] = useState(false);
+  const [error, setError] = useState("");
+
+  async function join(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || joined) return;
+    const form = new FormData(event.currentTarget);
+    setBusy(true);
+    setError("");
+    try {
+      await post(
+        apiUrl(`/v1/book/${catalog.slug}/waitlist`),
+        {
+          serviceId: selection.serviceId,
+          requestDate: selection.date,
+          ...(selection.staffId ? { staffId: selection.staffId } : {}),
+          name: text(form, "name"),
+          email: text(form, "email"),
+        },
+        waitlistReceiptSchema,
+      );
+      setJoined(true);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not join the waitlist.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border p-4">
+      <h2 className="font-medium">Join the waitlist</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        We’ll email you if a time opens on this date. The email will link back
+        here to book; it does not reserve a time.
+      </p>
+      {joined ? (
+        <p role="status" className="mt-3 text-sm">
+          You’re on the waitlist. Check your email if a time opens.
+        </p>
+      ) : (
+        <form
+          onSubmit={(event) => void join(event)}
+          className="mt-4 grid gap-3 sm:grid-cols-2"
+        >
+          <label className="text-sm">
+            Name{" "}
+            <Input
+              name="name"
+              autoComplete="name"
+              maxLength={100}
+              className="mt-1"
+            />
+          </label>
+          <label className="text-sm">
+            Email{" "}
+            <Input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={254}
+              className="mt-1"
+            />
+          </label>
+          {error && (
+            <p role="alert" className="text-sm text-destructive sm:col-span-2">
+              {error}
+            </p>
+          )}
+          <Button
+            type="submit"
+            disabled={busy}
+            className="sm:col-span-2 sm:justify-self-start"
+          >
+            {busy ? "Joining…" : "Notify me if a time opens"}
+          </Button>
+        </form>
+      )}
+    </div>
+  );
+}
+
 export function RealBookingForm({
   catalog,
   owner = false,
   onDone,
+  initialSelection,
 }: {
   catalog: Catalog;
   owner?: boolean;
   onDone?: (id: string) => void;
+  initialSelection?: BookingSelection;
 }) {
   const [step, setStep] = useState(1),
-    [selectedServiceId, setService] = useState(""),
-    [selectedDate, setDate] = useState(""),
-    [staffId, setStaff] = useState("");
+    [selectedServiceId, setService] = useState(
+      initialSelection?.serviceId ?? "",
+    ),
+    [selectedDate, setDate] = useState(initialSelection?.date ?? ""),
+    [staffId, setStaff] = useState(initialSelection?.staffId ?? "");
   const [slots, setSlots] = useState<Slot[]>([]),
     [selected, setSelected] = useState("");
   const [loaded, setLoaded] = useState(false),
@@ -96,6 +203,7 @@ export function RealBookingForm({
   const [receipt, setReceipt] = useState("");
   const requestRef = useRef<{ signature: string; key: string } | null>(null);
   const availabilityRequestRef = useRef(0);
+  const initialLoadDone = useRef(false);
   const serviceId = selectedServiceId || catalog.services[0]?.id || "";
   const date = selectedDate;
   const service = catalog.services.find((s) => s.id === serviceId);
@@ -112,49 +220,58 @@ export function RealBookingForm({
     setBusy(false);
   }
 
-  async function loadAvailability(
-    selection: { serviceId?: string; date?: string; staffId?: string } = {},
-  ) {
-    const requestedServiceId = selection.serviceId ?? serviceId;
-    const requestedDate = selection.date ?? date;
-    const requestedStaffId = selection.staffId ?? staffId;
-    if (!requestedDate) return;
+  const loadAvailability = useCallback(
+    async (
+      selection: { serviceId?: string; date?: string; staffId?: string } = {},
+    ) => {
+      const requestedServiceId = selection.serviceId ?? serviceId;
+      const requestedDate = selection.date ?? date;
+      const requestedStaffId = selection.staffId ?? staffId;
+      if (!requestedDate) return;
 
-    const requestVersion = ++availabilityRequestRef.current;
-    setBusy(true);
-    setAvailabilityError("");
-    try {
-      const q = new URLSearchParams({
-        service_id: requestedServiceId,
-        date: requestedDate,
-        ...(requestedStaffId ? { staff_id: requestedStaffId } : {}),
-      });
-      const path = owner
-        ? `/v1/workspaces/${catalog.id}/availability`
-        : `/v1/book/${catalog.slug}/availability`;
-      const available = await responseData(
-        await fetch(apiUrl(`${path}?${q}`), {
-          cache: "no-store",
-          credentials: owner ? "include" : "omit",
-        }),
-        slotsSchema,
-      );
-      if (requestVersion !== availabilityRequestRef.current) return;
+      const requestVersion = ++availabilityRequestRef.current;
+      setBusy(true);
+      setAvailabilityError("");
+      try {
+        const q = new URLSearchParams({
+          service_id: requestedServiceId,
+          date: requestedDate,
+          ...(requestedStaffId ? { staff_id: requestedStaffId } : {}),
+        });
+        const path = owner
+          ? `/v1/workspaces/${catalog.id}/availability`
+          : `/v1/book/${catalog.slug}/availability`;
+        const available = await responseData(
+          await fetch(apiUrl(`${path}?${q}`), {
+            cache: "no-store",
+            credentials: owner ? "include" : "omit",
+          }),
+          slotsSchema,
+        );
+        if (requestVersion !== availabilityRequestRef.current) return;
 
-      setSlots(available);
-      setLoaded(true);
-      setSelected("");
-    } catch (e) {
-      if (requestVersion !== availabilityRequestRef.current) return;
+        setSlots(available);
+        setLoaded(true);
+        setSelected("");
+      } catch (e) {
+        if (requestVersion !== availabilityRequestRef.current) return;
 
-      const message =
-        e instanceof Error ? e.message : "Could not load availability.";
-      setAvailabilityError(message);
-      toast.error(message);
-    } finally {
-      if (requestVersion === availabilityRequestRef.current) setBusy(false);
-    }
-  }
+        const message =
+          e instanceof Error ? e.message : "Could not load availability.";
+        setAvailabilityError(message);
+        toast.error(message);
+      } finally {
+        if (requestVersion === availabilityRequestRef.current) setBusy(false);
+      }
+    },
+    [serviceId, date, staffId, owner, catalog.id, catalog.slug],
+  );
+
+  useEffect(() => {
+    if (initialLoadDone.current || !initialSelection?.date) return;
+    initialLoadDone.current = true;
+    void loadAvailability(initialSelection);
+  }, [initialSelection, loadAvailability]);
 
   function next(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -294,6 +411,19 @@ export function RealBookingForm({
           onContinue={() => setStep(2)}
         />
       )}
+      {step === 1 &&
+        !owner &&
+        loaded &&
+        !busy &&
+        !availabilityError &&
+        slots.length === 0 &&
+        date && (
+          <WaitlistJoinForm
+            key={`${serviceId}:${date}:${staffId}`}
+            catalog={catalog}
+            selection={{ serviceId, date, staffId }}
+          />
+        )}
       {step === 2 && (
         <RealBookingDetailsForm
           serviceArea={catalog.serviceArea}

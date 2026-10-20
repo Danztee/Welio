@@ -78,8 +78,13 @@ func (w *reminderSweepWorker) Work(ctx context.Context, _ *river.Job[jobargs.Boo
 	if service == nil {
 		return errors.New("booking service is not configured")
 	}
-	_, err := service.EnqueueDueReminders(ctx)
-	return err
+	if _, err := service.EnqueueDueReminders(ctx); err != nil {
+		return err
+	}
+	if _, err := service.ExpireWaitlist(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func registerWorkers(workers *river.Workers, serviceFor func() *Service, sender mailer.Sender) {

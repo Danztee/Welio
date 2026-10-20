@@ -18,15 +18,17 @@ export function PublicBooking({
   configured,
   chat = false,
   greeting,
+  initialSelection,
 }: {
   catalog: Catalog;
   configured: boolean;
   chat?: boolean;
   greeting: string;
+  initialSelection?: { serviceId: string; date: string; staffId: string };
 }) {
   return (
     <>
-      <RealBookingForm catalog={catalog} />
+      <RealBookingForm catalog={catalog} initialSelection={initialSelection} />
       <Sheet defaultOpen={chat}>
         <SheetTrigger
           render={

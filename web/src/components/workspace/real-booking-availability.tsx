@@ -88,9 +88,11 @@ function BookingServiceFields({
           </p>
         )}
       </Field>
-      {owner && (
+      {catalog.staff.some((item) => assignedStaff.has(item.id)) && (
         <Field>
-          <FieldLabel htmlFor="real-staff">Team member</FieldLabel>
+          <FieldLabel htmlFor="real-staff">
+            {owner ? "Team member" : "Preferred team member"}
+          </FieldLabel>
           <NativeSelect
             id="real-staff"
             disabled={busy}

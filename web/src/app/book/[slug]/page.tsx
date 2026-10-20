@@ -10,6 +10,7 @@ import type { Catalog } from "@/lib/domain/bookings/contract";
 import { BookingLocation } from "@/lib/domain/workspaces/enums";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { backendClient, BackendError } from "@/lib/backend/server-api";
+import { bookingSelectionFromLink } from "@/lib/domain/bookings/waitlist-link";
 
 export const metadata = {
   title: "Book an appointment",
@@ -42,6 +43,8 @@ export default async function Page({
     .map((area) => area.trim())
     .filter(Boolean)
     .join(", ");
+  const query = await searchParams;
+  const initialSelection = bookingSelectionFromLink(catalog, query);
 
   return (
     <BookingShell>
@@ -74,7 +77,8 @@ export default async function Page({
         catalog={catalog}
         configured={settings.enabled}
         greeting={settings.greeting}
-        chat={(await searchParams).mode === "chat"}
+        chat={query.mode === "chat"}
+        initialSelection={initialSelection}
       />
     </BookingShell>
   );

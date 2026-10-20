@@ -135,6 +135,8 @@ func RegisterPublicAPI(service *Service, api huma.API) {
 				return nil, problem(ErrInvalid)
 			}
 		})
+
+	registerPublicWaitlist(service, api)
 }
 
 type bookingManagementOutput struct {
@@ -154,6 +156,7 @@ func RegisterOwnerAPI(service *Service, api huma.API) {
 	registerOwnerCustomers(service, api)
 	registerOwnerAvailability(service, api)
 	registerOwnerAppointmentWrites(service, api)
+	registerOwnerWaitlist(service, api)
 }
 
 type workspacePath struct {

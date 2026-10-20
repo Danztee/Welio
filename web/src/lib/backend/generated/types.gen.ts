@@ -458,6 +458,37 @@ export type User = {
     name: string;
 };
 
+export type WaitlistDateSummary = {
+    count: number;
+    request_date: string;
+    service_name: string;
+};
+
+export type WaitlistEntry = {
+    created_at: string;
+    customer_email: string;
+    customer_name: string;
+    id: string;
+    notified_at?: string;
+    request_date: string;
+    service_id: string;
+    staff_id?: string;
+    status: string;
+    workspace_id: string;
+};
+
+export type WaitlistInput = {
+    email: string;
+    name?: string;
+    request_date: string;
+    service_id: string;
+    staff_id?: string;
+};
+
+export type WaitlistJoinResponse = {
+    joined: boolean;
+};
+
 export type Workspace = {
     booking_location: string;
     business_address: string | null;
@@ -867,6 +898,60 @@ export type PublicReceptionistConfigResponses = {
 };
 
 export type PublicReceptionistConfigResponse = PublicReceptionistConfigResponses[keyof PublicReceptionistConfigResponses];
+
+export type PublicWaitlistListData = {
+    body?: never;
+    path: {
+        slug: string;
+    };
+    query?: never;
+    url: '/v1/book/{slug}/waitlist';
+};
+
+export type PublicWaitlistListErrors = {
+    /**
+     * Error
+     */
+    default: Error;
+};
+
+export type PublicWaitlistListError = PublicWaitlistListErrors[keyof PublicWaitlistListErrors];
+
+export type PublicWaitlistListResponses = {
+    /**
+     * OK
+     */
+    200: Array<WaitlistDateSummary> | null;
+};
+
+export type PublicWaitlistListResponse = PublicWaitlistListResponses[keyof PublicWaitlistListResponses];
+
+export type PublicWaitlistJoinData = {
+    body: WaitlistInput;
+    path: {
+        slug: string;
+    };
+    query?: never;
+    url: '/v1/book/{slug}/waitlist';
+};
+
+export type PublicWaitlistJoinErrors = {
+    /**
+     * Error
+     */
+    default: Error;
+};
+
+export type PublicWaitlistJoinError = PublicWaitlistJoinErrors[keyof PublicWaitlistJoinErrors];
+
+export type PublicWaitlistJoinResponses = {
+    /**
+     * OK
+     */
+    200: WaitlistJoinResponse;
+};
+
+export type PublicWaitlistJoinResponse = PublicWaitlistJoinResponses[keyof PublicWaitlistJoinResponses];
 
 export type PublicBookingManagementData = {
     body: PublicBookingManagementRequest;
@@ -2136,3 +2221,30 @@ export type WorkspaceTimeOffDeleteResponses = {
 };
 
 export type WorkspaceTimeOffDeleteResponse = WorkspaceTimeOffDeleteResponses[keyof WorkspaceTimeOffDeleteResponses];
+
+export type WorkspaceWaitlistListData = {
+    body?: never;
+    path: {
+        workspaceId: string;
+    };
+    query?: never;
+    url: '/v1/workspaces/{workspaceId}/waitlist';
+};
+
+export type WorkspaceWaitlistListErrors = {
+    /**
+     * Error
+     */
+    default: Error;
+};
+
+export type WorkspaceWaitlistListError = WorkspaceWaitlistListErrors[keyof WorkspaceWaitlistListErrors];
+
+export type WorkspaceWaitlistListResponses = {
+    /**
+     * OK
+     */
+    200: Array<WaitlistEntry> | null;
+};
+
+export type WorkspaceWaitlistListResponse = WorkspaceWaitlistListResponses[keyof WorkspaceWaitlistListResponses];

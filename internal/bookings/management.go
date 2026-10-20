@@ -172,6 +172,13 @@ func (service *Service) Change(ctx context.Context, id uuid.UUID, actor Actor, w
 				return err
 			}
 		}
+		if input.Action == "cancel" {
+			if _, err := service.NotifyWaitlistOnCancellation(ctx, tx, w, cancelledAppointment{
+				ID: booking.ID, ServiceID: booking.ServiceID, StaffID: booking.StaffID, StartsAt: booking.StartsAt,
+			}); err != nil {
+				return err
+			}
+		}
 		changedID = id
 		return nil
 	})
