@@ -198,6 +198,27 @@ type Appointment struct {
 	StaffName           string    `json:"staff_name"`
 }
 
+type AppointmentCalendarOptions struct {
+	From   string
+	To     string
+	Search string
+	Status string
+}
+
+type AppointmentCalendarItem struct {
+	ID           uuid.UUID `json:"id"`
+	Status       string    `json:"status"`
+	StartsAt     time.Time `json:"starts_at"`
+	EndsAt       time.Time `json:"ends_at"`
+	CustomerName string    `json:"customer_name"`
+	ServiceName  string    `json:"service_name"`
+	StaffName    string    `json:"staff_name"`
+}
+
+type AppointmentCalendar struct {
+	Appointments []AppointmentCalendarItem `json:"appointments"`
+}
+
 type Customer struct {
 	AppointmentCount int       `json:"appointment_count"`
 	ID               uuid.UUID `json:"id"`

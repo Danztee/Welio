@@ -31,6 +31,20 @@ export type Appointment = {
     workspace_id: string;
 };
 
+export type AppointmentCalendar = {
+    appointments: Array<AppointmentCalendarItem> | null;
+};
+
+export type AppointmentCalendarItem = {
+    customer_name: string;
+    ends_at: string;
+    id: string;
+    service_name: string;
+    staff_name: string;
+    starts_at: string;
+    status: string;
+};
+
 export type Assignment = {
     is_active: boolean;
     service_id: string;
@@ -1744,6 +1758,38 @@ export type WorkspaceAppointmentCreateResponses = {
 };
 
 export type WorkspaceAppointmentCreateResponse = WorkspaceAppointmentCreateResponses[keyof WorkspaceAppointmentCreateResponses];
+
+export type WorkspaceAppointmentsCalendarData = {
+    body?: never;
+    path: {
+        workspaceId: string;
+    };
+    query: {
+        from: string;
+        to: string;
+        search?: string;
+        status?: '' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+    };
+    url: '/v1/workspaces/{workspaceId}/appointments/calendar';
+};
+
+export type WorkspaceAppointmentsCalendarErrors = {
+    /**
+     * Error
+     */
+    default: Error;
+};
+
+export type WorkspaceAppointmentsCalendarError = WorkspaceAppointmentsCalendarErrors[keyof WorkspaceAppointmentsCalendarErrors];
+
+export type WorkspaceAppointmentsCalendarResponses = {
+    /**
+     * OK
+     */
+    200: AppointmentCalendar;
+};
+
+export type WorkspaceAppointmentsCalendarResponse = WorkspaceAppointmentsCalendarResponses[keyof WorkspaceAppointmentsCalendarResponses];
 
 export type WorkspaceAppointmentGetData = {
     body?: never;

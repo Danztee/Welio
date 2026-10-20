@@ -15,6 +15,32 @@ import (
 func registerOwnerAppointmentReads(service *Service, api huma.API) {
 	tags := []string{"Appointments and customers"}
 
+	huma.Register(api, huma.Operation{OperationID: "workspace-appointments-calendar", Method: http.MethodGet,
+		Path: "/v1/workspaces/{workspaceId}/appointments/calendar", Summary: "Read appointments for a calendar date range", Tags: tags},
+		func(ctx context.Context, in *struct {
+			WorkspaceID string `path:"workspaceId"`
+			From        string `query:"from" required:"true" maxLength:"10"`
+			To          string `query:"to" required:"true" maxLength:"10"`
+			Search      string `query:"search" maxLength:"200"`
+			Status      string `query:"status" enum:",confirmed,completed,cancelled,no_show"`
+		}) (*struct{ Body AppointmentCalendar }, error) {
+			principal, err := auth.RequireVerifiedUser(ctx)
+			if err != nil {
+				return nil, httpx.Wrap(err)
+			}
+			workspaceID, err := uuid.Parse(in.WorkspaceID)
+			if err != nil {
+				return nil, problem(ErrNotFound)
+			}
+			calendar, err := service.AppointmentCalendar(ctx, principal.UserID, workspaceID, AppointmentCalendarOptions{
+				From: in.From, To: in.To, Search: in.Search, Status: in.Status,
+			})
+			if err != nil {
+				return nil, problem(err)
+			}
+			return &struct{ Body AppointmentCalendar }{Body: calendar}, nil
+		})
+
 	huma.Register(api, huma.Operation{OperationID: "workspace-appointments-list", Method: http.MethodGet,
 		Path: "/v1/workspaces/{workspaceId}/appointments", Summary: "List workspace appointments", Tags: tags},
 		func(ctx context.Context, in *appointmentListPath) (*struct{ Body Page[Appointment] }, error) {
