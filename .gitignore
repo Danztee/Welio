@@ -42,3 +42,7 @@ web/playwright-report/
 **/.next-e2e/
 
 **/.next-build/
+
+# local tooling and deployment checks
+_bg/
+**/__pycache__/

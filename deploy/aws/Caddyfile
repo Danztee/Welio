@@ -1,0 +1,42 @@
+{
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+	default_sni {$PUBLIC_IP}
+	servers {
+		trusted_proxies static 10.42.0.0/16
+		trusted_proxies_strict
+	}
+}
+
+(app_routes) {
+	request_header -CF-Connecting-IP
+	@api path /v1/* /api/chat/* /api/mcp/* /api/auth/* /.well-known/* /docs* /healthz /readyz
+	handle @api {
+		reverse_proxy host.docker.internal:8081 {
+			header_up Host {http.request.host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+}
+
+{$PUBLIC_IP} {
+	encode zstd gzip
+	tls {
+		issuer acme {
+			profile shortlived
+		}
+	}
+
+	import app_routes
+}
+
+:8080 {
+	import app_routes
+}

@@ -1,0 +1,170 @@
+name: welio
+
+x-backend: &backend
+  image: welio-api:${WELIO_RELEASE:-local}
+  build:
+    context: ../..
+    dockerfile: Dockerfile
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: welio
+      POSTGRES_USER: welio
+      POSTGRES_PASSWORD:
+        ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - backend
+
+  migrate:
+    <<: *backend
+    profiles: [release]
+    network_mode: host
+    environment:
+      WELIO_ENV: production
+      WELIO_ROLE: api
+      DATABASE_URL:
+        postgres://welio:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in
+        .env.production}@127.0.0.1:5432/welio?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    command: ["migrate"]
+
+  api:
+    <<: *backend
+    network_mode: host
+    environment:
+      WELIO_ENV: production
+      WELIO_ROLE: api
+      HTTP_ADDR: :8081
+      TRUST_PROXY: "true"
+      DATABASE_URL:
+        postgres://welio:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in
+        .env.production}@127.0.0.1:5432/welio?sslmode=disable
+      PUBLIC_URL: ${APP_URL:?Set APP_URL in .env.production}
+      API_SERVER_URL: ${APP_URL}
+      TRUSTED_ORIGINS: ${APP_URL}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env.production}
+      AWS_REGION: ${AWS_REGION:-eu-north-1}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-eu.anthropic.claude-sonnet-4-6}
+      AI_DAILY_CALL_LIMIT: ${AI_DAILY_CALL_LIMIT:-10}
+      MCP_API_SECRETS_JSON:
+        ${MCP_API_SECRETS_JSON:?Set MCP_API_SECRETS_JSON in .env.production}
+      MCP_BOOKING_CONFIRMATION_ENABLED: ${MCP_BOOKING_CONFIRMATION_ENABLED:-true}
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    environment:
+      WELIO_ENV: production
+      WELIO_ROLE: worker
+      HTTP_ADDR: :8082
+      DATABASE_URL:
+        postgres://welio:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in
+        .env.production}@db:5432/welio?sslmode=disable
+      PUBLIC_URL: ${APP_URL}
+      ZEPTOMAIL_SEND_MAIL_TOKEN:
+        ${ZEPTOMAIL_SEND_MAIL_TOKEN:?Set ZEPTOMAIL_SEND_MAIL_TOKEN in
+        .env.production}
+      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in .env.production}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+
+  web:
+    image: welio-web:${WELIO_RELEASE:-local}
+    build:
+      context: ../../web
+      dockerfile: Dockerfile
+      args:
+        APP_URL: ${APP_URL:?Set APP_URL in .env.production}
+        NEXT_PUBLIC_WELIO_API_URL: ${APP_URL}
+    restart: unless-stopped
+    environment:
+      APP_URL: ${APP_URL}
+      WELIO_API_INTERNAL_URL: http://host.docker.internal:8081
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((r) =>
+          process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - frontend
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:2019/config/",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP:?Set PUBLIC_IP in .env.production}
+    ports:
+      - "8080:8080"
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - frontend
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  backend:
+  frontend:

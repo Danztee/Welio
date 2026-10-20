@@ -242,17 +242,7 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
 try {
   await doctor();
   await completion(
-    start("database", "docker", [
-      "compose",
-      "-f",
-      "docker-compose.dev.yml",
-      "-p",
-      "welio-dev",
-      "up",
-      "-d",
-      "--wait",
-      "postgres",
-    ]),
+    start("database", "make", ["--no-print-directory", "dev-db"]),
   );
   await completion(
     start("migrate", "make", ["--no-print-directory", "migrate"]),

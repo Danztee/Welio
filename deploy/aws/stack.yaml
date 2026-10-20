@@ -1,0 +1,297 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  Welio demo host with IAM-backed Bedrock access and a private CloudFront
+  origin.
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t4g.medium
+    AllowedValues:
+      - t4g.medium
+    Description: 2 vCPU and 4 GiB ARM host for the app and container build.
+
+  LatestArmAmi:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+
+  CloudFrontSecurityGroupId:
+    Type: String
+    Default: ""
+    Description:
+      CloudFront-VPCOrigins-Service-SG, filled after the first deploy.
+
+Conditions:
+  HasCloudFrontSecurityGroup:
+    !Not [!Equals [!Ref CloudFrontSecurityGroupId, ""]]
+
+Resources:
+  Network:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.42.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-vpc
+        - Key: Project
+          Value: Welio
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-internet
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Network
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      CidrBlock: 10.42.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-public
+        - Key: Project
+          Value: Welio
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Network
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-public
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+        Public HTTPS app and HTTP certificate renewal only; no SSH or data
+        ports.
+      VpcId: !Ref Network
+      SecurityGroupIngress:
+        - Description: HTTPS application traffic
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - Description: HTTP redirect and ACME IP certificate validation
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-app
+        - Key: Project
+          Value: Welio
+
+  DeploymentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireTemporaryDeployments
+            Status: Enabled
+            Prefix: releases/
+            ExpirationInDays: 1
+      Tags:
+        - Key: Project
+          Value: Welio
+        - Key: Purpose
+          Value: temporary-deployment-artifacts
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: WelioDemoRuntime
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: InvokeWelioBedrockModel
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource:
+                  - !Sub arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:inference-profile/eu.anthropic.claude-sonnet-4-6
+                  - !Sub arn:${AWS::Partition}:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6
+              - Sid: ReadTemporaryDeploymentArtifact
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub ${DeploymentBucket.Arn}/releases/*
+      Tags:
+        - Key: Project
+          Value: Welio
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestArmAmi
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+        HttpPutResponseHopLimit: 1
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euo pipefail
+          dnf install -y awscli-2
+          systemctl enable --now amazon-ssm-agent
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-app
+        - Key: Project
+          Value: Welio
+        - Key: Purpose
+          Value: AlexaPlusDemo
+
+  AppAddress:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref AppInstance
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-app
+        - Key: Project
+          Value: Welio
+
+  CloudFrontIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref InstanceSecurityGroup
+      Description: Private CloudFront VPC origin traffic
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8080
+      CidrIp: !If [HasCloudFrontSecurityGroup, !Ref AWS::NoValue, 10.42.0.0/16]
+      SourceSecurityGroupId: !If
+        - HasCloudFrontSecurityGroup
+        - !Ref CloudFrontSecurityGroupId
+        - !Ref AWS::NoValue
+
+  AppVpcOrigin:
+    Type: AWS::CloudFront::VpcOrigin
+    DependsOn: CloudFrontIngress
+    Properties:
+      VpcOriginEndpointConfig:
+        Name: !Sub ${AWS::StackName}-app
+        Arn: !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${AppInstance}
+        HTTPPort: 8080
+        HTTPSPort: 443
+        OriginProtocolPolicy: http-only
+
+  AppDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: Welio web app and MCP endpoint
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: welio
+            DomainName: !GetAtt AppInstance.PrivateDnsName
+            VpcOriginConfig:
+              VpcOriginId: !GetAtt AppVpcOrigin.Id
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 5
+        DefaultCacheBehavior:
+          TargetOriginId: welio
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+      Tags:
+        - Key: Project
+          Value: Welio
+
+Outputs:
+  AppUrl:
+    Description: Public HTTPS app and MCP base URL
+    Value: !Sub https://${AppDistribution.DomainName}
+
+  DistributionId:
+    Value: !Ref AppDistribution
+
+  PublicIp:
+    Value: !Ref AppAddress
+
+  InstanceId:
+    Value: !Ref AppInstance
+
+  ArtifactBucketName:
+    Value: !Ref DeploymentBucket
+
+  SecurityGroupId:
+    Value: !Ref InstanceSecurityGroup
