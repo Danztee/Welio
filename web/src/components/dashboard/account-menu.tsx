@@ -58,7 +58,7 @@ export function AccountMenu({
         className="w-64 max-w-[calc(100vw-2rem)] p-0"
       >
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex flex-col gap-1 px-3 py-3">
+          <DropdownMenuLabel className="flex flex-col gap-1 p-3">
             <span className="flex min-w-0 flex-col gap-1">
               <span className="text-sm font-medium text-foreground">
                 {name}

@@ -10,9 +10,9 @@ export function Heading({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-9 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-h-12 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-balance">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance">
           {title}
         </h1>
         {description && (

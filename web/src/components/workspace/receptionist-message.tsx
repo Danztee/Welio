@@ -109,7 +109,7 @@ export function ReceptionistMessage({
   return (
     <Message className="items-end">
       <MessageContent className="max-w-full gap-1">
-        <MessageHeader className="px-1 text-[11px]">Receptionist</MessageHeader>
+        <MessageHeader className="px-1 text-xs">Receptionist</MessageHeader>
         <Bubble variant="outline" className="max-w-full">
           <BubbleContent className="min-w-0 rounded-2xl rounded-bl-md px-3.5 py-2.5">
             {content}

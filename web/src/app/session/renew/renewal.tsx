@@ -25,7 +25,7 @@ export function SessionRenewal({ next }: { next: string }) {
   }, [next, attempt]);
   return (
     <main
-      className="flex min-h-screen flex-col items-center justify-center gap-4"
+      className="flex min-h-dvh flex-col items-center justify-center gap-4"
       aria-live="polite"
     >
       <p>

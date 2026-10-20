@@ -326,7 +326,7 @@ export function BusinessOverview({
                 </li>
               ))}
               {!activity.length && (
-                <li className="py-6 text-sm text-muted-foreground">
+                <li className="rounded-xl border border-dashed border-neutral-border bg-muted/45 px-4 py-8 text-center text-sm leading-6 text-muted-foreground">
                   Your latest booking updates will appear here.
                 </li>
               )}

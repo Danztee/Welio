@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -86,9 +85,6 @@ export function ReceptionistPreview({
             <CardTitle>
               <h2>Test your receptionist</h2>
             </CardTitle>
-            <CardDescription className="mt-1">
-              Private preview. No appointments are created.
-            </CardDescription>
           </div>
           <Button
             type="button"

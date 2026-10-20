@@ -63,7 +63,7 @@ export function PublicBookingSettings({
         )}
         <Button
           className="mt-6"
-          variant={w.isPublished ? "destructive" : "default"}
+          variant={w.isPublished ? "destructive" : "success"}
           onClick={() => setPublishing(true)}
         >
           {w.isPublished ? "Unpublish page" : "Publish booking page"}
@@ -75,7 +75,7 @@ export function PublicBookingSettings({
             w.isPublished ? "Unpublish booking page?" : "Publish booking page?"
           }
           label={w.isPublished ? "Unpublish" : "Publish"}
-          variant={w.isPublished ? "destructive" : "default"}
+          variant={w.isPublished ? "destructive" : "success"}
           onClose={() => setPublishing(false)}
           onConfirm={async () => {
             await save(w.id, !w.isPublished);

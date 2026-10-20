@@ -144,8 +144,7 @@ function SessionListHeader({
       </div>
       {!loadError && otherCount > 0 && (
         <Button
-          variant="outline"
-          className="text-destructive hover:text-destructive"
+          variant="destructive"
           onClick={onRevokeOthers}
           disabled={Boolean(pending) || loading}
         >
@@ -251,9 +250,9 @@ function SessionRow({
       </div>
       {!current && (
         <Button
-          variant="outline"
+          variant="destructive"
           size="sm"
-          className="col-start-2 justify-self-start text-destructive hover:text-destructive sm:col-start-3 sm:row-start-1"
+          className="col-start-2 justify-self-start sm:col-start-3 sm:row-start-1"
           disabled={Boolean(pending)}
           onClick={() => onRevoke(session)}
           aria-label={`Sign out ${deviceName(session.userAgent)} session from ${session.createdAtLabel}`}

@@ -20,7 +20,7 @@ import type {
 } from "@/features/workspaces/types";
 import { BellIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   getEditorFields,
@@ -66,17 +66,17 @@ export function WorkspaceApp({
     Data["notifications"] | null
   >(section === "Notifications" ? data.notifications : null);
   const [notificationError, setNotificationError] = useState(false);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const loadingNotifications = useRef(false);
   async function loadNotifications() {
-    if (loadingNotifications) return;
-    setLoadingNotifications(true);
+    if (loadingNotifications.current) return;
+    loadingNotifications.current = true;
     setNotificationError(false);
     try {
       setNotifications(await dashboardNotifications(data.workspace.id));
     } catch {
       setNotificationError(true);
     } finally {
-      setLoadingNotifications(false);
+      loadingNotifications.current = false;
     }
   }
   const router = useRouter();
@@ -166,7 +166,7 @@ export function WorkspaceApp({
         <BellIcon />
       </SheetTrigger>
       <SheetContent side="right" className={floatingSheetClassName}>
-        <SheetHeader className="border-b px-4 py-3 pr-12">
+        <SheetHeader>
           <SheetTitle>Notifications</SheetTitle>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">

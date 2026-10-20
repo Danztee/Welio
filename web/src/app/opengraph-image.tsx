@@ -41,7 +41,7 @@ export default function OpenGraphImage() {
               />
             </svg>
           </div>
-          <span style={{ fontSize: 44, fontWeight: 700, letterSpacing: -2 }}>
+          <span style={{ fontSize: 44, fontWeight: 700, letterSpacing: -1 }}>
             welio
           </span>
         </div>
@@ -51,7 +51,7 @@ export default function OpenGraphImage() {
             marginTop: 56,
             fontSize: 62,
             fontWeight: 600,
-            letterSpacing: -2,
+            letterSpacing: -1,
           }}
         >
           Manage bookings and customers.

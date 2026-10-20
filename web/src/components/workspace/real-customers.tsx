@@ -156,7 +156,7 @@ export function RealCustomers({ data }: { data: Data }) {
       >
         {customer && (
           <SheetContent side="right" className={floatingSheetClassName}>
-            <SheetHeader className="px-4 py-4 pr-12">
+            <SheetHeader>
               <SheetTitle>{customer.name}</SheetTitle>
               <SheetDescription className="break-words">
                 {customer.email || "No email added"} ·{" "}

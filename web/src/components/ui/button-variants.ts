@@ -7,9 +7,13 @@ export const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:brightness-95",
         outline:
-          "border-input bg-card hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-input bg-transparent text-foreground hover:border-neutral-foreground/40 hover:bg-muted aria-expanded:bg-muted",
         secondary:
-          "border-input bg-card text-foreground hover:bg-muted aria-expanded:bg-muted",
+          "bg-secondary text-secondary-foreground hover:bg-neutral-border aria-expanded:bg-neutral-border",
+        success:
+          "border-success-border bg-success-surface text-success-foreground hover:bg-success-border focus-visible:border-success-foreground focus-visible:ring-success-foreground/25",
+        warning:
+          "border-warning-border bg-warning-surface text-warning-foreground hover:bg-warning-border focus-visible:border-warning-foreground focus-visible:ring-warning-foreground/25",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:

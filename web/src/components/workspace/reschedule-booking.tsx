@@ -241,7 +241,7 @@ function RescheduleSlotList({
             type="button"
             variant={isSelected ? "default" : "outline"}
             aria-pressed={isSelected}
-            className="h-auto min-h-10 min-w-0 flex-col px-2 py-2 text-center"
+            className="h-auto min-h-10 min-w-0 flex-col p-2 text-center"
             onClick={() => onSelect(value)}
           >
             <span>{slot.time}</span>

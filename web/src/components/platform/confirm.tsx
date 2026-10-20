@@ -25,7 +25,7 @@ export function Confirm({
   onConfirm: () => void | Promise<void>;
   onClose: () => void;
   label?: string;
-  variant?: "default" | "destructive";
+  variant?: "default" | "success" | "warning" | "destructive";
 }) {
   const [busy, setBusy] = useState(false);
 
@@ -42,7 +42,7 @@ export function Confirm({
           <DialogDescription>{children}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button disabled={busy} variant="outline" onClick={onClose}>
+          <Button disabled={busy} variant="secondary" onClick={onClose}>
             Go back
           </Button>
           <Button

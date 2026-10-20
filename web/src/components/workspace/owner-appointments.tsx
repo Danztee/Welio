@@ -262,7 +262,7 @@ function AppointmentDialogs({
       {view && (
         <Sheet open onOpenChange={(open) => !open && onCloseDetails()}>
           <SheetContent side="right" className={floatingSheetClassName}>
-            <SheetHeader className="border-b px-4 py-4 pr-12">
+            <SheetHeader>
               <SheetTitle>{view.name || "Appointment details"}</SheetTitle>
               <SheetDescription>
                 {view.serviceName} · {view.status.replace("_", " ")}
@@ -280,7 +280,7 @@ function AppointmentDialogs({
                       Reschedule
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="destructive"
                       onClick={() =>
                         onCommandChange({
                           action: "cancel",
@@ -291,7 +291,7 @@ function AppointmentDialogs({
                       Cancel appointment
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="success"
                       onClick={() =>
                         onCommandChange({
                           action: "completed",
@@ -302,7 +302,7 @@ function AppointmentDialogs({
                       Mark completed
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="warning"
                       onClick={() =>
                         onCommandChange({
                           action: "no_show",
@@ -336,8 +336,20 @@ function AppointmentDialogs({
               ? "Cancel appointment?"
               : "Update appointment status?"
           }
-          label="Confirm change"
-          variant={command.action === "cancel" ? "destructive" : "default"}
+          label={
+            command.action === "cancel"
+              ? "Cancel appointment"
+              : command.action === "completed"
+                ? "Mark completed"
+                : "Mark no-show"
+          }
+          variant={
+            command.action === "cancel"
+              ? "destructive"
+              : command.action === "completed"
+                ? "success"
+                : "warning"
+          }
           onClose={() => onCommandChange(null)}
           onConfirm={() =>
             onChange({

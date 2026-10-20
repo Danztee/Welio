@@ -160,7 +160,7 @@ function SetupAlert({
       <div className="mt-4 flex flex-wrap gap-3">
         {!hasActiveStaff && (
           <Button
-            variant="outline"
+            variant="warning"
             nativeButton={false}
             render={<Link href={dashboardHref("Team", w.id)} />}
           >
@@ -170,7 +170,7 @@ function SetupAlert({
         )}
         {!hasActiveService && (
           <Button
-            variant="outline"
+            variant="warning"
             nativeButton={false}
             render={<Link href={dashboardHref("Services", w.id)} />}
           >
@@ -180,7 +180,7 @@ function SetupAlert({
         )}
         {hasActiveStaff && hasActiveService && !hasAssignedActiveService && (
           <Button
-            variant="outline"
+            variant="warning"
             nativeButton={false}
             render={<Link href={dashboardHref("Services", w.id)} />}
           >
@@ -289,7 +289,22 @@ function SectionHeading({ model }: { model: WorkspaceRenderModel }) {
       </Button>
     ) : undefined;
 
-  return <Heading title={section} action={action} />;
+  const descriptions: Partial<Record<DashboardSection, string>> = {
+    Customers: "Keep customer details and booking history in one place.",
+    Receptionist: "Shape the customer conversation and test it before sharing.",
+    Services:
+      "Manage what customers can book, including prices and availability.",
+    Team: "Manage the people who provide your services.",
+    Notifications: "Track booking emails and delivery attempts.",
+  };
+
+  return (
+    <Heading
+      title={section}
+      description={descriptions[section]}
+      action={action}
+    />
+  );
 }
 
 function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
@@ -377,12 +392,11 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
       tabIndex={-1}
       className={cn(
         "mx-auto my-3 flex min-h-0 w-[calc(100%-1.5rem)] max-w-[1600px] min-w-0 flex-1 flex-col overflow-hidden sm:my-0 sm:mb-4 sm:w-[calc(100%-1rem)]",
-        section !== "Overview" && "rounded-2xl border bg-card",
       )}
     >
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-4 sm:p-6 [&>*]:shrink-0",
+          "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-1 py-4 sm:px-2 sm:py-6 [&>*]:shrink-0",
           section === "Overview" && "p-0",
         )}
         role="region"

@@ -125,6 +125,7 @@ export function BookingNotifications({ data }: { data: Data }) {
         <Confirm
           title="Retry this email?"
           label="Retry delivery"
+          variant="warning"
           onClose={() => setRetry("")}
           onConfirm={async () => {
             await save(data.workspace.id, retry);

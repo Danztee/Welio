@@ -86,9 +86,7 @@ export function WorkspaceSwitcher({
             />
           </div>
           <DropdownMenuGroup className="p-2">
-            <DropdownMenuLabel className="px-2 py-2">
-              Workspaces
-            </DropdownMenuLabel>
+            <DropdownMenuLabel className="p-2">Workspaces</DropdownMenuLabel>
             {workspaces
               .filter((w) =>
                 w.name.toLowerCase().includes(search.toLowerCase()),

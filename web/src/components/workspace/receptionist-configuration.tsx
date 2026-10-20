@@ -55,8 +55,16 @@ export function ReceptionistConfiguration({
       </CardHeader>
       <CardContent className={dashboardPanelBodyClassName}>
         <form onSubmit={save} className="min-w-0">
-          <FieldGroup>
-            <section className="flex flex-col gap-4 border-b pb-6">
+          <FieldGroup className="gap-8">
+            <section className="flex flex-col gap-4 rounded-xl border bg-muted/35 p-5">
+              <div>
+                <h3 className="font-heading text-base font-semibold">
+                  Welcome message
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  Set what customers see and how the receptionist responds.
+                </p>
+              </div>
               <Field orientation="horizontal">
                 <Checkbox
                   className="mt-0.5"
@@ -110,9 +118,11 @@ export function ReceptionistConfiguration({
                 </FieldDescription>
               </Field>
             </section>
-            <section className="flex flex-col gap-4 border-b pb-6">
-              <h2 className="text-base font-medium">Allowed actions</h2>
-              <p className="text-xs leading-5 text-muted-foreground">
+            <section className="flex flex-col gap-4 rounded-xl border bg-muted/35 p-5">
+              <h3 className="font-heading text-base font-semibold">
+                Allowed actions
+              </h3>
+              <p className="text-sm leading-6 text-muted-foreground">
                 The receptionist can answer service and FAQ questions. It cannot
                 take payments, cancel bookings, or access customer records.
               </p>
@@ -141,11 +151,11 @@ export function ReceptionistConfiguration({
                 </FieldLabel>
               </Field>
             </section>
-            <section className="flex flex-col gap-4">
+            <section className="flex flex-col gap-4 rounded-xl border bg-muted/35 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-base font-medium">
+                <h3 className="font-heading text-base font-semibold">
                   Frequently asked questions
-                </h2>
+                </h3>
                 <Button
                   type="button"
                   variant="outline"
@@ -163,7 +173,7 @@ export function ReceptionistConfiguration({
                 </Button>
               </div>
               {!settings.faqs.length && (
-                <p className="text-sm text-muted-foreground">
+                <p className="rounded-lg border border-dashed border-neutral-border bg-card px-4 py-5 text-sm leading-6 text-muted-foreground">
                   Add answers about service areas, preparation, or business
                   policies.
                 </p>

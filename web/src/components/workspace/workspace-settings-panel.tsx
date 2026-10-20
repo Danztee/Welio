@@ -103,7 +103,7 @@ export function WorkspaceSettingsPanel({
   }
 
   return (
-    <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+    <div className="grid min-w-0 gap-8 rounded-2xl border bg-card p-5 shadow-xs sm:p-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
       <aside className="min-w-0" aria-label="Settings navigation">
         <h1 className="mb-5 text-lg font-semibold tracking-tight">Settings</h1>
         <Field className="lg:hidden">
