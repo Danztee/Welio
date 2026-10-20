@@ -9,6 +9,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   NativeSelect,
@@ -422,16 +423,20 @@ export function BusinessSettings({
         aria-busy={saving || preparingLogo}
         className="mt-6 max-w-2xl"
       >
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
+          <Separator />
           <section
             className="flex flex-col gap-5"
             aria-labelledby="business-profile-heading"
           >
-            <div>
-              <h3 id="business-profile-heading" className="font-medium">
+            <div className="flex flex-col gap-1">
+              <h3
+                id="business-profile-heading"
+                className="text-sm font-semibold"
+              >
                 Business profile
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Your name, booking link, and contact details.
               </p>
             </div>
@@ -447,15 +452,19 @@ export function BusinessSettings({
               <BusinessIdentityFields workspace={workspace} />
             </FieldGroup>
           </section>
+          <Separator />
           <section
-            className="flex flex-col gap-5 border-t pt-8"
+            className="flex flex-col gap-5"
             aria-labelledby="business-booking-heading"
           >
-            <div>
-              <h3 id="business-booking-heading" className="font-medium">
+            <div className="flex flex-col gap-1">
+              <h3
+                id="business-booking-heading"
+                className="text-sm font-semibold"
+              >
                 Booking details
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Set service location, time zone, and currency.
               </p>
             </div>

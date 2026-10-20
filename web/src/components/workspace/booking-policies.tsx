@@ -19,6 +19,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import { Separator } from "@/components/ui/separator";
 import { policyInput } from "@/lib/domain/bookings/contract";
 import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
@@ -105,18 +106,21 @@ export function BookingPolicies({ data }: { data: Data }) {
 
   return (
     <>
+      <Separator className="mt-6 max-w-2xl" />
       <section
-        className="border-b pb-8"
+        className="mt-6 flex max-w-2xl flex-col gap-5"
         aria-labelledby="booking-policy-heading"
       >
-        <h3 id="booking-policy-heading" className="font-medium">
-          Booking policies
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Rules for new bookings and customer changes. Existing appointment
-          times are preserved.
-        </p>
-        <form onSubmit={submitPolicies} className="mt-6 max-w-2xl">
+        <div className="flex flex-col gap-1">
+          <h3 id="booking-policy-heading" className="text-sm font-semibold">
+            Booking policies
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Rules for new bookings and customer changes. Existing appointment
+            times are preserved.
+          </p>
+        </div>
+        <form onSubmit={submitPolicies}>
           <FieldGroup>
             {policyValidationError && (
               <Notice error>{policyValidationError}</Notice>
@@ -195,14 +199,20 @@ export function BookingPolicies({ data }: { data: Data }) {
           </FieldGroup>
         </form>
       </section>
-      <section className="border-b pb-8" aria-labelledby="reminder-heading">
-        <h3 id="reminder-heading" className="font-medium">
-          Appointment reminders
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          One email reminder, 24 hours before each eligible appointment.
-        </p>
-        <form onSubmit={submitReminder} className="mt-6 max-w-2xl">
+      <Separator className="mt-6 max-w-2xl" />
+      <section
+        className="mt-6 flex max-w-2xl flex-col gap-5"
+        aria-labelledby="reminder-heading"
+      >
+        <div className="flex flex-col gap-1">
+          <h3 id="reminder-heading" className="text-sm font-semibold">
+            Appointment reminders
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            One email reminder, 24 hours before each eligible appointment.
+          </p>
+        </div>
+        <form onSubmit={submitReminder}>
           <FieldGroup>
             <Field orientation="horizontal">
               <Checkbox

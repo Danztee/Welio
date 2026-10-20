@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -172,6 +173,7 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Update the name on your Welio account.
             </p>
+            <Separator className="mt-6 max-w-2xl" />
             <form
               key={`${user.firstName}-${user.lastName}`}
               className="mt-6 max-w-2xl"
@@ -229,6 +231,7 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Review signed-in devices and end sessions you don’t recognize.
             </p>
+            <Separator className="mt-6" />
             <SessionSettings />
           </>
         )}
@@ -247,9 +250,7 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Set booking rules and appointment reminders.
             </p>
-            <div className="mt-6 flex flex-col gap-8">
-              <BookingPolicies data={data} />
-            </div>
+            <BookingPolicies data={data} />
           </>
         )}
         {tab === "booking-page" && (
@@ -260,7 +261,8 @@ export function WorkspaceSettingsPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               Publish and manage your customer booking link.
             </p>
-            <div className="mt-6 max-w-2xl">
+            <div className="mt-6 flex max-w-2xl flex-col gap-6">
+              <Separator />
               <PublicBookingSettings
                 data={data}
                 publicAppOrigin={publicAppOrigin}

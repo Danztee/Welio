@@ -351,23 +351,15 @@ export function SessionSettings() {
   }
 
   return (
-    <>
-      <h2 id="settings-section-title" className="text-lg font-semibold">
-        Authentication
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        See where you’re signed in and end sessions you no longer use.
-      </p>
-      <SessionList
-        sessions={sessions}
-        currentId={currentId}
-        loading={loading}
-        loadError={loadError}
-        pending={pending}
-        onRefresh={() => void refresh()}
-        onRevoke={(session) => void revoke(session)}
-        onRevokeOthers={() => void revokeOthers()}
-      />
-    </>
+    <SessionList
+      sessions={sessions}
+      currentId={currentId}
+      loading={loading}
+      loadError={loadError}
+      pending={pending}
+      onRefresh={() => void refresh()}
+      onRevoke={(session) => void revoke(session)}
+      onRevokeOthers={() => void revokeOthers()}
+    />
   );
 }
