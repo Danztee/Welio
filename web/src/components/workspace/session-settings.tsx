@@ -133,7 +133,7 @@ function SessionListHeader({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h3 id="active-sessions-heading" className="font-medium">
+        <h3 id="active-sessions-heading" className="text-sm font-semibold">
           Active sessions
         </h3>
         {!loading && !loadError && (
