@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -23,7 +22,7 @@ const statusLabels: Record<ReceptionistChatStatus, string> = {
   connecting: "Connecting…",
   online: "Receptionist online",
   unavailable: "Receptionist unavailable",
-  preview: "Receptionist preview",
+  preview: "Preview",
 };
 
 const statusColors: Record<ReceptionistChatStatus, string> = {
@@ -140,11 +139,6 @@ export function ReceptionistConversationHeader({
             >
               <HistoryIcon />
             </Button>
-          )}
-          {status === "preview" && (
-            <Badge variant="outline" tone="neutral">
-              Test
-            </Badge>
           )}
           {closeButton}
         </>

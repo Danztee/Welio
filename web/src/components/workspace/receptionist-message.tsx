@@ -1,15 +1,10 @@
 "use client";
 
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import {
-  Message,
-  MessageContent,
-  MessageHeader,
-} from "@/components/ui/message";
+import { Message, MessageContent } from "@/components/ui/message";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { type ReactNode } from "react";
-import { SparklesIcon } from "lucide-react";
 import type { ReceptionistActivity } from "@/lib/domain/receptionist/contract";
 
 const activityLabels: Record<ReceptionistActivity, string> = {
@@ -107,22 +102,17 @@ export function ReceptionistMessage({
     );
 
   return (
-    <Message className="items-end">
-      <MessageContent className="max-w-full gap-1">
-        <MessageHeader className="px-1 text-xs">Receptionist</MessageHeader>
-        <Bubble variant="outline" className="max-w-full">
-          <BubbleContent className="min-w-0 rounded-2xl rounded-bl-md px-3.5 py-2.5">
+    <Message>
+      <MessageContent className="max-w-full gap-0">
+        <Bubble variant="ghost" className="max-w-full">
+          <BubbleContent className="min-w-0 rounded-none px-0 py-0">
             {content}
             {activity && (
               <span
                 role="status"
                 aria-live="polite"
-                className="mt-2 flex items-center gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground"
+                className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"
               >
-                <SparklesIcon
-                  aria-hidden="true"
-                  className="size-3.5 text-primary motion-safe:animate-pulse motion-reduce:animate-none"
-                />
                 <span>{activityLabels[activity]}</span>
                 <span aria-hidden="true" className="flex items-center gap-0.5">
                   {[0, 120, 240].map((delay) => (

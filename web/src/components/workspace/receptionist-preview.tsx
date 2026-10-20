@@ -3,12 +3,7 @@
 import { Notice } from "@/components/platform/shared";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Message, MessageContent } from "@/components/ui/message";
 import {
   MessageScroller,
@@ -128,7 +123,7 @@ export function ReceptionistPreview({
             aria-live="polite"
           >
             <MessageScrollerViewport>
-              <MessageScrollerContent className="gap-4 p-4 sm:p-5">
+              <MessageScrollerContent className="gap-5 p-5 sm:p-6">
                 <MessageScrollerItem messageId="welcome">
                   <div className="flex flex-col gap-3">
                     <ReceptionistMessage>{saved.greeting}</ReceptionistMessage>
@@ -149,7 +144,11 @@ export function ReceptionistPreview({
                     <div className="flex flex-col gap-3">
                       <Message align="end">
                         <MessageContent className="max-w-[88%]">
-                          <Bubble align="end" className="max-w-full">
+                          <Bubble
+                            align="end"
+                            variant="muted"
+                            className="max-w-full"
+                          >
                             <BubbleContent className="whitespace-pre-wrap">
                               {turn.text}
                             </BubbleContent>
@@ -179,7 +178,11 @@ export function ReceptionistPreview({
                     <div className="flex flex-col gap-3">
                       <Message align="end">
                         <MessageContent className="max-w-[88%]">
-                          <Bubble align="end" className="max-w-full">
+                          <Bubble
+                            align="end"
+                            variant="muted"
+                            className="max-w-full"
+                          >
                             <BubbleContent className="whitespace-pre-wrap">
                               {activeMessage}
                             </BubbleContent>
@@ -219,6 +222,7 @@ export function ReceptionistPreview({
           busy={testing}
           disabled={dirty || !aiConfigured}
           sendMessage={test}
+          hideLabel
         />
       </Card>
     </section>

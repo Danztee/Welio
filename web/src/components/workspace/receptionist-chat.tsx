@@ -245,7 +245,7 @@ function ReceptionistChatBody({
           aria-live="polite"
         >
           <MessageScrollerViewport>
-            <MessageScrollerContent className="gap-4 p-4 sm:p-5">
+            <MessageScrollerContent className="gap-5 p-5 sm:p-6">
               <MessageScrollerItem messageId="welcome">
                 <div className="flex flex-col gap-3">
                   <ReceptionistMessage>{greeting}</ReceptionistMessage>
@@ -268,8 +268,12 @@ function ReceptionistChatBody({
                   <div className="flex flex-col gap-3">
                     <Message align="end">
                       <MessageContent className="max-w-[88%]">
-                        <Bubble align="end" className="max-w-full">
-                          <BubbleContent className="rounded-2xl rounded-br-md whitespace-pre-wrap">
+                        <Bubble
+                          align="end"
+                          variant="muted"
+                          className="max-w-full"
+                        >
+                          <BubbleContent className="rounded-2xl whitespace-pre-wrap">
                             {turn.text}
                           </BubbleContent>
                         </Bubble>
@@ -288,8 +292,12 @@ function ReceptionistChatBody({
                   <div className="flex flex-col gap-3">
                     <Message align="end">
                       <MessageContent className="max-w-[88%]">
-                        <Bubble align="end" className="max-w-full">
-                          <BubbleContent className="rounded-2xl rounded-br-md whitespace-pre-wrap">
+                        <Bubble
+                          align="end"
+                          variant="muted"
+                          className="max-w-full"
+                        >
+                          <BubbleContent className="rounded-2xl whitespace-pre-wrap">
                             {state.retry.text}
                           </BubbleContent>
                         </Bubble>
@@ -320,8 +328,12 @@ function ReceptionistChatBody({
                   <div className="flex flex-col gap-3">
                     <Message align="end">
                       <MessageContent className="max-w-[88%]">
-                        <Bubble align="end" className="max-w-full">
-                          <BubbleContent className="rounded-2xl rounded-br-md whitespace-pre-wrap">
+                        <Bubble
+                          align="end"
+                          variant="muted"
+                          className="max-w-full"
+                        >
+                          <BubbleContent className="rounded-2xl whitespace-pre-wrap">
                             {activeMessage}
                           </BubbleContent>
                         </Bubble>
