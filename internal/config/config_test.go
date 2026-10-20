@@ -131,7 +131,7 @@ func TestLoadValidDevelopmentAndProduction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("development config: %v", err)
 	}
-	if cfg.Role != "all" || cfg.HTTPAddr != ":8081" || !cfg.SignupEnabled || !cfg.TrustProxy || cfg.AWSRegion != "eu-north-1" || cfg.BedrockModelID != "eu.anthropic.claude-sonnet-4-6" {
+	if cfg.Role != "all" || cfg.HTTPAddr != ":8081" || !cfg.TrustProxy || cfg.AWSRegion != "eu-north-1" || cfg.BedrockModelID != "eu.anthropic.claude-sonnet-4-6" {
 		t.Fatalf("development defaults: %+v", cfg)
 	}
 	if cfg.AuthCookiePath != "/v1/auth" {

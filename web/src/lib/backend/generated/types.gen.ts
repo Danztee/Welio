@@ -69,7 +69,6 @@ export type AuthVerifyEmailRequest = {
 
 export type AuthConfig = {
     password_login: boolean;
-    signup_enabled: boolean;
 };
 
 export type AuthResult = {

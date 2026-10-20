@@ -18,7 +18,6 @@ type authOutput struct {
 
 type AuthConfig struct {
 	PasswordLogin bool `json:"password_login"`
-	SignupEnabled bool `json:"signup_enabled"`
 }
 
 func RegisterAPI(service *Service, api huma.API) {
@@ -27,7 +26,7 @@ func RegisterAPI(service *Service, api huma.API) {
 	huma.Register(api, huma.Operation{OperationID: "auth-config", Method: http.MethodGet, Path: "/v1/auth/config",
 		Summary: "Read account sign-in options", Tags: tags, Security: []map[string][]string{}},
 		func(context.Context, *struct{}) (*struct{ Body AuthConfig }, error) {
-			return &struct{ Body AuthConfig }{Body: AuthConfig{PasswordLogin: true, SignupEnabled: service.Cfg.SignupEnabled}}, nil
+			return &struct{ Body AuthConfig }{Body: AuthConfig{PasswordLogin: true}}, nil
 		})
 
 	huma.Register(api, huma.Operation{OperationID: "auth-register", Method: http.MethodPost, Path: "/v1/auth/register",

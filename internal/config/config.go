@@ -29,7 +29,6 @@ type Config struct {
 	CookieSecure           bool
 	TrustProxy             bool
 	TrustedOrigins         []string
-	SignupEnabled          bool
 	ZeptoMailToken         string
 	EmailFrom              string
 	AWSRegion              string
@@ -126,16 +125,9 @@ func Load(getenv func(string) string) (Config, error) {
 		}
 		c.CookieSecure = parsed
 	}
-	c.SignupEnabled = c.Env != "production"
 	c.TrustProxy, err = parseBoolDefault(getenv("TRUST_PROXY"), false)
 	if err != nil {
 		return Config{}, fmt.Errorf("TRUST_PROXY: %w", err)
-	}
-	if raw := strings.TrimSpace(getenv("SIGNUP_ENABLED")); raw != "" {
-		c.SignupEnabled, err = parseBool(raw)
-		if err != nil {
-			return Config{}, fmt.Errorf("SIGNUP_ENABLED: %w", err)
-		}
 	}
 	c.TrustedOrigins, err = parseOrigins(getenv("TRUSTED_ORIGINS"), publicURL, c.Env == "production")
 	if err != nil {

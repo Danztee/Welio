@@ -28,7 +28,7 @@ func newIntegrationService(t *testing.T) *Service {
 	if err != nil {
 		t.Fatalf("create River client: %v", err)
 	}
-	cfg := config.Config{Env: "test", PublicURL: "http://localhost:3000", SignupEnabled: true,
+	cfg := config.Config{Env: "test", PublicURL: "http://localhost:3000",
 		AuthCookiePath: "/v1/auth", CookieSecure: true, AuthSecret: []byte(strings.Repeat("s", 32))}
 	return &Service{DB: database, Tokens: NewTokens(cfg.AuthSecret), Limiter: httpx.NewLimiter(), Cfg: cfg,
 		Log: slog.Default(), Jobs: jobs}
@@ -36,6 +36,7 @@ func newIntegrationService(t *testing.T) *Service {
 
 func TestAuthRegistrationVerificationResetAndSessions(t *testing.T) {
 	service := newIntegrationService(t)
+	service.Cfg.Env = "production"
 	ctx := context.Background()
 	meta := httpx.RequestMeta{IP: "127.0.0.1", UserAgent: "Welio test", Origin: "http://localhost:3000"}
 	emailAddress := "auth-" + uuid.NewString() + "@example.test"

@@ -41,7 +41,7 @@ func run() error {
 	}
 	cfg := config.Config{Env: "test", Role: "api", HTTPAddr: "127.0.0.1:8181", DatabaseURL: raw, DatabaseURLDirect: raw,
 		PublicURL: "http://127.0.0.1:3101", APIServerURL: "http://127.0.0.1:8181", TrustedOrigins: []string{"http://127.0.0.1:3101"},
-		AuthSecret: []byte("welio-browser-tests-only-secret-12345"), AuthCookiePath: "/v1/auth", SignupEnabled: true, AWSRegion: "eu-north-1"}
+		AuthSecret: []byte("welio-browser-tests-only-secret-12345"), AuthCookiePath: "/v1/auth", AWSRegion: "eu-north-1"}
 	d, cleanup, err := app.Build(ctx, cfg, slog.Default())
 	if err != nil {
 		return err

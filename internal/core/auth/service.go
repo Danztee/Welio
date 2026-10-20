@@ -74,9 +74,6 @@ type LoginInput struct {
 }
 
 func (s *Service) Register(ctx context.Context, input RegisterInput, meta httpx.RequestMeta) (*AuthResult, error) {
-	if !s.Cfg.SignupEnabled {
-		return nil, httpx.E(403, "signup_disabled", "New account creation is currently disabled.")
-	}
 	if !s.Limiter.Allow("register:ip:"+meta.IP, 10, time.Hour) {
 		return nil, rateLimited()
 	}
