@@ -25,7 +25,7 @@ import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type Data = WorkspaceDashboardData;
 async function save(
@@ -68,14 +68,16 @@ export function BookingPolicies({ data }: { data: Data }) {
     setSavingPolicies(true);
     try {
       await save(saveBookingPoliciesAction, w.id, result.data);
-      toast.success("Booking policies saved.");
+      toast.add({ title: "Booking policies saved.", type: "success" });
       router.refresh();
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not save booking rules.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not save booking rules.",
+        type: "error",
+      });
     } finally {
       setSavingPolicies(false);
     }
@@ -88,12 +90,14 @@ export function BookingPolicies({ data }: { data: Data }) {
     setSavingReminder(true);
     try {
       await save(saveReminderPolicyAction, w.id, { enabled: reminderEnabled });
-      toast.success("Reminder settings saved.");
+      toast.add({ title: "Reminder settings saved.", type: "success" });
       router.refresh();
     } catch (cause) {
-      toast.error(
-        cause instanceof Error ? cause.message : "Could not save reminders.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error ? cause.message : "Could not save reminders.",
+        type: "error",
+      });
     } finally {
       setSavingReminder(false);
     }
@@ -117,7 +121,7 @@ export function BookingPolicies({ data }: { data: Data }) {
             {policyValidationError && (
               <Notice error>{policyValidationError}</Notice>
             )}
-            <div className="grid gap-5 sm:grid-cols-2">
+            <FieldGroup className="grid gap-5 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="booking-lead-hours">
                   Minimum notice (hours)
@@ -180,7 +184,7 @@ export function BookingPolicies({ data }: { data: Data }) {
                   ))}
                 </NativeSelect>
               </Field>
-            </div>
+            </FieldGroup>
             <Button
               type="submit"
               disabled={savingPolicies}

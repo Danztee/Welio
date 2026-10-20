@@ -9,7 +9,7 @@ import {
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { StaffAvailabilityFields } from "./staff-availability-fields";
 import { StaffEditorFooter } from "./staff-editor-footer";
 import { StaffFormFields } from "./staff-form-fields";
@@ -67,11 +67,13 @@ export function StaffEditor({
       await onSave(new FormData(e.currentTarget));
       onClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Could not save. Please try again.",
-      );
+      toast.add({
+        title:
+          err instanceof Error
+            ? err.message
+            : "Could not save. Please try again.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

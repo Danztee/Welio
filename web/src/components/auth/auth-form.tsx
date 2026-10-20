@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { TextLink } from "@/components/ui/text-link";
@@ -89,7 +89,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           return;
         }
 
-        toast.error(response.error.message);
+        toast.add({ title: response.error.message, type: "error" });
 
         return;
       }
@@ -102,7 +102,10 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         ),
       );
     } catch {
-      toast.error("We couldn’t reach the server. Please try again.");
+      toast.add({
+        title: "We couldn’t reach the server. Please try again.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

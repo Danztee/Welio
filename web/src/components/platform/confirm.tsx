@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -54,12 +54,13 @@ export function Confirm({
               setBusy(true);
               try {
                 await onConfirm();
-                toast.success("Done.");
+                toast.add({ title: "Done.", type: "success" });
                 onClose();
               } catch (e) {
-                toast.error(
-                  e instanceof Error ? e.message : "Please try again.",
-                );
+                toast.add({
+                  title: e instanceof Error ? e.message : "Please try again.",
+                  type: "error",
+                });
               } finally {
                 setBusy(false);
               }

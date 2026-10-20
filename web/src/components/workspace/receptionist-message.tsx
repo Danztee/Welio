@@ -2,6 +2,7 @@
 
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Message, MessageContent } from "@/components/ui/message";
+import { Separator } from "@/components/ui/separator";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { type ReactNode } from "react";
@@ -71,7 +72,7 @@ const markdownComponents: Components = {
     <th className="border-b px-2 py-1.5 font-semibold">{children}</th>
   ),
   td: ({ children }) => <td className="border-b px-2 py-1.5">{children}</td>,
-  hr: () => <hr className="border-border" />,
+  hr: () => <Separator className="my-2" />,
 };
 
 function ChatMarkdown({ children }: { children: string }) {

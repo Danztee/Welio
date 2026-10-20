@@ -20,7 +20,7 @@ import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { ServiceAreasField } from "./service-areas-field";
 import { ImagePlusIcon, Trash2Icon } from "lucide-react";
 import { useRef, useState, type FormEvent, type RefObject } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type Workspace = WorkspaceDashboardData["workspace"];
 
@@ -311,13 +311,13 @@ export function BusinessSettings({
     if (!file) return;
 
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      toast.error("Choose a PNG, JPG, or WebP image.");
+      toast.add({ title: "Choose a PNG, JPG, or WebP image.", type: "error" });
 
       return;
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      toast.error("Choose an image smaller than 8 MB.");
+      toast.add({ title: "Choose an image smaller than 8 MB.", type: "error" });
 
       return;
     }
@@ -356,11 +356,13 @@ export function BusinessSettings({
       });
       setLogo(dataUrl);
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not prepare this image.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not prepare this image.",
+        type: "error",
+      });
     } finally {
       setPreparingLogo(false);
       if (logoInput.current) logoInput.current.value = "";
@@ -385,7 +387,7 @@ export function BusinessSettings({
       currency: text(form, "currency"),
     });
     if (!result.success) {
-      toast.error(result.error.issues[0].message);
+      toast.add({ title: result.error.issues[0].message, type: "error" });
 
       return;
     }
@@ -393,13 +395,15 @@ export function BusinessSettings({
     setSaving(true);
     try {
       await onSave(result.data);
-      toast.success("Business details saved.");
+      toast.add({ title: "Business details saved.", type: "success" });
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not save business details.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not save business details.",
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }

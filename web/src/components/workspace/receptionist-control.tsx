@@ -14,7 +14,7 @@ import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { z } from "zod";
 import { apiUrl } from "@/lib/api-url";
 import { readReceptionistStream } from "@/lib/receptionist/stream-client";
@@ -79,7 +79,7 @@ export function ReceptionistControl({
       faqs: settings.faqs.map(({ question, answer }) => ({ question, answer })),
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.add({ title: parsed.error.issues[0].message, type: "error" });
 
       return;
     }
@@ -93,12 +93,14 @@ export function ReceptionistControl({
 
       setSaved(settings);
       setTurns([]);
-      toast.success("Receptionist settings saved.");
+      toast.add({ title: "Receptionist settings saved.", type: "success" });
       router.refresh();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not save. Try again.",
-      );
+      toast.add({
+        title:
+          error instanceof Error ? error.message : "Could not save. Try again.",
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -150,11 +152,13 @@ export function ReceptionistControl({
       setText("");
     } catch (error) {
       setText(message);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not test the receptionist.",
-      );
+      toast.add({
+        title:
+          error instanceof Error
+            ? error.message
+            : "Could not test the receptionist.",
+        type: "error",
+      });
     } finally {
       pending.current = false;
       setActiveMessage(null);

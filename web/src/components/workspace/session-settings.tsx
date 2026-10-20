@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authClient } from "@/lib/auth-client";
 import { MonitorIcon, SmartphoneIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type Session = NonNullable<
   Awaited<ReturnType<typeof authClient.listSessions>>["data"]
@@ -318,9 +318,13 @@ export function SessionSettings() {
       const result = await authClient.revokeSession({ id: session.id });
       if (result.error) throw Error("Could not sign out that device.");
 
-      if (await refresh()) toast.success("Device signed out.");
+      if (await refresh())
+        toast.add({ title: "Device signed out.", type: "success" });
     } catch {
-      toast.error("Could not sign out that device. Please try again.");
+      toast.add({
+        title: "Could not sign out that device. Please try again.",
+        type: "error",
+      });
     } finally {
       setPending("");
     }
@@ -334,9 +338,13 @@ export function SessionSettings() {
       const result = await authClient.revokeOtherSessions();
       if (result.error) throw Error("Could not sign out your other devices.");
 
-      if (await refresh()) toast.success("Other devices signed out.");
+      if (await refresh())
+        toast.add({ title: "Other devices signed out.", type: "success" });
     } catch {
-      toast.error("Could not sign out your other devices. Please try again.");
+      toast.add({
+        title: "Could not sign out your other devices. Please try again.",
+        type: "error",
+      });
     } finally {
       setPending("");
     }

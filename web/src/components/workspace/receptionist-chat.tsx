@@ -1,7 +1,7 @@
 "use client";
 
 import { z } from "zod";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   chatStartResponseSchema,
@@ -523,11 +523,13 @@ export function ReceptionistChat({
       started.current = false;
       setConnectFailed(true);
       setConnectionStatus("unavailable");
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not start the conversation. Please retry.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not start the conversation. Please retry.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }
@@ -560,13 +562,15 @@ export function ReceptionistChat({
 
       return true;
     } catch (cause) {
-      toast.error(
-        cause instanceof z.ZodError
-          ? "Could not read the response. Please retry."
-          : cause instanceof Error
-            ? cause.message
-            : "Connection failed. Please retry.",
-      );
+      toast.add({
+        title:
+          cause instanceof z.ZodError
+            ? "Could not read the response. Please retry."
+            : cause instanceof Error
+              ? cause.message
+              : "Connection failed. Please retry.",
+        type: "error",
+      });
 
       return false;
     } finally {
@@ -610,11 +614,13 @@ export function ReceptionistChat({
         ...previous,
         retry: { key: attempt.current!.key, text: value },
       }));
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Connection failed. Please retry.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Connection failed. Please retry.",
+        type: "error",
+      });
     } finally {
       setActiveMessage(null);
       setStreamingReply("");
@@ -652,11 +658,13 @@ export function ReceptionistChat({
       setShowingMessages(false);
       setConnectionStatus("online");
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not start a new conversation. Please retry.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not start a new conversation. Please retry.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }
@@ -685,11 +693,13 @@ export function ReceptionistChat({
       setShowingMessages(false);
       setConnectionStatus("online");
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not open this conversation. Please retry.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not open this conversation. Please retry.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

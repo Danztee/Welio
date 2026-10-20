@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthShell } from "./auth-shell";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -37,15 +37,18 @@ export function AccountFlow({ mode }: { mode: Mode }) {
     try {
       const result = await submitRequest(mode, data, token);
       if (result.error) {
-        toast.error(result.error.message);
+        toast.add({ title: result.error.message, type: "error" });
 
         return;
       }
 
       setDone(true);
-      toast.success(copy[mode].success);
+      toast.add({ title: copy[mode].success, type: "success" });
     } catch {
-      toast.error("We couldn’t reach the server. Please try again.");
+      toast.add({
+        title: "We couldn’t reach the server. Please try again.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

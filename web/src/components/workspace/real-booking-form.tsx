@@ -1,7 +1,15 @@
 "use client";
 import { createWorkspaceBookingAction } from "@/app/dashboard/booking-actions";
 import { text } from "@/components/platform/form-utils";
-import { Blank } from "@/components/platform/shared";
+import { Blank, Notice } from "@/components/platform/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import type {
   BookingInput,
   Catalog,
@@ -18,7 +26,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { z } from "zod";
 import { formatWhen } from "./booking-format";
 import { RealBookingAvailability } from "./real-booking-availability";
@@ -115,56 +123,59 @@ function WaitlistJoinForm({
   }
 
   return (
-    <div className="rounded-xl border p-4">
-      <h2 className="font-medium">Join the waitlist</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        We’ll email you if a time opens on this date. The email will link back
-        here to book; it does not reserve a time.
-      </p>
-      {joined ? (
-        <p role="status" className="mt-3 text-sm">
-          You’re on the waitlist. Check your email if a time opens.
-        </p>
-      ) : (
-        <form
-          onSubmit={(event) => void join(event)}
-          className="mt-4 grid gap-3 sm:grid-cols-2"
-        >
-          <label className="text-sm">
-            Name{" "}
-            <Input
-              name="name"
-              autoComplete="name"
-              maxLength={100}
-              className="mt-1"
-            />
-          </label>
-          <label className="text-sm">
-            Email{" "}
-            <Input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              maxLength={254}
-              className="mt-1"
-            />
-          </label>
-          {error && (
-            <p role="alert" className="text-sm text-destructive sm:col-span-2">
-              {error}
-            </p>
-          )}
-          <Button
-            type="submit"
-            disabled={busy}
-            className="sm:col-span-2 sm:justify-self-start"
-          >
-            {busy ? "Joining…" : "Notify me if a time opens"}
-          </Button>
-        </form>
-      )}
-    </div>
+    <Card className="gap-4 p-4">
+      <CardHeader className="p-0">
+        <CardTitle className="text-base">Join the waitlist</CardTitle>
+        <CardDescription>
+          We’ll email you if a time opens on this date. The email will link back
+          here to book; it does not reserve a time.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 p-0">
+        {joined ? (
+          <Notice tone="success">
+            You’re on the waitlist. Check your email if a time opens.
+          </Notice>
+        ) : (
+          <form onSubmit={(event) => void join(event)}>
+            <FieldGroup className="grid gap-3 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="waitlist-name">Name</FieldLabel>
+                <Input
+                  id="waitlist-name"
+                  name="name"
+                  autoComplete="name"
+                  maxLength={100}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="waitlist-email">Email</FieldLabel>
+                <Input
+                  id="waitlist-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  maxLength={254}
+                />
+              </Field>
+              {error && (
+                <div className="sm:col-span-2">
+                  <Notice error>{error}</Notice>
+                </div>
+              )}
+              <Button
+                type="submit"
+                disabled={busy}
+                className="sm:col-span-2 sm:justify-self-start"
+              >
+                {busy ? "Joining…" : "Notify me if a time opens"}
+              </Button>
+            </FieldGroup>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -259,7 +270,7 @@ export function RealBookingForm({
         const message =
           e instanceof Error ? e.message : "Could not load availability.";
         setAvailabilityError(message);
-        toast.error(message);
+        toast.add({ title: message, type: "error" });
       } finally {
         if (requestVersion === availabilityRequestRef.current) setBusy(false);
       }
@@ -332,14 +343,16 @@ export function RealBookingForm({
       }
 
       setReceipt(id);
-      toast.success("Appointment booked.");
+      toast.add({ title: "Appointment booked.", type: "success" });
       onDone?.(id);
     } catch (e) {
-      toast.error(
-        e instanceof Error
-          ? e.message
-          : "Could not confirm your booking. Please retry.",
-      );
+      toast.add({
+        title:
+          e instanceof Error
+            ? e.message
+            : "Could not confirm your booking. Please retry.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

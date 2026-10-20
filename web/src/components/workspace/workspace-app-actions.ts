@@ -10,7 +10,7 @@ import { authClient } from "@/lib/auth-client";
 import { accountNamesSchema } from "@/lib/auth/validation";
 import { runServerAction } from "@/lib/run-server-action";
 import type { WorkspaceEditorKind } from "./workspace-editor-fields";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type Data = WorkspaceDashboardData;
 type MutateOperation = (
@@ -62,7 +62,7 @@ export function createWorkspaceAppActions({
     await saveEditorInput(editor, input, mutate);
 
     if (editor === "assignments") {
-      toast.success("Team assignments saved.");
+      toast.add({ title: "Team assignments saved.", type: "success" });
 
       return;
     }
@@ -73,19 +73,21 @@ export function createWorkspaceAppActions({
       return;
     }
 
-    toast.success("Changes saved.");
+    toast.add({ title: "Changes saved.", type: "success" });
   }
 
   async function resendInvite(email: string) {
     try {
       await mutate(inviteWorkspaceMemberAction, email);
-      toast.success("Dashboard invitation sent.");
+      toast.add({ title: "Dashboard invitation sent.", type: "success" });
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not send the invitation.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not send the invitation.",
+        type: "error",
+      });
     }
   }
 
@@ -166,15 +168,23 @@ async function inviteNewStaffMember(
   if (email && !alreadyHasAccess) {
     try {
       await mutate(inviteWorkspaceMemberAction, email);
-      toast.success("Team member added. Dashboard invitation sent.");
+      toast.add({
+        title: "Team member added. Dashboard invitation sent.",
+        type: "success",
+      });
     } catch {
-      toast.warning(
-        "Team member added, but the dashboard invitation could not be sent. Use the team member menu to retry.",
-      );
+      toast.add({
+        title:
+          "Team member added, but the dashboard invitation could not be sent. Use the team member menu to retry.",
+        type: "warning",
+      });
     }
 
     return;
   }
 
-  toast.success("Team member added with existing dashboard access.");
+  toast.add({
+    title: "Team member added with existing dashboard access.",
+    type: "success",
+  });
 }

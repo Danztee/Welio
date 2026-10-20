@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { WorkspaceDashboardData } from "@/features/workspaces/types";
@@ -194,17 +194,20 @@ export function WorkspaceOnboarding({
         if (!finished.ok) throw Error(finished.error);
       }
 
-      toast.success(
-        workspace ? "Business setup completed." : "Business created.",
-      );
+      toast.add({
+        title: workspace ? "Business setup completed." : "Business created.",
+        type: "success",
+      });
       router.replace(`/dashboard?workspace=${result.id}`);
       router.refresh();
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not save your business. Please try again.",
-      );
+      toast.add({
+        title:
+          cause instanceof Error
+            ? cause.message
+            : "Could not save your business. Please try again.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

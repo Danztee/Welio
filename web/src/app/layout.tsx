@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
 export const metadata: Metadata = {

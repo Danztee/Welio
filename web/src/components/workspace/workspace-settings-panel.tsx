@@ -28,7 +28,7 @@ import { BusinessSettings } from "./business-settings";
 import { BookingPolicies } from "./booking-policies";
 import { PublicBookingSettings } from "./public-booking-settings";
 import { SessionSettings } from "./session-settings";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type SettingsTab =
   | "business"
@@ -83,7 +83,7 @@ export function WorkspaceSettingsPanel({
       lastName: text(form, "lastName"),
     });
     if (!names.success) {
-      toast.error(names.error.issues[0].message);
+      toast.add({ title: names.error.issues[0].message, type: "error" });
 
       return;
     }
@@ -93,10 +93,13 @@ export function WorkspaceSettingsPanel({
       const result = await authClient.updateUser(names.data);
       if (result.error) throw Error("Could not update your profile.");
 
-      toast.success("Profile saved.");
+      toast.add({ title: "Profile saved.", type: "success" });
       router.refresh();
     } catch {
-      toast.error("Could not update your profile. Please try again.");
+      toast.add({
+        title: "Could not update your profile. Please try again.",
+        type: "error",
+      });
     } finally {
       setSavingProfile(false);
     }
@@ -175,7 +178,7 @@ export function WorkspaceSettingsPanel({
               action={saveProfile}
             >
               <FieldGroup>
-                <div className="grid gap-5 sm:grid-cols-2">
+                <FieldGroup className="grid gap-5 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="settings-first-name">
                       First name
@@ -202,7 +205,7 @@ export function WorkspaceSettingsPanel({
                       required
                     />
                   </Field>
-                </div>
+                </FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="settings-email">Email</FieldLabel>
                   <Input id="settings-email" value={user.email} readOnly />

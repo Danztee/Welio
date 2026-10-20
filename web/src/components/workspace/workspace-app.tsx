@@ -21,7 +21,7 @@ import type {
 import { BellIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import {
   getEditorFields,
   type WorkspaceEditorKind as EditorKind,
@@ -133,7 +133,7 @@ export function WorkspaceApp({
       onSignOut={async () => {
         const result = await authClient.signOut();
         if (result.error) {
-          toast.error("Could not sign out. Try again.");
+          toast.add({ title: "Could not sign out. Try again.", type: "error" });
 
           return;
         }

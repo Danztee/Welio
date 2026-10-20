@@ -26,7 +26,7 @@ function Detail({
         className="mt-0.5 size-4 shrink-0 text-muted-foreground"
         aria-hidden="true"
       />
-      <div className="min-w-0 space-y-1">
+      <div className="flex min-w-0 flex-col gap-1">
         <dt className="text-xs text-muted-foreground">{label}</dt>
         <dd className="text-sm font-medium break-words">{children}</dd>
       </div>
@@ -61,7 +61,7 @@ export function BookingDetails({ view }: { view: BookingView }) {
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <CalendarDaysIcon className="size-4" aria-hidden="true" />
           </div>
-          <div className="min-w-0 space-y-1">
+          <div className="flex min-w-0 flex-col gap-1">
             <p className="text-xs font-medium text-muted-foreground">
               Date and time
             </p>

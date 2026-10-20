@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { runServerAction } from "@/lib/run-server-action";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 export function AcceptInvite({ token }: { token: string }) {
   const router = useRouter();
@@ -21,12 +21,15 @@ export function AcceptInvite({ token }: { token: string }) {
               acceptInviteAction(token),
             );
             if (result.ok) {
-              toast.success("Invitation accepted.");
+              toast.add({ title: "Invitation accepted.", type: "success" });
               router.push(`/dashboard?workspace=${result.id}`);
               router.refresh();
-            } else toast.error(result.error);
+            } else toast.add({ title: result.error, type: "error" });
           } catch {
-            toast.error("Could not accept this invitation. Try again.");
+            toast.add({
+              title: "Could not accept this invitation. Try again.",
+              type: "error",
+            });
           } finally {
             setBusy(false);
           }

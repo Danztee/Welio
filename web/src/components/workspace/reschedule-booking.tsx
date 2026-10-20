@@ -24,7 +24,7 @@ import type {
   Slot,
 } from "@/lib/domain/bookings/contract";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { formatBookingDate } from "./booking-format";
 
 function parseDate(value: string) {
@@ -105,12 +105,13 @@ async function submitReschedule({
       time,
       staffId,
     });
-    toast.success("Appointment rescheduled.");
+    toast.add({ title: "Appointment rescheduled.", type: "success" });
     onClose();
   } catch (error) {
-    toast.error(
-      error instanceof Error ? error.message : "Could not reschedule.",
-    );
+    toast.add({
+      title: error instanceof Error ? error.message : "Could not reschedule.",
+      type: "error",
+    });
   } finally {
     setSaving(false);
   }
@@ -364,7 +365,7 @@ export function RescheduleBooking({
           ? error.message
           : "Could not check availability.";
       setAvailabilityError(message);
-      toast.error(message);
+      toast.add({ title: message, type: "error" });
     } finally {
       setLoadingVersion((current) => (current === version ? null : current));
     }

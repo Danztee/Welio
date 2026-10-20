@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,15 +100,17 @@ export function Editor({
     setBusy(true);
     try {
       await onSave(new FormData(e.currentTarget));
-      if (successMessage) toast.success(successMessage);
+      if (successMessage) toast.add({ title: successMessage, type: "success" });
 
       onClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Could not save. Please try again.",
-      );
+      toast.add({
+        title:
+          err instanceof Error
+            ? err.message
+            : "Could not save. Please try again.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }

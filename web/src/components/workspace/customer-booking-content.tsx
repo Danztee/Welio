@@ -38,7 +38,7 @@ function BookingStatusHeader({ view }: { view: BookingView }) {
           : "Your appointment";
 
   return (
-    <header className="space-y-3">
+    <header className="flex flex-col gap-3">
       <Badge variant="outline" tone={statusTone} className="capitalize">
         {isConfirmed ? (
           <CircleCheckIcon data-icon="inline-start" aria-hidden="true" />
@@ -47,7 +47,7 @@ function BookingStatusHeader({ view }: { view: BookingView }) {
         ) : null}
         {view.status.replaceAll("_", " ")}
       </Badge>
-      <div className="space-y-1.5">
+      <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
           {view.serviceName} <span aria-hidden="true">·</span> {view.business}
@@ -78,7 +78,7 @@ function BookingManagement({
     <>
       {view.canChange ? (
         <div className="flex flex-col gap-3 border-y py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
+          <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">Need to make a change?</p>
             <p className="text-sm text-muted-foreground">
               Reschedule or cancel this appointment.
