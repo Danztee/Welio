@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Brand } from "@/components/brand";
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { DashboardNavigation } from "./dashboard-navigation";
 import { type NavigationItem } from "./dashboard-shell-types";
+import { Spinner } from "@/components/ui/spinner";
 
 export function DashboardShell({
   section,
@@ -29,6 +30,10 @@ export function DashboardShell({
   headerActions?: ReactNode;
   children: ReactNode;
 }) {
+  const [pendingSection, setPendingSection] = useState<string | null>(null);
+  const visiblePendingSection =
+    pendingSection === section ? null : pendingSection;
+
   return (
     <TooltipProvider>
       <SidebarProvider
@@ -54,7 +59,13 @@ export function DashboardShell({
             {picker}
           </SidebarHeader>
           <SidebarContent>
-            <DashboardNavigation section={section} navigation={navigation} />
+            <DashboardNavigation
+              section={section}
+              navigation={navigation}
+              onNavigate={(name) => {
+                if (name !== section) setPendingSection(name);
+              }}
+            />
           </SidebarContent>
           <SidebarFooter className="px-4 pb-5 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:[&_.account-trigger-chevron]:hidden group-data-[collapsible=icon]:[&_.account-trigger-details]:hidden">
             {accountMenu}
@@ -72,7 +83,19 @@ export function DashboardShell({
               {headerActions}
             </div>
           </header>
-          {children}
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+            {children}
+            {visiblePendingSection && (
+              <div
+                className="absolute inset-0 z-20 flex items-center justify-center gap-2 bg-background/80 text-sm text-muted-foreground backdrop-blur-[1px]"
+                role="status"
+                aria-label={`Loading ${visiblePendingSection}`}
+              >
+                <Spinner aria-hidden="true" />
+                <span>Loading {visiblePendingSection}…</span>
+              </div>
+            )}
+          </div>
         </div>
       </SidebarProvider>
     </TooltipProvider>

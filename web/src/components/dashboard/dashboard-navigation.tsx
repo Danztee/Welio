@@ -1,7 +1,6 @@
 "use client";
 
-import Link, { useLinkStatus } from "next/link";
-import { Spinner } from "@/components/ui/spinner";
+import Link from "next/link";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -13,24 +12,14 @@ import {
 } from "@/components/ui/sidebar";
 import type { NavigationItem } from "./dashboard-shell-types";
 
-function NavigationIcon({
-  name,
-  icon: Icon,
-}: Pick<NavigationItem, "name" | "icon">) {
-  const { pending } = useLinkStatus();
-  return pending ? (
-    <Spinner aria-label={`Opening ${name}`} />
-  ) : (
-    <Icon aria-hidden="true" />
-  );
-}
-
 export function DashboardNavigation({
   section,
   navigation,
+  onNavigate,
 }: {
   section: string;
   navigation: NavigationItem[];
+  onNavigate: (name: string) => void;
 }) {
   const { setOpenMobile } = useSidebar();
 
@@ -46,14 +35,19 @@ export function DashboardNavigation({
                 {items.map(({ name, href, icon: Icon }) => (
                   <SidebarMenuItem key={name}>
                     <SidebarMenuButton
-                      render={<Link href={href} />}
+                      render={
+                        <Link
+                          href={href}
+                          onNavigate={() => onNavigate(name)}
+                        />
+                      }
                       isActive={section === name}
                       aria-current={section === name ? "page" : undefined}
                       tooltip={name}
                       onClick={() => setOpenMobile(false)}
                       className="h-11 gap-3 md:h-10"
                     >
-                      <NavigationIcon name={name} icon={Icon} />
+                      <Icon aria-hidden="true" />
                       <span>{name}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
