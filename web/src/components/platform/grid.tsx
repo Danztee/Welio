@@ -12,6 +12,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Blank } from "./blank";
 import { SearchField } from "./search-field";
+import { cn } from "@/lib/utils";
 
 export function Grid<T>({
   rows,
@@ -51,8 +52,8 @@ export function Grid<T>({
       ? "Try a different search."
       : (emptyDescription ?? "There’s nothing to show here yet.");
 
-  return (
-    <Card className="min-w-0 gap-0 py-0">
+  const content = (
+    <>
       {!compact && (
         <GridToolbar
           externalSearch={externalSearch}
@@ -62,12 +63,20 @@ export function Grid<T>({
         />
       )}
       {visibleRows.length ? (
-        <RecordsTable rows={visibleRows} columns={columns} />
+        <RecordsTable rows={visibleRows} columns={columns} compact={compact} />
       ) : (
         <Blank title={emptyTitle} description={emptyMessage} />
       )}
       {!compact && <GridFooter count={visibleRows.length} footer={footer} />}
-    </Card>
+    </>
+  );
+
+  return compact ? (
+    <Card className="min-w-0 gap-0 py-0">{content}</Card>
+  ) : (
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
+      {content}
+    </div>
   );
 }
 
@@ -83,7 +92,7 @@ function GridToolbar({
   toolbar?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b bg-muted/35 p-4 sm:px-6">
+    <div className="flex flex-wrap items-center gap-3 border-b border-border p-4 sm:px-6">
       {!externalSearch && (
         <SearchField
           label="Search records"
@@ -99,13 +108,15 @@ function GridToolbar({
 function RecordsTable<T>({
   rows,
   columns,
+  compact,
 }: {
   rows: T[];
   columns: { label: string; cell: (row: T) => ReactNode }[];
+  compact: boolean;
 }) {
   return (
     <Table>
-      <TableHeader className="bg-muted/35">
+      <TableHeader className={compact ? "bg-muted/35" : undefined}>
         <TableRow>
           {columns.map((column) => (
             <TableHead

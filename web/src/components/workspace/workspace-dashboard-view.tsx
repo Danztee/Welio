@@ -290,12 +290,7 @@ function SectionHeading({ model }: { model: WorkspaceRenderModel }) {
     ) : undefined;
 
   const descriptions: Partial<Record<DashboardSection, string>> = {
-    Customers: "Keep customer details and booking history in one place.",
     Receptionist: "Shape the customer conversation and test it before sharing.",
-    Services:
-      "Manage what customers can book, including prices and availability.",
-    Team: "Manage the people who provide your services.",
-    Notifications: "Track booking emails and delivery attempts.",
   };
 
   return (
@@ -385,6 +380,14 @@ function WorkspacePageContent({ model }: { model: WorkspaceRenderModel }) {
 
 function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
   const { section } = model;
+  const usesMainWorkspaceCard = [
+    "Appointments",
+    "Customers",
+    "Services",
+    "Team",
+    "Time off",
+    "Notifications",
+  ].includes(section);
 
   return (
     <main
@@ -396,16 +399,24 @@ function WorkspaceMain({ model }: { model: WorkspaceRenderModel }) {
     >
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-1 py-4 sm:px-2 sm:py-6 [&>*]:shrink-0",
-          section === "Overview" && "p-0",
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+          usesMainWorkspaceCard && "rounded-xl border border-border bg-card",
         )}
-        role="region"
-        aria-label={`${section} content`}
-        tabIndex={0}
       >
-        {section === "Overview" && <h1 className="sr-only">Overview</h1>}
-        <SectionHeading model={model} />
-        <WorkspacePageContent model={model} />
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain [&>*]:shrink-0",
+            usesMainWorkspaceCard ? "p-4 sm:p-6" : "px-1 py-4 sm:px-2 sm:py-6",
+            section === "Overview" && "p-0",
+          )}
+          role="region"
+          aria-label={`${section} content`}
+          tabIndex={0}
+        >
+          {section === "Overview" && <h1 className="sr-only">Overview</h1>}
+          <SectionHeading model={model} />
+          <WorkspacePageContent model={model} />
+        </div>
       </div>
     </main>
   );
