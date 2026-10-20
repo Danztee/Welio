@@ -48,6 +48,12 @@ import { EyeIcon, MoreHorizontalIcon } from "lucide-react";
 
 type Data = WorkspaceDashboardData;
 
+const appointmentDetailsSheetClassName = [
+  floatingSheetClassName,
+  "!top-1/2 !right-auto !bottom-auto !left-1/2 !h-auto !w-[calc(100vw-2rem)] !max-w-[400px] !-translate-x-1/2 !-translate-y-1/2",
+  "sm:!inset-y-4 sm:!top-4 sm:!right-4 sm:!bottom-4 sm:!left-auto sm:!h-[calc(100%-2rem)] sm:!w-[400px] sm:!max-w-[calc(100vw-2rem)] sm:!translate-x-0 sm:!translate-y-0",
+].join(" ");
+
 async function save(workspaceId: string, input: unknown) {
   const result = await runServerAction(() =>
     changeWorkspaceBookingAction(workspaceId, input),
@@ -261,7 +267,10 @@ function AppointmentDialogs({
       )}
       {view && (
         <Sheet open onOpenChange={(open) => !open && onCloseDetails()}>
-          <SheetContent side="right" className={floatingSheetClassName}>
+          <SheetContent
+            side="right"
+            className={appointmentDetailsSheetClassName}
+          >
             <SheetHeader>
               <SheetTitle>{view.name || "Appointment details"}</SheetTitle>
               <SheetDescription>
@@ -272,15 +281,17 @@ function AppointmentDialogs({
               <div className="flex flex-col gap-4">
                 <BookingDetails view={view} />
                 {view.status === "confirmed" && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 gap-2 border-t pt-4">
                     <Button
                       variant="outline"
+                      className="w-full"
                       onClick={() => onReschedulingChange(true)}
                     >
                       Reschedule
                     </Button>
                     <Button
                       variant="destructive"
+                      className="w-full"
                       onClick={() =>
                         onCommandChange({
                           action: "cancel",
@@ -292,6 +303,7 @@ function AppointmentDialogs({
                     </Button>
                     <Button
                       variant="success"
+                      className="w-full"
                       onClick={() =>
                         onCommandChange({
                           action: "completed",
@@ -303,6 +315,7 @@ function AppointmentDialogs({
                     </Button>
                     <Button
                       variant="warning"
+                      className="w-full"
                       onClick={() =>
                         onCommandChange({
                           action: "no_show",
