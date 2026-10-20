@@ -9,9 +9,8 @@ staff, then publish the booking page.
 
 ## Owner workflow
 
-- Configure the business profile, time zone, currency, booking location,
-  booking rules, services, team schedules, breaks, service assignments, and
-  time off.
+- Configure the business profile, time zone, currency, booking location, booking
+  rules, services, team schedules, breaks, service assignments, and time off.
 - Publishing requires completed setup, a business contact email, and an active
   service assigned to active staff. Unpublishing stops new public bookings;
   existing private customer-management links remain valid.
@@ -39,12 +38,12 @@ booking if the new slot is unavailable.
 ## Availability and integrity
 
 PostgreSQL stores appointment instants in UTC; UI and email display the saved
-business time zone. Availability uses active service/staff eligibility,
-working days and hours, breaks, time off, lead time, booking horizon, slot
-interval, duration, buffers, and existing appointments. Booking operations
-recheck availability while holding the workspace lock. Database constraints
-protect workspace-scoped references, and booking idempotency prevents retries
-from creating duplicate appointments or messages.
+business time zone. Availability uses active service/staff eligibility, working
+days and hours, breaks, time off, lead time, booking horizon, slot interval,
+duration, buffers, and existing appointments. Booking operations recheck
+availability while holding the workspace lock. Database constraints protect
+workspace-scoped references, and booking idempotency prevents retries from
+creating duplicate appointments or messages.
 
 Public management tokens are bounded and hashed at rest. Public routes return
 only published catalog and available slots, never customer records, private
@@ -65,9 +64,9 @@ require an allowed origin, JSON content type, bounded body, and rate limit.
 | `POST /v1/workspaces/{workspaceID}/appointments`                 | Create an owner-entered appointment               |
 | `POST /v1/workspaces/{workspaceID}/appointments/{appointmentID}` | Change appointment status or time                 |
 
-The public Go API is configured with `NEXT_PUBLIC_WELIO_API_URL` in the web
-app. Owner server actions use `WELIO_API_INTERNAL_URL` and revalidate the
-dashboard after successful writes.
+The public Go API is configured with `NEXT_PUBLIC_WELIO_API_URL` in the web app.
+Owner server actions use `WELIO_API_INTERNAL_URL` and revalidate the dashboard
+after successful writes.
 
 ## Email and notifications
 
@@ -79,19 +78,18 @@ content or private management tokens. Failed booking notifications can be
 retried by an owner. Delivery is at least once, so an ambiguous provider timeout
 can result in a duplicate message.
 
-Configure a verified `EMAIL_FROM` and a server-only
-`ZEPTOMAIL_SEND_MAIL_TOKEN`. `sent` means ZeptoMail accepted the message; it
-does not guarantee inbox delivery. Run the Go worker role continuously so
-River can deliver email and schedule reminders. See [the API guide](./API.md)
-for worker configuration.
+Configure a verified `EMAIL_FROM` and a server-only `ZEPTOMAIL_SEND_MAIL_TOKEN`.
+`sent` means ZeptoMail accepted the message; it does not guarantee inbox
+delivery. Run the Go worker role continuously so River can deliver email and
+schedule reminders. See [the API guide](./API.md) for worker configuration.
 
 ## Appointment reminders
 
 Reminders are off by default and owners can enable them in Settings. Customers
 must consent to booking updates and reminders. The worker queues a reminder
-about 24 hours before an eligible confirmed appointment; bookings made less
-than 24 hours before their start do not receive one. Reminder times and content
-use the business time zone and saved appointment details.
+about 24 hours before an eligible confirmed appointment; bookings made less than
+24 hours before their start do not receive one. Reminder times and content use
+the business time zone and saved appointment details.
 
 Before sending, the worker checks the appointment version and status, customer
 consent, current workspace setting, and scheduled time. Rescheduling or closing

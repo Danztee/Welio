@@ -2,17 +2,18 @@
 
 Welio helps service businesses manage appointments, customers, staff schedules,
 and services. Its AI receptionist answers business questions and helps customers
-prepare and confirm bookings. The receptionist runs on Amazon Bedrock and exposes
-the same tenant-scoped booking operations through a Streamable HTTP MCP server.
+prepare and confirm bookings. The receptionist runs on Amazon Bedrock and
+exposes the same tenant-scoped booking operations through a Streamable HTTP MCP
+server.
 
 ## Architecture
 
 The repository uses a root Go module and a standalone Next.js application in
 `web/`. The Go API owns authentication, PostgreSQL, tenant authorization,
-booking rules, MCP, Bedrock calls, transactional mail delivery, and background jobs. Browser
-requests use `NEXT_PUBLIC_WELIO_API_URL`; Next.js server components and actions
-use the private `WELIO_API_INTERNAL_URL`. The web app does not connect to
-PostgreSQL.
+booking rules, MCP, Bedrock calls, transactional mail delivery, and background
+jobs. Browser requests use `NEXT_PUBLIC_WELIO_API_URL`; Next.js server
+components and actions use the private `WELIO_API_INTERNAL_URL`. The web app
+does not connect to PostgreSQL.
 
 The backend is organized by business area. Chat, external MCP clients, and the
 dashboard use the same booking and availability services, so each entry point
@@ -43,15 +44,16 @@ make dev
 
 `make setup` checks local prerequisites, installs dependencies, creates missing
 private env files, and generates a local auth secret. Existing env files are
-preserved. `make dev` starts PostgreSQL, waits for readiness, applies migrations,
-and launches the API, worker, and Next.js as separate processes in one terminal.
-Go changes rebuild and restart the Go processes; Next.js provides its own hot
-reload. After adding SQL migrations, run `make migrate` or restart `make dev`. Ctrl+C stops the launcher and its child processes. PostgreSQL retains its
-volume; use `make dev-db-down` to stop it.
+preserved. `make dev` starts PostgreSQL, waits for readiness, applies
+migrations, and launches the API, worker, and Next.js as separate processes in
+one terminal. Go changes rebuild and restart the Go processes; Next.js provides
+its own hot reload. After adding SQL migrations, run `make migrate` or restart
+`make dev`. Ctrl+C stops the launcher and its child processes. PostgreSQL
+retains its volume; use `make dev-db-down` to stop it.
 
-Open [http://127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up).
-Run `make doctor` to diagnose prerequisites, env configuration, and local ports.
-The individual `make api`, `make worker`, `make web`, and `make migrate` targets
+Open [http://127.0.0.1:3000/sign-up](http://127.0.0.1:3000/sign-up). Run
+`make doctor` to diagnose prerequisites, env configuration, and local ports. The
+individual `make api`, `make worker`, `make web`, and `make migrate` targets
 remain available.
 
 Set Bedrock credentials in `.env.api` for live receptionist responses, using the
@@ -72,11 +74,11 @@ External MCP clients connect to the business-scoped Streamable HTTP endpoint.
 Authentication uses a business-specific bearer secret or the optional
 service-level OAuth `client_credentials` grant. Configure credentials and
 `MCP_OAUTH_RESOURCE_URL` only in the Go API environment. Point it at the Go
-API's public MCP URL, such as
-`https://api.example.com/api/mcp/your-business`. The endpoint must use HTTPS
-outside local development. Follow [the receptionist and MCP guide](./docs/RECEPTIONIST.md)
-to configure and run an external Streamable HTTP MCP client.
-See [AWS integration notes](./docs/AWS-INTEGRATIONS.md) for the Bedrock runtime
+API's public MCP URL, such as `https://api.example.com/api/mcp/your-business`.
+The endpoint must use HTTPS outside local development. Follow
+[the receptionist and MCP guide](./docs/RECEPTIONIST.md) to configure and run an
+external Streamable HTTP MCP client. See
+[AWS integration notes](./docs/AWS-INTEGRATIONS.md) for the Bedrock runtime
 integration and Kiro Crew's role in development.
 
 ## Verification
@@ -89,40 +91,52 @@ make verify     # full Go, web, browser, and container verification
 ```
 
 `make check` runs contract and migration checks, formatting, Go vet and unit
-tests, web unit tests, TypeScript checks, and lint. `make test` provisions a
-disposable PostgreSQL database for the Go suite, and `make test-e2e` does the
-same for browser tests. `make verify` provisions one disposable database for
-the complete race-enabled Go suite, Go and Next.js production builds, browser
-tests, and the API/worker container smoke test. GitHub Actions runs the Go,
-web, browser, and image checks.
+tests, web unit tests, TypeScript checks, lint, and local deployment checks.
+`make test` provisions a disposable PostgreSQL database for the Go suite, and
+`make test-e2e` does the same for browser tests. `make verify` provisions one
+disposable database for the complete race-enabled Go suite, Go and Next.js
+production builds, browser tests, and the API/worker container smoke test.
+GitHub Actions runs the Go, web, browser, and image checks.
+
+## Deploy the Alexa+ demo to AWS
+
+The small, single-EC2 deployment runs the web app, Go API, worker, PostgreSQL,
+and Caddy proxy, with a CloudFront HTTPS address. Sign in with
+`aws login --region eu-north-1`, then run `make aws-up` to deploy the current
+working tree (Python 3.10+ and Git required). It uses an EC2 role for Bedrock
+and keeps the database and API ports private. See
+[the AWS deployment guide](./deploy/aws/README.md) for operations and cost
+boundaries.
 
 ## Repository layout
 
 ```text
 cmd/welio/                Go API, migration, health-check, and version commands
-contracts/                HTTP and MCP contracts
+contracts/                HTTP schema and generation guide
 internal/                 Application areas and infrastructure
 migrations/               PostgreSQL schema and queue migrations
 web/                      Next.js application
-docs/                     Setup and product guides
+docs/                     Architecture, configuration, and product guides
+deploy/aws/               AWS provisioning, releases, and operations
+scripts/                  Development launcher and test process runners
 Dockerfile                Go API and worker image
 docker-compose.dev.yml    Local PostgreSQL dependency
 ```
 
-Go commands run from the repository root; frontend commands run from `web/`.
-See the focused guides for [bookings](./docs/BOOKINGS.md) and
+Go commands run from the repository root; frontend commands run from `web/`. See
+the focused guides for [bookings](./docs/BOOKINGS.md) and
 [receptionist and MCP](./docs/RECEPTIONIST.md).
 
 ## Code conventions
 
-Run `make fmt` to format handwritten Go and frontend/configuration files, and
-`make format-check` to check their formatting. Both tools are pinned; CI runs
-the same checks. API artifacts remain owned by `make contracts`.
+Run `make fmt` to format handwritten Go, frontend/configuration files, and
+documentation; use `make format-check` to check their formatting. Both tools are
+pinned; CI runs the same checks. API artifacts remain owned by `make contracts`.
 
 See [the architecture guide](./docs/ARCHITECTURE.md) for module boundaries,
 workspace data flow, and the patterns adapted from the local OpenDesk reference.
 
 ## License
 
-Welio is licensed under the Apache License 2.0. See [LICENSE](./LICENSE) for
-the complete terms.
+Welio is licensed under the Apache License 2.0. See [LICENSE](./LICENSE) for the
+complete terms.

@@ -56,19 +56,21 @@ The browser uses `NEXT_PUBLIC_WELIO_API_URL`. Next.js server code uses
 `WELIO_API_INTERNAL_URL` when it needs a private API origin. Keep backend
 credentials out of the web app environment.
 
-## Development and checks
+## Composition and deployment
 
-The root Makefile is the command menu. `make setup` installs dependencies and
-creates missing local environment files. `make dev` starts PostgreSQL, applies
-migrations, and runs the API, worker, and web app as separate processes. Use
-`make doctor` to check local prerequisites and configuration.
+`internal/app/areas.go` explicitly registers routes and workers for the four
+business areas. Areas define worker and periodic-job hooks only when they own
+jobs; there is no plugin registry or background-loop framework.
 
-Run `make fmt` to format source and `make format-check` to check it. Run
-`make check` for formatting, contract and migration checks, Go tests and vet,
-web tests, TypeScript, and lint. Run `make verify` for the full suite, including
-race-enabled Go tests, production builds, browser tests, and the container
-smoke test.
+The root Makefile is the command menu. Local development runs PostgreSQL in
+Compose and API, worker, and web as separate processes. The AWS deployment runs
+the same services as containers on one EC2 host with Caddy for HTTPS. Its
+CloudFormation template, controller, host release script, and operations guide
+live together in `deploy/aws/`.
 
-The Go route definitions are the HTTP contract source. Run `make contracts`
-after changing API routes and `make contracts-check` to verify generated
-artifacts. See [the contract guide](../contracts/README.md) for details.
+OpenDesk informed the feature boundaries, explicit SQL and River transactions,
+root Makefile, and focused deployment directory. Welio keeps these patterns
+sized to its four areas and single-host deployment.
+
+See [the README](../README.md) for setup and verification, and
+[the contract guide](../contracts/README.md) for API generation.

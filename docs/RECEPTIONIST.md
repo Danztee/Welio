@@ -38,9 +38,9 @@ The preview has its own owner authorization and request limits.
    ZeptoMail is configured.
 
 Typed chat approval does not confirm a booking. The model cannot invent prices
-or availability, take payment, access private customer records, or send email
-on its own. Customer chat history survives network interruptions and page
-reloads while the seven-day session remains valid. The browser stores the active
+or availability, take payment, access private customer records, or send email on
+its own. Customer chat history survives network interruptions and page reloads
+while the seven-day session remains valid. The browser stores the active
 conversation ID in local storage; its access capability stays in an HttpOnly
 cookie. Customers can start a separate conversation explicitly.
 
@@ -66,7 +66,9 @@ receptionist is unavailable.
 
 The Go API exposes `/api/mcp/{slug}` using the official Go MCP SDK's Streamable
 HTTP transport and negotiates MCP protocol `2025-11-25` or later. The endpoint
-supports initialization and discovery for these tools:
+uses stateless sessions and JSON responses. Requests pass configured host,
+origin, and rate limits. It supports initialization and discovery for these
+tools:
 
 - `list_services` returns the published business's active catalog and booking
   policies.
@@ -78,8 +80,8 @@ supports initialization and discovery for these tools:
   confirmation and the business allows booking. It requires an unexpired
   proposal token, `customerApproved: true`, and separate `emailConsent: true`.
 
-External confirmation calls the same booking service as web bookings. A
-proposal token is returned once and only its hash is stored. Workspace scope,
+External confirmation calls the same booking service as web bookings. A proposal
+token is returned once and only its hash is stored. Workspace scope,
 availability checks, proposal expiration, leases, and idempotency are enforced
 by the API. Repeated confirmation returns the same appointment; conflicting
 bookings fail and require a fresh proposal.
@@ -87,10 +89,11 @@ bookings fail and require a fresh proposal.
 Set `API_SERVER_URL` to the public Go API origin and use that origin in the MCP
 client URL and `MCP_OAUTH_RESOURCE_URL`. The default allowed host comes from
 `API_SERVER_URL`; override `MCP_ALLOWED_HOSTS` when a reverse proxy or tunnel
-uses a different public hostname. The API publishes its route-derived OpenAPI 3.1 schema at
-`/v1/openapi.json`. Welio generates its TypeScript models and HTTP SDK with
-Hey API from this schema; run `make contracts` after changing route definitions.
-See [the contract guide](../contracts/README.md) for generation and freshness checks.
+uses a different public hostname. The API publishes its route-derived OpenAPI
+3.1 schema at `/v1/openapi.json`. Welio generates its TypeScript models and HTTP
+SDK with Hey API from this schema; run `make contracts` after changing route
+definitions. See [the contract guide](../contracts/README.md) for generation and
+freshness checks.
 
 Set `MCP_BOOKING_CONFIRMATION_ENABLED=true` to expose the complete tool set.
 Authentication can use a business-specific bearer secret in
@@ -99,12 +102,9 @@ the Go API environment. Secrets must remain server-side. Configure the exact
 public resource URL and HTTPS origin for remote clients; see
 [`.env.api.example`](../.env.api.example) and the API guide.
 
-The endpoint exposes a self-hosted Streamable HTTP MCP service and its OAuth
-grant is service-level `client_credentials`. It does not link an individual
-Alexa+ account. The Amazon Developer Hackathon rules accept self-hosted MCP
-servers using Streamable HTTP. See the [MCP contract](../contracts/mcp.md) and
-[AWS integration notes](./AWS-INTEGRATIONS.md) for the endpoint and Bedrock
-details.
+The OAuth grant is service-level `client_credentials`; it does not link an
+individual Alexa+ account. See [AWS integrations](./AWS-INTEGRATIONS.md) for
+runtime and development tooling.
 
 ## Data limits and retention
 
